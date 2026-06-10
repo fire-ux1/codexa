@@ -1,0 +1,27 @@
+# Python Virtual Environment
+venv/
+backend/venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Environment Variables
+.env
+
+# VS Code
+.vscode/
+
+# Node.js
+node_modules/
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# ChromaDB
+chroma_db/
+
