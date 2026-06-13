@@ -32,3 +32,16 @@ def search_chunks(
     )
 
     return results
+
+def reset_collection():
+
+    global collection
+
+    try:
+        client.delete_collection("code_chunks")
+    except:
+        pass
+
+    collection = client.get_or_create_collection(
+        name="code_chunks"
+    )

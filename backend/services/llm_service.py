@@ -1,23 +1,16 @@
-import os
-
-from dotenv import load_dotenv
-import google.generativeai as genai
-
-load_dotenv()
-
-genai.configure(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
-
-model = genai.GenerativeModel(
-    "gemini-2.5-flash"
-)
+from ollama import chat
 
 
 def generate_answer(prompt: str):
 
-    response = model.generate_content(
-        prompt
+    response = chat(
+        model="qwen3:8b",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
     )
 
-    return response.text
+    return response["message"]["content"]

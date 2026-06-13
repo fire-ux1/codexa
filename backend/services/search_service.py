@@ -18,10 +18,12 @@ def search_codebase(query: str):
     ):
 
         formatted.append({
-            "file": meta["file_name"],
-            "path": meta["file_path"],
-            "score": round(distance, 4),
-            "snippet": doc[:300]
-        })
+        "file": meta["file_name"],
+        "path": meta["file_path"],
+        "symbol": meta.get("symbol"),
+        "type": meta.get("symbol_type"),
+        "score": round(distance, 4),
+        "snippet": doc[:300]
+    })
 
     return formatted

@@ -2,12 +2,17 @@ import uuid
 
 from services.scanner_service import scan_repository
 from services.reader_service import read_file
-from services.chunker_service import chunk_text
+from services.ast_chunker_service import chunk_python_file
 
-from vector_store.chroma_service import add_chunk
+from vector_store.chroma_service import (
+    add_chunk,
+    reset_collection
+)
 
 
 def index_repository(repo_path: str):
+    
+    reset_collection()
 
     scan_result = scan_repository(repo_path)
 
@@ -22,18 +27,34 @@ def index_repository(repo_path: str):
         if not content.strip():
             continue
 
-        chunks = chunk_text(content)
+        # Use AST chunking for Python files
+        if file["extension"] == ".py":
 
+            chunks = chunk_python_file(content)
+
+        else:
+
+            chunks = [
+                {
+                    "name": file["name"],
+                    "type": "file",
+                    "content": content
+                }
+            ]
+
+        # Store chunks in ChromaDB
         for chunk in chunks:
 
             chunk_id = str(uuid.uuid4())
 
             add_chunk(
                 chunk_id=chunk_id,
-                text=chunk,
+                text=chunk["content"],
                 metadata={
                     "file_name": file["name"],
-                    "file_path": file_path
+                    "file_path": file_path,
+                    "symbol": chunk["name"],
+                    "symbol_type": chunk["type"]
                 }
             )
 

@@ -19,9 +19,13 @@ FILE: {chunk['file']}
 """
 
     prompt = f"""
-You are an expert software engineer.
+You are a codebase assistant.
 
-Answer the user's question using only the provided code context.
+Answer ONLY using the provided context.
+
+If the answer is not present in the context, say:
+
+"I could not find the answer in the indexed repository."
 
 CODE CONTEXT:
 
