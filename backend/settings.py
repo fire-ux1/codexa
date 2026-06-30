@@ -10,8 +10,8 @@ class Settings(BaseSettings):
     cors_origins: list[str] = Field(
         default=[
             "http://localhost:5173",
+            "https://codepilot-ai-wine.vercel.app",
             "https://codepilot-backend-wx7u.onrender.com",
-            "https://*.vercel.app",
         ],
         validation_alias=AliasChoices("CORS_ORIGINS"),
     )
@@ -32,7 +32,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("LLM_APP_NAME", "OPENROUTER_APP_NAME"),
     )
     llm_site_url: str = Field(
-        default="https://codepilot-backend-wx7u.onrender.com",
+        default="https://codepilot-ai-wine.vercel.app",
         validation_alias=AliasChoices("LLM_SITE_URL", "OPENROUTER_SITE_URL"),
     )
 
