@@ -36,3 +36,4 @@ __pycache__/
 
 # Private docs (roadmap / deployment details)
 docs/DEPLOYMENT_WALKTHROUGH.txt
+docs/DOCKER_SETUP.txt

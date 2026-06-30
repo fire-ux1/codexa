@@ -1,0 +1,61 @@
+# ════════════════════════════════════════════════════════════════════════════
+# Stage 1 — builder
+# Install all Python dependencies into /opt/venv so only the clean venv
+# is copied to the final image (no pip cache, no download artefacts).
+# ════════════════════════════════════════════════════════════════════════════
+FROM python:3.11-slim AS builder
+
+WORKDIR /build
+
+# Create an isolated virtual environment
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# ── CPU-only PyTorch ──────────────────────────────────────────────────────────
+# sentence-transformers 5.x requires torch >= 2.4.
+# Install from PyTorch's CPU-only index FIRST so pip never fetches the CUDA
+# variant (~2 GB of nvidia_* wheels).
+RUN pip install --no-cache-dir \
+    "torch>=2.4,<2.6" \
+    --index-url https://download.pytorch.org/whl/cpu
+
+# ── Application dependencies ──────────────────────────────────────────────────
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ── Remove packages that are provably unused at runtime ───────────────────────
+# kubernetes  — chromadb optional telemetry client, never imported by the app
+# networkx    — torch optional graph utility, never imported by the app
+# pip/setuptools/wheel — build tools not needed at runtime
+RUN pip uninstall -y kubernetes networkx pip setuptools wheel 2>/dev/null || true
+
+# ════════════════════════════════════════════════════════════════════════════
+# Stage 2 — final runtime image
+# Only the clean venv + git binary reach the shipped image.
+# ════════════════════════════════════════════════════════════════════════════
+FROM python:3.11-slim AS final
+
+WORKDIR /app
+
+# git binary is required by GitPython at runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git \
+    && git --version \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy only the venv from the builder — no pip cache, no removed packages
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy application source
+COPY . .
+
+# Pre-create the repos clone directory so GitPython has a writable target
+RUN mkdir -p /app/repos
+
+# Prevent GitPython from crashing on import if git is not immediately on PATH
+ENV GIT_PYTHON_REFRESH=quiet
+
+EXPOSE 8000
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
