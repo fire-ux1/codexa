@@ -8,6 +8,7 @@ __pycache__/
 
 # Environment Variables
 .env
+.env.example
 
 # VS Code
 .vscode/
@@ -25,14 +26,8 @@ Thumbs.db
 # ChromaDB
 chroma_db/
 
+# Repository Clones
 backend/repos/
-
-backend/venv/
-backend/repos/
-__pycache__/
-*.pyc
-
-.env.example
 
 # Private docs (roadmap / deployment details)
 docs/DEPLOYMENT_WALKTHROUGH.txt
