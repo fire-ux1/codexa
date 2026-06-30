@@ -8,9 +8,13 @@ class Settings(BaseSettings):
     api_title: str = "CodePilot AI"
     api_version: str = "1.0.0"
     cors_origins: list[str] = Field(
-    default=["http://localhost:5173"],
-    validation_alias=AliasChoices("CORS_ORIGINS"),
-)
+        default=[
+            "http://localhost:5173",
+            "https://codepilot-backend-wx7u.onrender.com",
+            "https://*.vercel.app",
+        ],
+        validation_alias=AliasChoices("CORS_ORIGINS"),
+    )
     llm_base_url: str = Field(
         default="https://openrouter.ai/api/v1",
         validation_alias=AliasChoices("LLM_BASE_URL", "OPENROUTER_BASE_URL"),
@@ -28,7 +32,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("LLM_APP_NAME", "OPENROUTER_APP_NAME"),
     )
     llm_site_url: str = Field(
-        default="http://localhost:5173",
+        default="https://codepilot-backend-wx7u.onrender.com",
         validation_alias=AliasChoices("LLM_SITE_URL", "OPENROUTER_SITE_URL"),
     )
 
