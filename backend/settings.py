@@ -7,7 +7,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     api_title: str = "CodePilot AI"
     api_version: str = "1.0.0"
-    cors_origins: list[str] = ["http://localhost:5173"]
+    cors_origins: list[str] = Field(
+    default=["http://localhost:5173"],
+    validation_alias=AliasChoices("CORS_ORIGINS"),
+)
     llm_base_url: str = Field(
         default="https://openrouter.ai/api/v1",
         validation_alias=AliasChoices("LLM_BASE_URL", "OPENROUTER_BASE_URL"),
