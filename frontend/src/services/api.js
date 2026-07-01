@@ -131,5 +131,16 @@ export async function searchCodebase(query, repoPath = null) {
   return response.data;
 }
 
+export async function runAIActionStream(payload) {
+  return fetch(`${API_BASE_URL}/ai/action`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("codepilot_token") || ""}`,
+    },
+    body: JSON.stringify(payload),
+  });
+}
+
 export { API_BASE_URL };
 export default api;
