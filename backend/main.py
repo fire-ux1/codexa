@@ -86,6 +86,7 @@ app.include_router(git_router, prefix="/git", tags=["Git Intelligence"])
 app.include_router(agents_router, prefix="/ai", tags=["AI Agents"])
 app.include_router(knowledge_router, prefix="/knowledge", tags=["AI Knowledge Graph"])
 app.include_router(planner_router, prefix="/planner", tags=["Autonomous Task Planner"])
-app.include_router(collaboration_router, prefix="/collaboration", tags=["Team Collaboration"])
+app.include_router(
+    collaboration_router, prefix="/collaboration", tags=["Team Collaboration"]
+)
 app.include_router(devops_router, prefix="/devops", tags=["AI DevOps & Documentation"])
-

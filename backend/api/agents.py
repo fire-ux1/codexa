@@ -6,14 +6,16 @@ from services.agents.coordinator import handle_agent_chat_stream
 
 router = APIRouter()
 
+
 class AgentChatPayload(BaseModel):
     message: str
-    agent_type: str = "auto"              # auto, architecture, security, performance, testing, documentation, refactoring, review
+    agent_type: str = "auto"  # auto, architecture, security, performance, testing, documentation, refactoring, review
     repo: Optional[str] = None
     file: Optional[str] = None
     symbol: Optional[str] = None
     selection: Optional[str] = None
     collaborate: bool = False
+
 
 @router.post("/agents/chat")
 def run_agent_chat(payload: AgentChatPayload):
@@ -29,7 +31,7 @@ def run_agent_chat(payload: AgentChatPayload):
             selection=payload.selection,
             message=payload.message,
             agent_type=payload.agent_type,
-            collaborate=payload.collaborate
+            collaborate=payload.collaborate,
         ),
-        media_type="text/event-stream"
+        media_type="text/event-stream",
     )

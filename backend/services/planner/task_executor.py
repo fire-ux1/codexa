@@ -1,8 +1,11 @@
 import os
 from services.llm_service import generate_answer
-from services.git_service import get_repo_obj # import validation helper
+from services.git_service import get_repo_obj  # import validation helper
 
-def execute_plan_step(repo_path: str, file_path: str, action: str, instruction: str) -> dict:
+
+def execute_plan_step(
+    repo_path: str, file_path: str, action: str, instruction: str
+) -> dict:
     """
     Executes a single step in the implementation plan:
     1. Generates patch/updates for the file.
@@ -11,7 +14,7 @@ def execute_plan_step(repo_path: str, file_path: str, action: str, instruction: 
     """
     # Safety checkout
     get_repo_obj(repo_path)
-    
+
     # Read original file if modify action
     original_content = ""
     abs_file_path = os.path.join(repo_path, file_path)
@@ -89,5 +92,5 @@ Provide your audit results in a concise bullet-point list.
         "original": original_content,
         "updated": updated_code,
         "test_code": test_code,
-        "audit": audit_notes
+        "audit": audit_notes,
     }

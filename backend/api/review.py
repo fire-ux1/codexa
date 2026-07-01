@@ -8,4 +8,3 @@ router = APIRouter()
 @router.post("/repository")
 def review(payload: RepositoryPathRequest):
     return review_repository(payload.repo_path)
-

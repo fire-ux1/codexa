@@ -1,6 +1,7 @@
 import json
 from services.db_service import get_db
 
+
 def clear_graph(repo_id: str):
     """Deletes all nodes and edges associated with a repository."""
     conn = get_db()
@@ -11,6 +12,7 @@ def clear_graph(repo_id: str):
         conn.commit()
     finally:
         conn.close()
+
 
 def insert_nodes(repo_id: str, nodes: list[dict]):
     """
@@ -25,24 +27,27 @@ def insert_nodes(repo_id: str, nodes: list[dict]):
         data = []
         for node in nodes:
             meta_str = json.dumps(node.get("meta", {}))
-            data.append((
-                node["id"],
-                repo_id,
-                node["name"],
-                node["type"],
-                node.get("path", ""),
-                meta_str
-            ))
+            data.append(
+                (
+                    node["id"],
+                    repo_id,
+                    node["name"],
+                    node["type"],
+                    node.get("path", ""),
+                    meta_str,
+                )
+            )
         cursor.executemany(
             """
             INSERT OR REPLACE INTO graph_nodes (id, repo_id, name, type, path, meta)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            data
+            data,
         )
         conn.commit()
     finally:
         conn.close()
+
 
 def insert_edges(repo_id: str, edges: list[dict]):
     """
@@ -56,23 +61,26 @@ def insert_edges(repo_id: str, edges: list[dict]):
     try:
         data = []
         for edge in edges:
-            data.append((
-                edge["id"],
-                repo_id,
-                edge["source"],
-                edge["target"],
-                edge["relation_type"]
-            ))
+            data.append(
+                (
+                    edge["id"],
+                    repo_id,
+                    edge["source"],
+                    edge["target"],
+                    edge["relation_type"],
+                )
+            )
         cursor.executemany(
             """
             INSERT OR REPLACE INTO graph_edges (id, repo_id, source_node_id, target_node_id, relation_type)
             VALUES (?, ?, ?, ?, ?)
             """,
-            data
+            data,
         )
         conn.commit()
     finally:
         conn.close()
+
 
 def get_graph(repo_id: str):
     """Retrieves all nodes and edges for a repository."""
@@ -80,7 +88,10 @@ def get_graph(repo_id: str):
     cursor = conn.cursor()
     try:
         # Fetch nodes
-        cursor.execute("SELECT id, name, type, path, meta FROM graph_nodes WHERE repo_id = ?", (repo_id,))
+        cursor.execute(
+            "SELECT id, name, type, path, meta FROM graph_nodes WHERE repo_id = ?",
+            (repo_id,),
+        )
         node_rows = cursor.fetchall()
         nodes = []
         for row in node_rows:
@@ -88,29 +99,33 @@ def get_graph(repo_id: str):
                 meta = json.loads(row["meta"]) if row["meta"] else {}
             except Exception:
                 meta = {}
-            nodes.append({
-                "id": row["id"],
-                "name": row["name"],
-                "type": row["type"],
-                "path": row["path"],
-                "meta": meta
-            })
+            nodes.append(
+                {
+                    "id": row["id"],
+                    "name": row["name"],
+                    "type": row["type"],
+                    "path": row["path"],
+                    "meta": meta,
+                }
+            )
 
         # Fetch edges
-        cursor.execute("SELECT id, source_node_id, target_node_id, relation_type FROM graph_edges WHERE repo_id = ?", (repo_id,))
+        cursor.execute(
+            "SELECT id, source_node_id, target_node_id, relation_type FROM graph_edges WHERE repo_id = ?",
+            (repo_id,),
+        )
         edge_rows = cursor.fetchall()
         edges = []
         for row in edge_rows:
-            edges.append({
-                "id": row["id"],
-                "source": row["source_node_id"],
-                "target": row["target_node_id"],
-                "relation_type": row["relation_type"]
-            })
+            edges.append(
+                {
+                    "id": row["id"],
+                    "source": row["source_node_id"],
+                    "target": row["target_node_id"],
+                    "relation_type": row["relation_type"],
+                }
+            )
 
-        return {
-            "nodes": nodes,
-            "edges": edges
-        }
+        return {"nodes": nodes, "edges": edges}
     finally:
         conn.close()

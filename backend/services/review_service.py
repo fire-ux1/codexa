@@ -5,6 +5,7 @@ from services.llm_service import generate_answer
 
 import json
 
+
 def review_repository(repo_path: str):
     structure = generate_structure(repo_path)
     symbols = get_repository_symbols(repo_path)
@@ -52,7 +53,7 @@ Ensure the JSON is correctly escaped and valid. Keep markdown text inside quotes
 """
 
     raw_answer = generate_answer(prompt)
-    
+
     # Extract JSON if wrapped in markdown code block
     json_text = raw_answer.strip()
     if json_text.startswith("```"):
@@ -69,15 +70,15 @@ Ensure the JSON is correctly escaped and valid. Keep markdown text inside quotes
         print(f"Failed to parse LLM response as JSON: {e}. Raw response: {raw_answer}")
         data = {
             "score": 5.0,
-            "architecture": "Failed to parse structured review. Raw output below:\n\n" + raw_answer,
+            "architecture": "Failed to parse structured review. Raw output below:\n\n"
+            + raw_answer,
             "maintainability": "N/A",
             "security": "N/A",
             "performance": "N/A",
             "code_smells": "N/A",
             "duplicate_code": "N/A",
             "best_practices": "N/A",
-            "recommendations": ["Re-run repository review to get structured data."]
+            "recommendations": ["Re-run repository review to get structured data."],
         }
 
     return data
-

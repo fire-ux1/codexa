@@ -11,14 +11,16 @@ SLASH_COMMAND_TEMPLATES = {
     "/summary": "Provide a high-level summary of the exports, modules, and intent of:\n{message}",
 }
 
+
 def parse_slash_command(message: str) -> str:
     """Detects slash commands and reformats the query with templates."""
     trimmed = message.strip()
     for cmd, template in SLASH_COMMAND_TEMPLATES.items():
         if trimmed.startswith(cmd):
-            remaining = trimmed[len(cmd):].strip()
+            remaining = trimmed[len(cmd) :].strip()
             return template.format(message=remaining or "the active code block/context")
     return message
+
 
 def build_context_prompt(
     repo_path: str,
@@ -26,7 +28,7 @@ def build_context_prompt(
     symbol_name: str,
     selection: str,
     messages: list,
-    user_query: str
+    user_query: str,
 ) -> str:
     """Assembles structured prompt context for LLM completion."""
     context_blocks = []
@@ -44,18 +46,20 @@ def build_context_prompt(
             try:
                 with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                
+
                 # Protect context window by truncating files larger than 12KB
                 if len(content) > 12000:
                     content = content[:12000] + "\n... [truncated due to file length]"
-                
+
                 context_blocks.append(f"Active File Content:\n```\n{content}\n```")
             except Exception:
                 pass
 
     # 3. Active Class/Function Symbol Focus
     if symbol_name:
-        context_blocks.append(f"Active Symbol Focus: {symbol_name} (Current cursor position)")
+        context_blocks.append(
+            f"Active Symbol Focus: {symbol_name} (Current cursor position)"
+        )
 
     # 4. Text Selection Context
     if selection and selection.strip():
@@ -69,7 +73,7 @@ def build_context_prompt(
     for msg in messages:
         role = "Developer" if msg["role"] == "user" else "Assistant"
         history_lines.append(f"{role}: {msg['content']}")
-    
+
     history_str = "\n".join(history_lines)
 
     # Re-evaluate user query with slash commands

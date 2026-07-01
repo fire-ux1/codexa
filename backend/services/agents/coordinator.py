@@ -8,7 +8,7 @@ from services.agents import (
     testing_agent,
     documentation_agent,
     refactoring_agent,
-    review_agent
+    review_agent,
 )
 
 AGENT_PROMPTS = {
@@ -18,8 +18,9 @@ AGENT_PROMPTS = {
     "testing": testing_agent.SYSTEM_PROMPT,
     "documentation": documentation_agent.SYSTEM_PROMPT,
     "refactoring": refactoring_agent.SYSTEM_PROMPT,
-    "review": review_agent.SYSTEM_PROMPT
+    "review": review_agent.SYSTEM_PROMPT,
 }
+
 
 def classify_query_for_agent(message: str) -> str:
     """Uses LLM to classify user query into one of the specialized agent types."""
@@ -47,14 +48,15 @@ Return ONLY the classification string (e.g. "security" or "performance") and not
     # Fallback to general review agent
     return "review"
 
+
 def handle_agent_chat_stream(
     repo: str,
     file: str,
     symbol: str,
     selection: str,
     message: str,
-    agent_type: str, # "auto", "architecture", "security", etc.
-    collaborate: bool = False
+    agent_type: str,  # "auto", "architecture", "security", etc.
+    collaborate: bool = False,
 ):
     """
     Orchestrates specialized agent analysis or sequential agent collaboration.
@@ -62,21 +64,37 @@ def handle_agent_chat_stream(
     """
     # 1. Determine agent(s) to run
     agents_to_run = []
-    
+
     if collaborate:
         # Collaboration Mode runs Architecture, Security, and Performance agents in order
         agents_to_run = ["architecture", "security", "performance"]
-        yield json.dumps({"type": "token", "token": "### 🤖 Multi-Agent Collaboration Report\n*Running Architecture, Security, and Performance specialists in sequence...*\n\n---\n"}) + "\n"
+        yield (
+            json.dumps(
+                {
+                    "type": "token",
+                    "token": "### 🤖 Multi-Agent Collaboration Report\n*Running Architecture, Security, and Performance specialists in sequence...*\n\n---\n",
+                }
+            )
+            + "\n"
+        )
     else:
         # Single agent mode
         selected = agent_type.strip().lower()
         if selected == "auto":
             selected = classify_query_for_agent(message)
-            yield json.dumps({"type": "token", "token": f"*(Auto-routed query to **{selected.capitalize()} Agent**)*\n\n"}) + "\n"
-            
+            yield (
+                json.dumps(
+                    {
+                        "type": "token",
+                        "token": f"*(Auto-routed query to **{selected.capitalize()} Agent**)*\n\n",
+                    }
+                )
+                + "\n"
+            )
+
         if selected not in AGENT_PROMPTS:
             selected = "review"
-            
+
         agents_to_run = [selected]
 
     # 2. Build code context prompt
@@ -87,25 +105,44 @@ def handle_agent_chat_stream(
         symbol_name=symbol,
         selection=selection,
         messages=[],
-        user_query=message
+        user_query=message,
     )
 
     # 3. Execute agent(s)
     for agent in agents_to_run:
         system_prompt = AGENT_PROMPTS[agent]
-        
+
         if collaborate:
-            yield json.dumps({"type": "token", "token": f"\n#### 🔬 Specialist: {agent.capitalize()} Agent\n"}) + "\n"
-            
+            yield (
+                json.dumps(
+                    {
+                        "type": "token",
+                        "token": f"\n#### 🔬 Specialist: {agent.capitalize()} Agent\n",
+                    }
+                )
+                + "\n"
+            )
+
         # Combine system prompt with workspace context prompt
         combined_prompt = f"{system_prompt}\n\nUser request is: {message}\n\nWorkspace Context:\n{base_prompt}"
-        
+
         try:
             for token in generate_answer_stream(combined_prompt):
                 yield json.dumps({"type": "token", "token": token}) + "\n"
             yield json.dumps({"type": "token", "token": "\n\n---\n"}) + "\n"
         except Exception as e:
-            yield json.dumps({"type": "error", "message": f"Error running {agent} agent: {str(e)}"}) + "\n"
+            yield (
+                json.dumps(
+                    {
+                        "type": "error",
+                        "message": f"Error running {agent} agent: {str(e)}",
+                    }
+                )
+                + "\n"
+            )
             return
-            
-    yield json.dumps({"type": "token", "token": "\n*Collaboration analysis complete.*"}) + "\n"
+
+    yield (
+        json.dumps({"type": "token", "token": "\n*Collaboration analysis complete.*"})
+        + "\n"
+    )

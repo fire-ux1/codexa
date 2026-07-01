@@ -1,5 +1,6 @@
 import uuid
 
+
 class ConversationSession:
     def __init__(self, conversation_id: str = None):
         self.conversation_id = conversation_id or str(uuid.uuid4())
@@ -22,8 +23,9 @@ class ConversationSession:
             "selection": self.selection,
             "recent_actions": self.recent_actions,
             "last_review": self.last_review,
-            "recent_references": self.recent_references
+            "recent_references": self.recent_references,
         }
+
 
 class ConversationMemoryManager:
     def __init__(self):
@@ -46,13 +48,16 @@ class ConversationMemoryManager:
                 "repo": s.repo,
                 "file": s.file,
                 "symbol": s.symbol,
-                "last_message": s.messages[-1]["content"] if s.messages else "New Conversation"
+                "last_message": s.messages[-1]["content"]
+                if s.messages
+                else "New Conversation",
             }
             for cid, s in self._sessions.items()
         ]
 
     def clear(self):
         self._sessions.clear()
+
 
 # Global memory manager instance
 memory_manager = ConversationMemoryManager()

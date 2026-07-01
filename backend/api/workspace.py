@@ -6,6 +6,7 @@ from services.workspace_service import handle_workspace_chat_stream
 
 router = APIRouter()
 
+
 class WorkspaceChatPayload(BaseModel):
     repo: str | None = None
     file: str | None = None
@@ -13,6 +14,7 @@ class WorkspaceChatPayload(BaseModel):
     selection: str | None = None
     conversation_id: str | None = None
     message: str
+
 
 @router.post("/chat")
 def workspace_chat(payload: WorkspaceChatPayload):
@@ -27,15 +29,17 @@ def workspace_chat(payload: WorkspaceChatPayload):
             symbol=payload.symbol,
             selection=payload.selection,
             conversation_id=payload.conversation_id,
-            message=payload.message
+            message=payload.message,
         ),
-        media_type="application/x-ndjson"
+        media_type="application/x-ndjson",
     )
+
 
 @router.get("/conversations")
 def list_conversations():
     """Lists recent session identifiers and summaries."""
     return memory_manager.list_sessions()
+
 
 @router.get("/conversations/{conversation_id}")
 def get_conversation(conversation_id: str):

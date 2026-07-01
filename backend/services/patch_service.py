@@ -3,23 +3,19 @@ import json
 import difflib
 from services.llm_service import generate_answer_stream
 
+
 def calculate_diff(original: str, modified: str, filename: str = "file") -> str:
     """Computes a unified diff between original and modified content."""
     original_lines = original.splitlines(keepends=True)
     modified_lines = modified.splitlines(keepends=True)
     diff = difflib.unified_diff(
-        original_lines,
-        modified_lines,
-        fromfile=f"a/{filename}",
-        tofile=f"b/{filename}"
+        original_lines, modified_lines, fromfile=f"a/{filename}", tofile=f"b/{filename}"
     )
     return "".join(diff)
 
+
 def handle_patch_generation_stream(
-    repo_path: str,
-    file_path: str,
-    selection: str,
-    instruction: str
+    repo_path: str, file_path: str, selection: str, instruction: str
 ):
     """
     Queries the LLM to generate a code modification patch based on the instruction.
@@ -34,7 +30,10 @@ def handle_patch_generation_stream(
                 with open(abs_path, "r", encoding="utf-8", errors="ignore") as f:
                     original_file_content = f.read()
             except Exception as e:
-                yield json.dumps({"type": "error", "message": f"Read error: {str(e)}"}) + "\n"
+                yield (
+                    json.dumps({"type": "error", "message": f"Read error: {str(e)}"})
+                    + "\n"
+                )
                 return
 
     # Decide if we are modifying a selection or the entire file
@@ -90,17 +89,20 @@ You MUST respond strictly in the following format:
                 temp = summary_text + token
                 if "[CODE]" in temp:
                     parts = temp.split("[CODE]")
-                    summary_delta = parts[0][len(summary_text):]
+                    summary_delta = parts[0][len(summary_text) :]
                     if summary_delta:
                         # Clean summary token
                         yield_token = summary_delta
                         if "[SUMMARY]" in yield_token:
                             yield_token = yield_token.replace("[SUMMARY]", "").lstrip()
-                        yield json.dumps({"type": "summary", "content": yield_token}) + "\n"
-                    
+                        yield (
+                            json.dumps({"type": "summary", "content": yield_token})
+                            + "\n"
+                        )
+
                     summary_text = parts[0]
                     mode = "code"
-                    
+
                     code_delta = parts[1].lstrip()
                     if code_delta:
                         yield json.dumps({"type": "code", "content": code_delta}) + "\n"
@@ -109,10 +111,10 @@ You MUST respond strictly in the following format:
                     yield_token = token
                     if not summary_text:
                         if token.startswith("[SUMMARY]"):
-                            yield_token = token[len("[SUMMARY]"):].lstrip()
+                            yield_token = token[len("[SUMMARY]") :].lstrip()
                         elif "[SUMMARY]" in token:
                             yield_token = token.replace("[SUMMARY]", "").lstrip()
-                    
+
                     yield json.dumps({"type": "summary", "content": yield_token}) + "\n"
                     summary_text += token
             else:
@@ -120,7 +122,10 @@ You MUST respond strictly in the following format:
                 code_text += token
 
     except Exception as e:
-        yield json.dumps({"type": "error", "message": f"LLM stream error: {str(e)}"}) + "\n"
+        yield (
+            json.dumps({"type": "error", "message": f"LLM stream error: {str(e)}"})
+            + "\n"
+        )
         return
 
     # 4. Finalize formatting and compute diff
@@ -149,10 +154,15 @@ You MUST respond strictly in the following format:
 
     # Yield final results
     yield json.dumps({"type": "diff", "content": diff_str}) + "\n"
-    yield json.dumps({
-        "type": "done",
-        "summary": final_summary,
-        "original": original_file_content,
-        "updated": modified_file_content,
-        "diff": diff_str
-    }) + "\n"
+    yield (
+        json.dumps(
+            {
+                "type": "done",
+                "summary": final_summary,
+                "original": original_file_content,
+                "updated": modified_file_content,
+                "diff": diff_str,
+            }
+        )
+        + "\n"
+    )

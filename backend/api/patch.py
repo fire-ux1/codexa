@@ -10,8 +10,10 @@ router = APIRouter()
 
 class PatchRequestPayload(BaseModel):
     repo: Optional[str] = None
-    file_path: str                        # absolute or repo-relative path to target file
-    content: Optional[str] = None         # full file content (or selection, if selection_range given)
+    file_path: str  # absolute or repo-relative path to target file
+    content: Optional[str] = (
+        None  # full file content (or selection, if selection_range given)
+    )
     selection_range: Optional[dict] = None  # {"startLine": int, "endLine": int}
     instruction: str
     stream: bool = True

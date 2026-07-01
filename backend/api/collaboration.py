@@ -7,19 +7,23 @@ from api.auth import get_current_user_id
 
 router = APIRouter()
 
+
 class OrgCreatePayload(BaseModel):
     name: str
+
 
 class ProjectCreatePayload(BaseModel):
     org_id: str
     repository_id: str
     name: str
 
+
 class CommentCreatePayload(BaseModel):
     project_id: str
     file: str
     line: int
     comment_text: str
+
 
 # 1. Organizations
 @router.post("/organizations")
@@ -29,13 +33,13 @@ def create_organization(payload: OrgCreatePayload):
     org_id = str(uuid.uuid4())
     try:
         cursor.execute(
-            "INSERT INTO organizations (id, name) VALUES (?, ?)",
-            (org_id, payload.name)
+            "INSERT INTO organizations (id, name) VALUES (?, ?)", (org_id, payload.name)
         )
         conn.commit()
         return {"status": "success", "id": org_id, "name": payload.name}
     finally:
         conn.close()
+
 
 @router.get("/organizations")
 def list_organizations():
@@ -48,6 +52,7 @@ def list_organizations():
     finally:
         conn.close()
 
+
 # 2. Projects
 @router.post("/projects")
 def create_project(payload: ProjectCreatePayload):
@@ -57,7 +62,7 @@ def create_project(payload: ProjectCreatePayload):
     try:
         cursor.execute(
             "INSERT INTO projects (id, org_id, repository_id, name) VALUES (?, ?, ?, ?)",
-            (project_id, payload.org_id, payload.repository_id, payload.name)
+            (project_id, payload.org_id, payload.repository_id, payload.name),
         )
         conn.commit()
         return {"status": "success", "id": project_id, "name": payload.name}
@@ -65,6 +70,7 @@ def create_project(payload: ProjectCreatePayload):
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         conn.close()
+
 
 @router.get("/projects")
 def list_projects(org_id: str = Query(...)):
@@ -77,13 +83,16 @@ def list_projects(org_id: str = Query(...)):
     finally:
         conn.close()
 
+
 # 3. Comments
 @router.post("/comments")
-def add_comment(payload: CommentCreatePayload, user_id: str = Depends(get_current_user_id)):
+def add_comment(
+    payload: CommentCreatePayload, user_id: str = Depends(get_current_user_id)
+):
     conn = get_db()
     cursor = conn.cursor()
     comment_id = str(uuid.uuid4())
-    
+
     # Resolve user name or fallback to email
     author_name = "Developer"
     try:
@@ -100,7 +109,14 @@ def add_comment(payload: CommentCreatePayload, user_id: str = Depends(get_curren
             INSERT INTO comments (id, project_id, file, line, comment_text, author)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
-            (comment_id, payload.project_id, payload.file, payload.line, payload.comment_text, author_name)
+            (
+                comment_id,
+                payload.project_id,
+                payload.file,
+                payload.line,
+                payload.comment_text,
+                author_name,
+            ),
         )
         conn.commit()
         return {"status": "success", "id": comment_id, "author": author_name}
@@ -108,6 +124,7 @@ def add_comment(payload: CommentCreatePayload, user_id: str = Depends(get_curren
         raise HTTPException(status_code=400, detail=str(e))
     finally:
         conn.close()
+
 
 @router.get("/comments")
 def get_comments(project_id: str = Query(...), file: Optional[str] = Query(None)):
@@ -117,17 +134,18 @@ def get_comments(project_id: str = Query(...), file: Optional[str] = Query(None)
         if file:
             cursor.execute(
                 "SELECT * FROM comments WHERE project_id = ? AND file = ? ORDER BY timestamp ASC",
-                (project_id, file)
+                (project_id, file),
             )
         else:
             cursor.execute(
                 "SELECT * FROM comments WHERE project_id = ? ORDER BY timestamp ASC",
-                (project_id,)
+                (project_id,),
             )
         rows = cursor.fetchall()
         return [dict(r) for r in rows]
     finally:
         conn.close()
+
 
 @router.delete("/comments/{comment_id}")
 def delete_comment(comment_id: str):
@@ -139,6 +157,7 @@ def delete_comment(comment_id: str):
         return {"status": "success", "message": "Comment deleted."}
     finally:
         conn.close()
+
 
 # 4. Activity Feed
 @router.get("/activity")
@@ -153,7 +172,7 @@ def get_activity_feed(project_id: str = Query(...)):
             FROM comments WHERE project_id = ?
             ORDER BY timestamp DESC LIMIT 20
             """,
-            (project_id,)
+            (project_id,),
         )
         rows = cursor.fetchall()
         return [dict(r) for r in rows]

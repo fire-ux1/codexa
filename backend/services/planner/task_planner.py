@@ -2,6 +2,7 @@ import json
 from services.llm_service import generate_answer
 from services.context_builder import build_context_prompt
 
+
 def create_implementation_plan(repo_path: str, user_request: str) -> dict:
     """
     Analyzes the codebase and plans the feature implementation.
@@ -14,7 +15,7 @@ def create_implementation_plan(repo_path: str, user_request: str) -> dict:
         symbol_name=None,
         selection=None,
         messages=[],
-        user_query=user_request
+        user_query=user_request,
     )
 
     prompt = f"""You are an elite Autonomous Software Architect.
@@ -51,7 +52,7 @@ Return ONLY the raw JSON structure, with no wrapper, markdown fences, or introdu
 """
     try:
         res_text = generate_answer(prompt).strip()
-        
+
         # Clean potential markdown wrappers
         if res_text.startswith("```"):
             lines = res_text.splitlines()
@@ -60,7 +61,7 @@ Return ONLY the raw JSON structure, with no wrapper, markdown fences, or introdu
             if lines and lines[-1].startswith("```"):
                 lines = lines[:-1]
             res_text = "\n".join(lines).strip()
-            
+
         return json.loads(res_text)
     except Exception as e:
         # Structured fallback if LLM output fails parsing
@@ -75,7 +76,7 @@ Return ONLY the raw JSON structure, with no wrapper, markdown fences, or introdu
                     "file": "unknown_file.py",
                     "action": "MODIFY",
                     "instruction": f"Implement user request directly: {user_request}",
-                    "complexity": "Medium"
+                    "complexity": "Medium",
                 }
-            ]
+            ],
         }

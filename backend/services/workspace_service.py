@@ -3,13 +3,14 @@ from services.conversation_memory import memory_manager
 from services.context_builder import build_context_prompt
 from services.llm_service import generate_answer_stream
 
+
 def handle_workspace_chat_stream(
     repo: str,
     file: str,
     symbol: str,
     selection: str,
     conversation_id: str,
-    message: str
+    message: str,
 ):
     """Orchestrates streaming chatbot responses and appends to session history."""
     # 1. Get or instantiate session
@@ -28,7 +29,7 @@ def handle_workspace_chat_stream(
         symbol_name=session.symbol,
         selection=session.selection,
         messages=session.messages,
-        user_query=message
+        user_query=message,
     )
 
     # 4. Save user request
