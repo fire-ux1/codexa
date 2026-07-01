@@ -1,5 +1,4 @@
 import os
-import json
 from services.llm_service import generate_answer
 from services.git_service import get_repo_obj # import validation helper
 

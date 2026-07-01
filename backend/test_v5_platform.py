@@ -7,7 +7,6 @@ sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from services.knowledge_graph.graph_builder import build_knowledge_graph, parse_db_tables
 from services.knowledge_graph.graph_storage import get_graph
 from services.planner.task_planner import create_implementation_plan
-from services.planner.task_executor import execute_plan_step
 from services.devops.devops_service import generate_devops_asset
 from services.db_service import init_db
 
@@ -18,11 +17,12 @@ import services.devops.devops_service
 # If LLM_API_KEY is not set (e.g. in test runner), mock the generate_answer call
 if not os.environ.get("LLM_API_KEY"):
     print("WARNING: LLM_API_KEY not set. Mocking LLM answers for unit test.")
-    mock_func = lambda prompt: (
-        '{"summary": "Mock plan summary details", "complexity": "Medium", "estimated_hours": 4, "risks": [], "tasks": [{"id": "t1", "file": "f1.py", "action": "MODIFY", "instruction": "mock coding instruction", "complexity": "Medium"}]}'
-        if "plan" in prompt.lower()
-        else "FROM python:3.11-alpine\nRUN echo mock"
-    )
+    def mock_func(prompt):
+        if "plan" in prompt.lower():
+            return '{"summary": "Mock plan summary details", "complexity": "Medium", "estimated_hours": 4, "risks": [], "tasks": [{"id": "t1", "file": "f1.py", "action": "MODIFY", "instruction": "mock coding instruction", "complexity": "Medium"}]}'
+        else:
+            return "FROM python:3.11-alpine\nRUN echo mock"
+            
     services.llm_service.generate_answer = mock_func
     services.planner.task_planner.generate_answer = mock_func
     services.devops.devops_service.generate_answer = mock_func

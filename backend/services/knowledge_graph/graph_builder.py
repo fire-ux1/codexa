@@ -168,7 +168,6 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
                     elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         # Determine if function is inside a class
                         parent_class = None
-                        curr = node
                         # Simple scope resolution finding class parents in AST traversal
                         for parent in ast.walk(tree):
                             if isinstance(parent, ast.ClassDef):

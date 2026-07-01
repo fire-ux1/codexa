@@ -1,6 +1,5 @@
 import os
 from services.llm_service import generate_answer
-from services.context_builder import build_context_prompt
 
 def generate_devops_asset(repo_path: str, asset_type: str) -> str:
     """Auto-generates DevOps infrastructure assets based on the tech stack detected in the codebase."""
