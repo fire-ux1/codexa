@@ -1,7 +1,7 @@
 import json
 from services.conversation_memory import memory_manager
 from services.context_builder import build_context_prompt
-from services.llm_service import generate_answer, generate_answer_stream
+from services.llm_service import generate_answer_stream
 
 def handle_workspace_chat_stream(
     repo: str,

@@ -2,7 +2,7 @@ import os
 import ast
 import re
 import json
-from services.scanner_service import scan_repository, SUPPORTED_EXTENSIONS
+from services.scanner_service import scan_repository
 
 class ComplexityVisitor(ast.NodeVisitor):
     def __init__(self):

@@ -1,6 +1,5 @@
 from services.conversation_memory import memory_manager
 from services.context_builder import parse_slash_command, build_context_prompt
-from services.workspace_service import handle_workspace_chat_stream
 
 def test_conversation_memory():
     print("Testing Conversation Memory...")

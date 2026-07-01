@@ -1,0 +1,564 @@
+# CodePilot AI v4.0 Roadmap
+
+# Phase 20 — AI Patch Generation
+
+---
+
+# Objective
+
+Transform CodePilot AI from an AI code reviewer into an AI software engineer capable of generating safe code modifications.
+
+Unlike previous AI actions that only explain code, this phase introduces patch generation with full diff previews and user approval before any changes are applied.
+
+The user must always review changes before they are written.
+
+---
+
+# User Review Required
+
+> [!IMPORTANT]
+> Every generated patch must be previewed before application.
+>
+> The AI must never directly overwrite repository files.
+>
+> Users should always be able to:
+>
+> - Review
+> - Reject
+> - Copy
+> - Download
+> - Apply
+> - Undo
+
+---
+
+# Backend
+
+## Create
+
+services/
+
+patch_service.py
+
+Responsibilities
+
+- Refactor code
+- Fix bugs
+- Optimize performance
+- Generate documentation
+- Generate unit tests
+- Modernize legacy code
+
+Return
+
+- Original Code
+- Updated Code
+- Unified Diff
+- AI Explanation
+
+---
+
+## API
+
+POST
+
+/ai/patch
+
+Request
+
+{
+    "repo":"...",
+    "file":"...",
+    "selection":"...",
+    "instruction":"Optimize this function",
+    "stream":true
+}
+
+Response
+
+Streaming JSON
+
+{
+    "summary":"",
+    "original":"",
+    "updated":"",
+    "diff":""
+}
+
+---
+
+# Frontend
+
+Create
+
+src/components/patch/
+
+PatchViewer.jsx
+
+PatchToolbar.jsx
+
+DiffViewer.jsx
+
+PatchHistory.jsx
+
+---
+
+# Monaco
+
+Replace
+
+Current File
+
+↓
+
+Monaco Diff Editor
+
+↓
+
+Original
+
+Modified
+
+↓
+
+Toolbar
+
+Apply Patch
+
+Reject
+
+Copy
+
+Download
+
+Undo
+
+---
+
+# Patch History
+
+Store
+
+Patch ID
+
+Timestamp
+
+Instruction
+
+Applied
+
+Rejected
+
+Downloaded
+
+---
+
+# Future Compatibility
+
+This system must later support
+
+Git Commits
+
+Undo
+
+Redo
+
+Pull Requests
+
+Patch Chains
+
+---
+
+# Testing
+
+✓ Generate patch
+
+✓ Diff rendering
+
+✓ Apply patch
+
+✓ Reject patch
+
+✓ Undo
+
+✓ Streaming
+
+✓ Build
+
+✓ Lint
+
+---
+
+# Git Commit
+
+git add .
+
+git commit -m "Implement AI patch generation"
+
+---
+
+# Success Criteria
+
+CodePilot AI now generates production-ready code edits instead of only explanations.
+
+====================================================================
+
+# Phase 21 — Git Intelligence & Pull Request Review
+
+---
+
+# Objective
+
+Teach CodePilot AI to understand Git history, commits and pull requests.
+
+---
+
+# Backend
+
+Create
+
+services/
+
+git_service.py
+
+Capabilities
+
+- Repository Status
+- Branches
+- Commits
+- Diff Analysis
+- Pull Request Review
+- Blame
+- File History
+
+---
+
+# API
+
+GET
+
+/git/status
+
+GET
+
+/git/history
+
+POST
+
+/git/review
+
+POST
+
+/git/diff
+
+---
+
+# Frontend
+
+Create
+
+src/components/git/
+
+GitPanel.jsx
+
+CommitHistory.jsx
+
+DiffViewer.jsx
+
+BranchSelector.jsx
+
+PRReview.jsx
+
+---
+
+# Features
+
+Repository Status
+
+Current Branch
+
+Recent Commits
+
+Changed Files
+
+Commit Diff
+
+Explain Commit
+
+Review Pull Request
+
+Generate Commit Message
+
+Summarize Changes
+
+Risk Analysis
+
+---
+
+# AI Features
+
+Explain Commit
+
+Review PR
+
+Security Review
+
+Performance Review
+
+Breaking Change Detection
+
+Generate Release Notes
+
+---
+
+# Testing
+
+✓ Git history loads
+
+✓ Diff viewer
+
+✓ Commit explanation
+
+✓ PR review
+
+✓ Build
+
+---
+
+# Git Commit
+
+git add .
+
+git commit -m "Add Git intelligence and PR review"
+
+---
+
+# Success Criteria
+
+The AI understands repository evolution instead of only repository structure.
+
+====================================================================
+
+# Phase 22 — Multi-Agent AI System
+
+---
+
+# Objective
+
+Convert the single assistant into multiple expert AI agents.
+
+---
+
+# Backend
+
+Create
+
+services/
+
+agents/
+
+architecture_agent.py
+
+security_agent.py
+
+performance_agent.py
+
+testing_agent.py
+
+documentation_agent.py
+
+refactoring_agent.py
+
+review_agent.py
+
+coordinator.py
+
+---
+
+# Agent Responsibilities
+
+Architecture Agent
+
+Repository Structure
+
+Dependency Graph
+
+Layering
+
+Security Agent
+
+OWASP
+
+Secrets
+
+Unsafe APIs
+
+Performance Agent
+
+Optimization
+
+Memory
+
+CPU
+
+Algorithm Analysis
+
+Testing Agent
+
+Generate Tests
+
+Coverage Suggestions
+
+Edge Cases
+
+Documentation Agent
+
+README
+
+API Docs
+
+Architecture Docs
+
+Refactoring Agent
+
+Clean Code
+
+SOLID
+
+Naming
+
+Duplication
+
+Review Agent
+
+General Code Review
+
+Best Practices
+
+---
+
+# Coordinator
+
+Receives one request
+
+↓
+
+Chooses best agent
+
+↓
+
+Runs agent
+
+↓
+
+Returns response
+
+Future
+
+Allow multiple agents simultaneously.
+
+---
+
+# Frontend
+
+Create
+
+src/components/agents/
+
+AgentSelector.jsx
+
+AgentChat.jsx
+
+AgentResponse.jsx
+
+AgentHistory.jsx
+
+---
+
+# UI
+
+Dropdown
+
+Architecture
+
+Security
+
+Performance
+
+Testing
+
+Documentation
+
+Refactoring
+
+Auto
+
+---
+
+# Future
+
+Agent Collaboration
+
+Architecture Agent
+
+↓
+
+Security Agent
+
+↓
+
+Performance Agent
+
+↓
+
+Final Report
+
+---
+
+# Testing
+
+✓ Agent selection
+
+✓ Auto routing
+
+✓ History
+
+✓ Streaming
+
+✓ Build
+
+---
+
+# Git Commit
+
+git add .
+
+git commit -m "Implement multi-agent AI architecture"
+
+---
+
+# Success Criteria
+
+CodePilot AI becomes an AI software engineering platform rather than a single chatbot.
+
+====================================================================
+
+# Recommended Order
+
+Phase 20
+
+AI Patch Generation
+
+↓
+
+Phase 21
+
+Git Intelligence
+
+↓
+
+Phase 22
+
+Multi-Agent AI
+
+These three phases complete CodePilot AI v4.0.

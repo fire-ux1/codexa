@@ -16,6 +16,9 @@ from api.repositories import router as repositories_router
 from api.symbols import router as symbols_router
 from api.analytics import router as analytics_router
 from api.workspace import router as workspace_router
+from api.patch import router as patch_router
+from api.git import router as git_router
+from api.agents import router as agents_router
 from settings import get_settings
 from services.db_service import init_db
 
@@ -74,3 +77,7 @@ app.include_router(flow_router, prefix="/repository", tags=["Flow"])
 app.include_router(symbols_router, prefix="/symbols", tags=["Symbols"])
 app.include_router(analytics_router, prefix="/repository", tags=["Analytics"])
 app.include_router(workspace_router, prefix="/workspace", tags=["AI Workspace"])
+app.include_router(patch_router, prefix="/ai", tags=["AI Patch Generation"])
+app.include_router(git_router, prefix="/git", tags=["Git Intelligence"])
+app.include_router(agents_router, prefix="/ai", tags=["AI Agents"])
+
