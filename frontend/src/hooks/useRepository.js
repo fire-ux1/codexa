@@ -55,7 +55,7 @@ export default function useRepository(token, showToast, history, setHistory) {
           clearWorkspace();
         }
       }
-    } catch (err) {
+    } catch {
       showToast("Deletion failed.", "error");
     }
   }, [repoPath, history, setHistory, showToast, clearWorkspace]);

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ReactFlow, MiniMap, Controls, Background, MarkerType } from "@xyflow/react";
+import { ReactFlow, MiniMap, Controls, Background } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { IconCpu } from "../components/icons/Icons";
 import FormatText from "../components/common/FormatText";

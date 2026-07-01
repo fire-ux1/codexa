@@ -42,11 +42,20 @@ import useExecutionFlow from "./hooks/useExecutionFlow";
 // Utilities
 import { statusTones } from "./utils/constants";
 import { getFileColor } from "./utils/colors";
-import { parseSymbolLabel } from "./utils/helpers";
+
+const getInitialToken = () => {
+  const params = new URLSearchParams(window.location.search);
+  const urlToken = params.get("token");
+  if (urlToken) {
+    localStorage.setItem("codepilot_token", urlToken);
+    return urlToken;
+  }
+  return localStorage.getItem("codepilot_token") || "";
+};
 
 export default function App() {
   // Authentication & History States
-  const [token, setToken] = useState(localStorage.getItem("codepilot_token") || "");
+  const [token, setToken] = useState(getInitialToken);
   const [user, setUser] = useState(null);
   const [history, setHistory] = useState([]);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
@@ -96,6 +105,7 @@ export default function App() {
 
   const {
     architecture,
+    setArchitecture,
     graphNodes,
     graphEdges,
     selectedNode,
@@ -112,6 +122,7 @@ export default function App() {
 
   const {
     callGraph,
+    setCallGraph,
     isGraphLoading,
     graphSearch,
     setGraphSearch,
@@ -122,6 +133,7 @@ export default function App() {
 
   const {
     flowData,
+    setFlowData,
     isFlowLoading,
     handleGetFlow,
   } = useExecutionFlow(repoPath, setStatus);
@@ -134,8 +146,6 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get("token");
     if (urlToken) {
-      localStorage.setItem("codepilot_token", urlToken);
-      setToken(urlToken);
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast("Authentication successful!", "success");
     }
@@ -188,7 +198,7 @@ export default function App() {
       setUser(res.user);
       setShowSandboxForm(false);
       showToast(`Logged in as Sandbox Session: ${res.user.name}`, "success");
-    } catch (err) {
+    } catch {
       showToast("Developer login failed.", "error");
     } finally {
       setIsAuthLoading(false);
@@ -241,7 +251,7 @@ export default function App() {
       const res = await askQuestion(searchQuery, repoPath);
       setSearchResults(res.sources || []);
       showToast(`Semantic search matched ${res.sources.length} items`, "success");
-    } catch (error) {
+    } catch {
       showToast("Semantic search failed", "error");
     } finally {
       setIsSearchingSemantic(false);
@@ -255,7 +265,7 @@ export default function App() {
       setIsPreviewLoading(true);
       const res = await fetchFileContent(filePath);
       setPreviewContent(res.content);
-    } catch (err) {
+    } catch {
       setPreviewContent("Error loading file content.");
     } finally {
       setIsPreviewLoading(false);

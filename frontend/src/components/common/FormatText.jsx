@@ -1,6 +1,6 @@
 // Lightweight markdown-like text renderer
 
-export function parseInlineCode(str) {
+function parseInlineCode(str) {
   const parts = [];
   const regex = /`([^`]+)`/g;
   let match;
