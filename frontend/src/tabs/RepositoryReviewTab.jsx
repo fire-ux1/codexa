@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchRepositoryReview } from "../services/api";
 import FormatText from "../components/common/FormatText";
 import { IconCpu, IconSparkles } from "../components/icons/Icons";
@@ -24,7 +24,8 @@ export default function RepositoryReviewTab({ repoPath }) {
     }));
   };
 
-  const loadReview = async () => {
+  const loadReview = useCallback(async () => {
+    if (!repoPath) return;
     setLoading(true);
     setError(null);
     try {
@@ -36,13 +37,14 @@ export default function RepositoryReviewTab({ repoPath }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [repoPath]);
 
   useEffect(() => {
-    if (repoPath) {
+    const timer = setTimeout(() => {
       loadReview();
-    }
-  }, [repoPath]);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadReview]);
 
   const handleExportMarkdown = () => {
     if (!review) return;

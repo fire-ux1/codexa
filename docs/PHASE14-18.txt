@@ -1,0 +1,142 @@
+CodePilot AI Roadmap — Phases 14 to 18
+---
+Phase 14 — AI Code Actions
+Objective
+Turn the file viewer into an AI-assisted coding workspace.
+Create
+src/components/ai/
+CodeActions.jsx
+ActionButton.jsx
+PromptTemplates.js
+Actions
+Explain Code
+Summarize File
+Review Code
+Find Bugs
+Security Scan
+Suggest Refactoring
+Optimize Performance
+Generate Unit Tests
+Generate Documentation
+Explain Selected Code
+Backend
+POST /ai/action
+Request:
+{
+"repo": "...",
+"file": "...",
+"action": "review",
+"selection": "optional"
+}
+Reuse the existing LLM service with different prompt templates.
+UI
+Display actions beside Monaco Editor.
+Commit:
+git commit -m "Add AI code actions"
+---
+Phase 15 — Inline AI & Editor Intelligence
+Objective
+Provide Cursor-like AI interactions inside Monaco.
+Features
+Right-click AI menu
+Explain selected code
+Refactor selected code
+Generate docs for selection
+Generate tests for selection
+AI side panel
+Copy generated code
+Replace selection (preview first)
+Monaco APIs
+Use:
+addAction()
+getSelection()
+executeEdits()
+Keep edits in preview mode first.
+Commit:
+git commit -m "Add inline AI editing"
+---
+Phase 16 — Repository Review
+Objective
+Generate a full AI review of the repository.
+New Tab
+Repository Review
+Sections
+Overall Score (/10)
+Architecture
+Maintainability
+Security
+Performance
+Code Smells
+Duplicate Code
+Best Practices
+Recommendations
+Backend
+POST /review/repository
+Return structured JSON for rendering.
+Optional:
+Export report as Markdown or PDF.
+Commit:
+git commit -m "Add AI repository review"
+---
+Phase 17 — Repository Analytics Dashboard
+Objective
+Provide engineering metrics.
+Widgets
+Files Indexed
+Languages
+Functions
+Classes
+Imports
+Largest Files
+Largest Folders
+Dependency Count
+Average Function Length
+Cyclomatic Complexity
+Repository Health
+Code Duplication (future)
+Optional Charts
+Language distribution
+File type distribution
+Complexity histogram
+Commit:
+git commit -m "Add repository analytics dashboard"
+---
+Phase 18 — Advanced Graph & Code Intelligence
+Objective
+Upgrade navigation and visualization.
+Graph
+Dagre/ELK auto layout
+Search nodes
+Folder clusters
+Mini-map
+Highlight dependencies
+Animated edges
+Focus selected node
+Code Intelligence
+Go to Definition
+Find References
+Hover documentation
+Breadcrumb navigation
+Symbol search
+Cross-file navigation
+Monaco
+Sync editor with graph selection.
+Commit:
+git commit -m "Add advanced code intelligence"
+---
+Final Deliverable
+After Phase 18, CodePilot AI should provide:
+✓ Repository Explorer
+✓ Monaco IDE
+✓ Symbol Outline
+✓ AI Code Actions
+✓ Inline AI
+✓ Repository Review
+✓ Analytics Dashboard
+✓ Architecture Graph
+✓ Call Graph
+✓ Execution Flow
+✓ Semantic Search
+✓ Code Intelligence
+✓ Professional Developer Experience
+This marks the completion of CodePilot AI v2.0.

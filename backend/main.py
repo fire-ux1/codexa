@@ -15,6 +15,7 @@ from api.auth import router as auth_router
 from api.repositories import router as repositories_router
 from api.symbols import router as symbols_router
 from api.analytics import router as analytics_router
+from api.workspace import router as workspace_router
 from settings import get_settings
 from services.db_service import init_db
 
@@ -72,3 +73,4 @@ app.include_router(call_graph_router, prefix="/repository", tags=["Call Graph"])
 app.include_router(flow_router, prefix="/repository", tags=["Flow"])
 app.include_router(symbols_router, prefix="/symbols", tags=["Symbols"])
 app.include_router(analytics_router, prefix="/repository", tags=["Analytics"])
+app.include_router(workspace_router, prefix="/workspace", tags=["AI Workspace"])

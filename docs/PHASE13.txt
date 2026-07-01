@@ -1,0 +1,111 @@
+Phase 13 – Code Intelligence & Symbol Navigation
+Objective
+Transform CodePilot AI from a code viewer into an intelligent code navigation platform similar to Sourcegraph or VS Code.
+---
+Features
+1. Symbol Explorer
+Create:
+```
+src/components/symbols/
+    SymbolExplorer.jsx
+    SymbolList.jsx
+```
+Display symbols for the currently opened file:
+Classes
+Functions
+Methods
+Variables (optional)
+Selecting a symbol should scroll the editor to its definition.
+---
+2. Backend API
+Create or extend an endpoint:
+```
+GET /symbols?path=<file_path>
+```
+Example response:
+```json
+[
+  {
+    "name": "handleAskQuestion",
+    "kind": "function",
+    "line": 512,
+    "column": 1
+  }
+]
+```
+Reuse the indexing data whenever possible instead of reparsing files.
+---
+3. Jump to Definition
+When a user clicks:
+a function
+class
+import
+Automatically:
+locate its definition
+open the correct file
+position Monaco at the correct line
+---
+4. Monaco Integration
+Expose an editor reference:
+```jsx
+const editorRef = useRef(null);
+```
+Use:
+```
+editor.revealLineInCenter(line)
+editor.setPosition(...)
+editor.focus()
+```
+---
+5. Breadcrumb Navigation
+Example:
+```
+backend
+  > api
+    > ask.py
+      > handleAskQuestion()
+```
+---
+6. Find References
+Right-click menu:
+Go to Definition
+Find References
+Explain Symbol
+Display references grouped by file.
+---
+7. Highlight Symbol
+Selecting a symbol should:
+highlight all occurrences
+highlight matching definition
+clear highlights when another symbol is selected
+---
+8. Search Symbols
+Add a search box above Symbol Explorer.
+Search by:
+class
+function
+filename
+---
+9. Testing Checklist
+Symbol list loads.
+Search filters symbols.
+Jump to Definition works.
+Editor scrolls correctly.
+References display correctly.
+No build or lint errors.
+---
+Suggested Commit
+```bash
+git add .
+git commit -m "Add code intelligence and symbol navigation"
+```
+---
+Success Criteria
+IDE-like navigation.
+Monaco editor integrated with repository metadata.
+Foundation ready for:
+AI inline explanations
+Rename preview
+Code lenses
+Diagnostics
+Hover documentation

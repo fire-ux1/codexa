@@ -1,0 +1,484 @@
+# CodePilot AI v3.0
+# Phase 19 — AI Workspace
+
+---
+
+# Objective
+
+Transform CodePilot AI from a repository analysis platform into a persistent AI-powered software engineering workspace similar to Cursor, Windsurf and GitHub Copilot Workspace.
+
+The AI should always understand:
+
+- Current Repository
+- Current File
+- Current Function
+- Current Selection
+- Current Graph Node
+- Previous AI Conversations
+
+without asking the user repeatedly.
+
+---
+
+# Current Problem
+
+Today the workflow is:
+
+Open File
+
+↓
+
+Select Code
+
+↓
+
+Click AI Action
+
+↓
+
+Receive Response
+
+↓
+
+Everything resets
+
+The AI has no memory of what the user was doing.
+
+---
+
+# Target Workflow
+
+Repository
+
+↓
+
+Explorer
+
+↓
+
+Editor
+
+↓
+
+AI Workspace
+
+↓
+
+Architecture
+
+↓
+
+Review
+
+↓
+
+Continue Working
+
+The AI always knows the current context.
+
+---
+
+# New Folder Structure
+
+frontend/
+
+src/
+
+components/
+
+workspace/
+
+AIWorkspace.jsx
+
+ConversationPanel.jsx
+
+ContextPanel.jsx
+
+PromptBox.jsx
+
+ChatHistory.jsx
+
+WorkspaceHeader.jsx
+
+hooks/
+
+useWorkspace.js
+
+useConversation.js
+
+useSelection.js
+
+services/
+
+workspace.js
+
+backend/
+
+services/
+
+workspace_service.py
+
+conversation_memory.py
+
+context_builder.py
+
+api/
+
+workspace.py
+
+---
+
+# Backend
+
+Create
+
+POST
+
+/workspace/chat
+
+Request
+
+{
+    "repo":"...",
+    "file":"...",
+    "symbol":"...",
+    "selection":"...",
+    "conversation_id":"...",
+    "message":"..."
+}
+
+---
+
+Response
+
+StreamingResponse
+
+The backend automatically injects
+
+Repository
+
+Current File
+
+Current Symbol
+
+Current Selection
+
+Conversation History
+
+into the LLM prompt.
+
+---
+
+# Conversation Memory
+
+Maintain
+
+conversation_id
+
+Messages
+
+Current Repository
+
+Current File
+
+Current Symbol
+
+Recent AI Actions
+
+Last Review
+
+Recent References
+
+This should be stored in memory initially.
+
+Later it can move to Redis/PostgreSQL.
+
+---
+
+# Workspace Context Builder
+
+Create
+
+context_builder.py
+
+Responsibilities
+
+Build context automatically
+
+Repository
+
+↓
+
+File
+
+↓
+
+Function
+
+↓
+
+Selection
+
+↓
+
+Architecture
+
+↓
+
+Recent Conversation
+
+↓
+
+Prompt
+
+No manual concatenation inside routes.
+
+---
+
+# Frontend Layout
+
+Current
+
+------------------------------------
+
+Explorer
+
+Tabs
+
+------------------------------------
+
+Target
+
+-------------------------------------------------------------
+
+Explorer
+
+|
+
+Monaco Editor
+
+|
+
+AI Workspace
+
+|
+
+Context Panel
+
+-------------------------------------------------------------
+
+Bottom Dock
+
+Architecture
+
+Call Graph
+
+Execution Flow
+
+Analytics
+
+Review
+
+-------------------------------------------------------------
+
+---
+
+# AI Workspace
+
+Contains
+
+Current Context
+
+Current File
+
+Current Function
+
+Selection
+
+Conversation
+
+Streaming Response
+
+Prompt Box
+
+Suggested Questions
+
+Recent Actions
+
+---
+
+# Suggested Questions
+
+Examples
+
+Explain this function
+
+Find bugs
+
+Generate tests
+
+Refactor this
+
+Why is this slow?
+
+Explain imports
+
+Show dependencies
+
+Document this
+
+Optimize algorithm
+
+---
+
+# Context Panel
+
+Always Visible
+
+Repository
+
+Current File
+
+Current Symbol
+
+Selection Lines
+
+Language
+
+Tokens Used
+
+Conversation ID
+
+Model
+
+---
+
+# Prompt Box
+
+Supports
+
+Enter
+
+Shift+Enter
+
+Slash Commands
+
+Examples
+
+/explain
+
+/review
+
+/test
+
+/docs
+
+/refactor
+
+/security
+
+/architecture
+
+/summary
+
+---
+
+# AI Response
+
+Support
+
+Markdown
+
+Tables
+
+Code Blocks
+
+Syntax Highlighting
+
+Streaming
+
+Copy
+
+Regenerate
+
+Continue
+
+Stop Generation
+
+Download Markdown
+
+---
+
+# Workspace History
+
+Every AI interaction should appear here.
+
+Explain auth.py
+
+Review main.py
+
+Generate tests
+
+Security Scan
+
+Repository Review
+
+Clicking one restores the response instantly.
+
+---
+
+# Future Compatibility
+
+This architecture must support
+
+Multi-Agent AI
+
+GitHub Pull Requests
+
+Diff Reviews
+
+Inline Editing
+
+Patch Generation
+
+Live Collaboration
+
+without redesigning the workspace.
+
+---
+
+# Testing Checklist
+
+✓ Workspace loads.
+
+✓ Streaming works.
+
+✓ Conversation persists.
+
+✓ Context updates when file changes.
+
+✓ Context updates when selection changes.
+
+✓ Slash commands work.
+
+✓ Markdown renders.
+
+✓ Build succeeds.
+
+✓ Lint succeeds.
+
+---
+
+# Git Commit
+
+git add .
+
+git commit -m "Implement AI Workspace with persistent repository context"
+
+---
+
+# Success Criteria
+
+The AI behaves like a persistent software engineering assistant instead of a one-off chatbot.
+
+This completes the foundation for CodePilot AI v3.0.

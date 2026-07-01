@@ -1,0 +1,120 @@
+Phase 12 – Monaco Editor Integration
+Objective
+Replace the current `<pre>`-based file preview with the Monaco Editor to provide a professional IDE-like experience.
+---
+Goals
+VS Code-like editor
+Syntax highlighting
+Line numbers
+Minimap
+Read-only mode
+Automatic language detection
+Jump to selected file from File Explorer
+---
+1. Install Dependency
+```bash
+npm install @monaco-editor/react
+```
+---
+2. Create Component
+Create:
+```
+src/components/editor/
+    MonacoFileViewer.jsx
+```
+Responsibilities:
+Render Monaco Editor
+Receive:
+`content`
+`filePath`
+`loading`
+Detect language automatically
+Configure editor options
+---
+3. Language Detection
+Create:
+```
+src/utils/editorLanguage.js
+```
+Example mapping:
+Extension	Language
+.py	python
+.js	javascript
+.jsx	javascript
+.ts	typescript
+.tsx	typescript
+.json	json
+.css	css
+.html	html
+.md	markdown
+.java	java
+.cpp	cpp
+.c	c
+.go	go
+.rs	rust
+Export:
+```js
+getEditorLanguage(filePath)
+```
+---
+4. Monaco Configuration
+Use:
+Theme: `vs-dark`
+Read Only
+Minimap enabled
+Word Wrap
+Automatic Layout
+Line Numbers
+Smooth Scrolling
+---
+5. Replace Preview Modal
+Current:
+```
+<pre>{previewContent}</pre>
+```
+Replace with:
+```
+<MonacoFileViewer
+    filePath={previewFile}
+    content={previewContent}
+    loading={isPreviewLoading}
+/>
+```
+---
+6. Enhance File Preview
+Display:
+File name
+File path
+Language badge
+File size (if available)
+Copy file path button
+---
+7. Prepare for Future Features
+Design the editor component so it can later support:
+Go to Definition
+Find References
+Highlight Symbols
+Jump to Line
+AI annotations
+Inline diagnostics
+---
+8. Testing Checklist
+Monaco loads correctly.
+Syntax highlighting works.
+Language detection is correct.
+Large files remain responsive.
+File Explorer still opens files.
+Preview modal opens and closes correctly.
+No console errors.
+`npm run build` succeeds.
+---
+Suggested Git Commit
+```bash
+git add .
+git commit -m "Integrate Monaco editor for repository file preview"
+```
+---
+Success Criteria
+Professional IDE-style code viewer.
+Clean separation of editor logic.
+Foundation ready for advanced code intelligence.

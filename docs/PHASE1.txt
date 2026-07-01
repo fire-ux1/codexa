@@ -1,0 +1,65 @@
+CodePilot AI - Next Phase Implementation Guide
+
+Current Status
+
+✓ Frontend refactoring completed.
+
+PHASE 11 - VS Code Style File Explorer
+
+Goal: - Add a left-side repository tree like VS Code.
+
+Create: src/components/explorer/ - FileExplorer.jsx - FileTreeNode.jsx
+
+Features: - Expand/collapse folders - File/folder icons - Highlight
+selected file - Open file on click - Integrate with existing preview API
+
+Commit: git commit -m “Add repository file explorer”
+
+PHASE 12 - Monaco Editor
+
+Install: npm install @monaco-editor/react
+
+Replace the
+preview with Monaco Editor.
+
+Features: - Syntax highlighting - Line numbers - Search - Folding -
+Read-only mode
+
+Commit: git commit -m “Integrate Monaco editor”
+
+PHASE 13 - Architecture Graph
+
+Install: npm install @dagrejs/dagre
+
+Improve: - Auto layout - Better edge routing - Folder grouping - Hover
+details - Zoom to node
+
+Commit: git commit -m “Improve architecture graph”
+
+PHASE 14 - AI Actions
+
+Create: src/components/ai/CodeActions.jsx
+
+Buttons: - Explain - Find Bugs - Security Review - Generate Tests -
+Refactor - Documentation
+
+Reuse the existing AI endpoint with different prompts.
+
+Commit: git commit -m “Add AI code actions”
+
+PHASE 15 - Repository Dashboard
+
+Show: - Files - Languages - Classes - Functions - Imports - Largest
+folder - Repository health
+
+Commit: git commit -m “Add repository analytics”
+
+Recommended Order
+
+1.  File Explorer
+2.  Monaco Editor
+3.  Graph Improvements
+4.  AI Actions
+5.  Dashboard
+6.  UI Polish
+7.  Deployment

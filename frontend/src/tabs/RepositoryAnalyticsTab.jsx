@@ -1,13 +1,14 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { fetchRepositoryAnalytics } from "../services/api";
-import { IconDatabase, IconCpu } from "../components/icons/Icons";
+import { IconDatabase } from "../components/icons/Icons";
 
 export default function RepositoryAnalyticsTab({ repoPath }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadAnalytics = async () => {
+  const loadAnalytics = useCallback(async () => {
+    if (!repoPath) return;
     setLoading(true);
     setError(null);
     try {
@@ -19,13 +20,14 @@ export default function RepositoryAnalyticsTab({ repoPath }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [repoPath]);
 
   useEffect(() => {
-    if (repoPath) {
+    const timer = setTimeout(() => {
       loadAnalytics();
-    }
-  }, [repoPath]);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadAnalytics]);
 
   // Determine language colors
   const getLanguageColor = (lang) => {
@@ -95,7 +97,6 @@ export default function RepositoryAnalyticsTab({ repoPath }) {
   }
 
   // Find max files count for relative bar widths
-  const maxLanguageFiles = Math.max(...data.languages.map((l) => l.files), 1);
   const totalLangFiles = data.languages.reduce((acc, curr) => acc + curr.files, 0);
 
   // Find max sizes for relative file/folder bar widths

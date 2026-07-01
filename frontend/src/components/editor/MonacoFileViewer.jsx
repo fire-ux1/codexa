@@ -13,6 +13,7 @@ export default function MonacoFileViewer({
   onGoToDefinition,
   onFindReferences,
   onRunSelectionAction,
+  onSelectionChange,
   repoPath,
 }) {
   const language = getEditorLanguage(filePath);
@@ -66,7 +67,7 @@ export default function MonacoFileViewer({
               accumulated += parsed.token;
               setInlinePanel((prev) => ({ ...prev, resultText: accumulated }));
             }
-          } catch (/* ignored */ _e) {/* ignore */}
+          } catch { /* ignore */ }
         }
       };
 
@@ -84,7 +85,7 @@ export default function MonacoFileViewer({
 
   const handleReplaceSelection = (ed) => {
     if (!inlinePanel || !inlinePanelRef.current) return;
-    const { selection, model } = inlinePanelRef.current;
+    const { selection } = inlinePanelRef.current;
 
     // Extract code block from markdown fences if present
     let codeToInsert = inlinePanel.resultText;
@@ -101,6 +102,13 @@ export default function MonacoFileViewer({
   const handleEditorDidMount = (editor) => {
     if (editorRef) {
       editorRef.current = editor;
+    }
+
+    // Propagate selection changes to parent (Phase 19 AI Workspace)
+    if (onSelectionChange) {
+      editor.onDidChangeCursorSelection(() => {
+        onSelectionChange(editor);
+      });
     }
 
     // --- Navigation actions (Phase 13) ---
