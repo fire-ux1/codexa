@@ -128,6 +128,8 @@ export default function App() {
     loadUserAndHistory();
   }, [token, selectRepositoryFromHistory, showToast]);
 
+  const activeRepo = history.find((r) => r.repository_path === repoPath);
+  const activeRepoId = activeRepo ? activeRepo.id : null;
   const repositoryReady = Boolean(repoPath);
 
 
@@ -264,6 +266,7 @@ export default function App() {
         /* FULL IDE WORKSPACE */
         <AIWorkspace
           repoPath={repoPath}
+          repoId={activeRepoId}
           architecture={architecture}
           graphNodes={graphNodes}
           graphEdges={graphEdges}

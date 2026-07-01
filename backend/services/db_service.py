@@ -41,6 +41,81 @@ def init_db():
     )
     """)
 
+    # Create graph_nodes table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS graph_nodes (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT,
+        name TEXT,
+        type TEXT,
+        path TEXT,
+        meta TEXT,
+        FOREIGN KEY (repo_id) REFERENCES repositories(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Create graph_edges table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS graph_edges (
+        id TEXT PRIMARY KEY,
+        repo_id TEXT,
+        source_node_id TEXT,
+        target_node_id TEXT,
+        relation_type TEXT,
+        FOREIGN KEY (repo_id) REFERENCES repositories(id) ON DELETE CASCADE,
+        FOREIGN KEY (source_node_id) REFERENCES graph_nodes(id) ON DELETE CASCADE,
+        FOREIGN KEY (target_node_id) REFERENCES graph_nodes(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Create organizations table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS organizations (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    # Create projects table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS projects (
+        id TEXT PRIMARY KEY,
+        org_id TEXT,
+        repository_id TEXT,
+        name TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (org_id) REFERENCES organizations(id) ON DELETE CASCADE,
+        FOREIGN KEY (repository_id) REFERENCES repositories(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Create project_members table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS project_members (
+        project_id TEXT,
+        user_id TEXT,
+        role TEXT,
+        PRIMARY KEY (project_id, user_id),
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )
+    """)
+
+    # Create comments table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS comments (
+        id TEXT PRIMARY KEY,
+        project_id TEXT,
+        file TEXT,
+        line INTEGER,
+        comment_text TEXT,
+        author TEXT,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+    )
+    """)
+
     conn.commit()
     conn.close()
 

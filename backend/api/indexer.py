@@ -87,6 +87,11 @@ async def websocket_indexer(websocket: WebSocket):
                     files_indexed=data_metrics.get("files_indexed", 0),
                     chunks_indexed=data_metrics.get("chunks_indexed", 0),
                 )
+                try:
+                    from services.knowledge_graph.graph_builder import build_knowledge_graph
+                    build_knowledge_graph(repo_path, repo_id)
+                except Exception as graph_err:
+                    print(f"Failed to build knowledge graph: {graph_err}")
             elif stage == "Failed":
                 update_repository_status(repo_id=repo_id, status="failed")
 

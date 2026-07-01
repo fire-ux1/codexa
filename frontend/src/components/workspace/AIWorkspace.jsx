@@ -20,6 +20,10 @@ import { runPatchStream, commitPatch } from "../../services/patch";
 import GitPanel from "../git/GitPanel";
 import AgentChat from "../agents/AgentChat";
 
+// Knowledge Graph & Autonomous Planner
+import KnowledgePanel from "../knowledge/KnowledgePanel";
+import PlannerWorkspace from "../planner/PlannerWorkspace";
+
 // Bottom dock panels
 import ArchitectureTab from "../../tabs/ArchitectureTab";
 import RepositoryReviewTab from "../../tabs/RepositoryReviewTab";
@@ -31,6 +35,8 @@ const BOTTOM_TABS = [
   { key: "review", label: "AI Review", icon: "🔍" },
   { key: "analytics", label: "Analytics", icon: "📊" },
   { key: "graph", label: "Call Graph", icon: "🕸️" },
+  { key: "knowledge", label: "Knowledge Graph", icon: "🧠" },
+  { key: "planner", label: "Planner", icon: "📋" },
   { key: "git", label: "Git", icon: "🐙" },
 ];
 
@@ -50,6 +56,7 @@ function BottomDock({
   onSelectPanel,
   onClose,
   repoPath,
+  repoId,
   callGraph,
   graphSearch,
   setGraphSearch,
@@ -150,6 +157,16 @@ function BottomDock({
             <GitPanel repoPath={repoPath} />
           </div>
         )}
+        {activePanel === "knowledge" && (
+          <div className="h-full">
+            <KnowledgePanel repoId={repoId} />
+          </div>
+        )}
+        {activePanel === "planner" && (
+          <div className="h-full">
+            <PlannerWorkspace repoPath={repoPath} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -173,6 +190,7 @@ const INITIAL_PATCH = {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AIWorkspace({
   repoPath,
+  repoId,
   architecture,
   graphNodes,
   graphEdges,
@@ -627,6 +645,7 @@ export default function AIWorkspace({
                 onSelectPanel={openDockPanel}
                 onClose={() => setBottomPanel(null)}
                 repoPath={repoPath}
+                repoId={repoId}
                 architecture={architecture}
                 graphNodes={graphNodes}
                 graphEdges={graphEdges}

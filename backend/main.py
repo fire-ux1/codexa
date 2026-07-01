@@ -19,6 +19,10 @@ from api.workspace import router as workspace_router
 from api.patch import router as patch_router
 from api.git import router as git_router
 from api.agents import router as agents_router
+from api.knowledge import router as knowledge_router
+from api.planner import router as planner_router
+from api.collaboration import router as collaboration_router
+from api.devops import router as devops_router
 from settings import get_settings
 from services.db_service import init_db
 
@@ -80,4 +84,8 @@ app.include_router(workspace_router, prefix="/workspace", tags=["AI Workspace"])
 app.include_router(patch_router, prefix="/ai", tags=["AI Patch Generation"])
 app.include_router(git_router, prefix="/git", tags=["Git Intelligence"])
 app.include_router(agents_router, prefix="/ai", tags=["AI Agents"])
+app.include_router(knowledge_router, prefix="/knowledge", tags=["AI Knowledge Graph"])
+app.include_router(planner_router, prefix="/planner", tags=["Autonomous Task Planner"])
+app.include_router(collaboration_router, prefix="/collaboration", tags=["Team Collaboration"])
+app.include_router(devops_router, prefix="/devops", tags=["AI DevOps & Documentation"])
 
