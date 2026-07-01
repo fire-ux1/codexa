@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ReactFlow, MiniMap, Controls, Background } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { IconCpu } from "../components/icons/Icons";
+import { IconCpu, IconSearch } from "../components/icons/Icons";
 import FormatText from "../components/common/FormatText";
 
 export default function ArchitectureTab({
@@ -18,37 +18,148 @@ export default function ArchitectureTab({
   getFileColor,
 }) {
   const [showReport, setShowReport] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const handleNodeClickInternal = (event, node) => {
     setShowReport(false);
     onNodeClick(event, node);
   };
+
+  // Filter and style nodes based on search and selectedNode connections
+  const nodes = useMemo(() => {
+    return graphNodes.map((node) => {
+      let opacity = 1;
+      let borderGlow = "";
+
+      const matchesSearch = searchQuery.trim()
+        ? node.data.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          node.id.toLowerCase().includes(searchQuery.toLowerCase())
+        : true;
+
+      if (searchQuery.trim() && !matchesSearch) {
+        opacity = 0.2;
+      }
+
+      const isSelected = selectedNode && selectedNode.id === node.id;
+      const isConnected =
+        selectedNode &&
+        (graphEdges.some((e) => e.source === selectedNode.id && e.target === node.id) ||
+          graphEdges.some((e) => e.target === selectedNode.id && e.source === node.id));
+
+      if (selectedNode) {
+        if (!isSelected && !isConnected) {
+          opacity = 0.25;
+        }
+        if (isSelected) {
+          borderGlow = `0 0 15px ${getFileColor(node.data.extension)}`;
+        }
+      }
+
+      return {
+        ...node,
+        style: {
+          ...node.style,
+          opacity,
+          boxShadow: borderGlow || node.style.boxShadow,
+        },
+      };
+    });
+  }, [graphNodes, graphEdges, selectedNode, searchQuery, getFileColor]);
+
+  // Style and animate edges based on connection to selection
+  const edges = useMemo(() => {
+    return graphEdges.map((edge) => {
+      let stroke = "#4b5563";
+      let strokeWidth = 1;
+      let opacity = 0.4;
+      let animated = false;
+
+      const isConnected = selectedNode && (edge.source === selectedNode.id || edge.target === selectedNode.id);
+
+      if (selectedNode) {
+        if (isConnected) {
+          stroke = edge.source === selectedNode.id ? "#a855f7" : "#3b82f6"; // purple for outgoing, blue for incoming
+          strokeWidth = 2.5;
+          opacity = 1;
+          animated = true;
+        } else {
+          opacity = 0.1;
+        }
+      } else {
+        stroke = "#6366f1";
+        strokeWidth = 1.5;
+        opacity = 0.7;
+        animated = true;
+      }
+
+      return {
+        ...edge,
+        animated,
+        style: {
+          ...edge.style,
+          stroke,
+          strokeWidth,
+          opacity,
+        },
+        markerEnd: {
+          ...edge.markerEnd,
+          color: stroke,
+        },
+      };
+    });
+  }, [graphEdges, selectedNode]);
+
   return (
     <div className="space-y-6 animate-fade-in w-full h-[580px] flex flex-col">
-      <div className="border-b border-white/5 pb-4 shrink-0 flex items-center justify-between">
+      <div className="border-b border-white/5 pb-4 shrink-0 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
             <IconCpu className="w-5 h-5 text-indigo-400" /> Interactive Dependency Graph
           </h2>
           <p className="mt-1 text-xs text-soft leading-relaxed">
-            Drag, zoom, and click nodes to open code explanations and preview full file contents.
+            Inspect import dependency chains. Nodes positioned left-to-right (dependencies to dependents).
           </p>
         </div>
 
-        {!architecture && (
-          <button
-            onClick={onGetArchitecture}
-            disabled={isArchitectureLoading}
-            className="px-4 py-2 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-all inline-flex items-center gap-1.5"
-          >
-            {isArchitectureLoading ? "Loading..." : "Load Graph"}
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {/* Node Search Bar */}
+          {architecture && (
+            <div className="relative">
+              <span className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-500">
+                <IconSearch className="w-3.5 h-3.5" />
+              </span>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search nodes..."
+                className="pl-8 pr-3 py-1.5 rounded-lg text-xs bg-black/30 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500/50 w-[160px] transition-all font-mono"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-500 hover:text-white text-[10px]"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+
+          {!architecture && (
+            <button
+              onClick={onGetArchitecture}
+              disabled={isArchitectureLoading}
+              className="px-4 py-2 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 transition-all inline-flex items-center gap-1.5"
+            >
+              {isArchitectureLoading ? "Loading..." : "Load Graph"}
+            </button>
+          )}
+        </div>
       </div>
 
       {architecture ? (
         <div className="flex-grow grid grid-cols-1 xl:grid-cols-[1fr_300px] gap-4 min-h-0">
-
           {/* React Flow Panel */}
           <div className="h-[430px] xl:h-full rounded-2xl border border-white/10 bg-black/35 relative overflow-hidden">
             {isGraphLoadingReactFlow ? (
@@ -58,8 +169,8 @@ export default function ArchitectureTab({
             ) : null}
 
             <ReactFlow
-              nodes={graphNodes}
-              edges={graphEdges}
+              nodes={nodes}
+              edges={edges}
               onNodeClick={handleNodeClickInternal}
               fitView
               proOptions={{ hideAttribution: true }}

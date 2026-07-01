@@ -110,6 +110,20 @@ export async function fetchFlow(repoPath) {
   return response.data;
 }
 
+export async function fetchRepositoryReview(repoPath) {
+  const response = await api.post("/review/repository", {
+    repo_path: repoPath,
+  });
+  return response.data;
+}
+
+export async function fetchRepositoryAnalytics(repoPath) {
+  const response = await api.get("/repository/analytics", {
+    params: { repo_path: repoPath },
+  });
+  return response.data;
+}
+
 export async function fetchRepositoryGraph(repoPath) {
   const response = await api.get("/repository/graph", {
     params: { repo_path: repoPath },

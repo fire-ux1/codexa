@@ -14,6 +14,8 @@ import {
   IconTerminal,
   IconSearch,
   IconFolder,
+  IconCode,
+  IconDatabase,
 } from "./components/icons/Icons";
 
 import ToastContainer from "./components/common/ToastContainer";
@@ -31,6 +33,8 @@ import ArchitectureTab from "./tabs/ArchitectureTab";
 import CallGraphTab from "./tabs/CallGraphTab";
 import FlowTab from "./tabs/FlowTab";
 import SearchTab from "./tabs/SearchTab";
+import RepositoryReviewTab from "./tabs/RepositoryReviewTab";
+import RepositoryAnalyticsTab from "./tabs/RepositoryAnalyticsTab";
 
 // Hooks
 import useToast from "./hooks/useToast";
@@ -428,6 +432,8 @@ export default function App() {
                   { key: "graph", label: "Call Graph", icon: IconNetwork },
                   { key: "flow", label: "Execution Flow", icon: IconFlow },
                   { key: "search", label: "Semantic Search", icon: IconSearch },
+                  { key: "review", label: "Repository Review", icon: IconCode },
+                  { key: "analytics", label: "Repository Analytics", icon: IconDatabase },
                 ].map((tab) => {
                   const TabIcon = tab.icon;
                   const active = activeTab === tab.key;
@@ -515,6 +521,12 @@ export default function App() {
                     onSearch={handleSemanticSearch}
                     onOpenFile={openFilePreviewModal}
                   />
+                )}
+                {activeTab === "review" && (
+                  <RepositoryReviewTab repoPath={repoPath} />
+                )}
+                {activeTab === "analytics" && (
+                  <RepositoryAnalyticsTab repoPath={repoPath} />
                 )}
               </div>
             </div>
