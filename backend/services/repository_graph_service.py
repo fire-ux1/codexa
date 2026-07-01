@@ -1,19 +1,12 @@
 import os
 import ast
 
-SUPPORTED_EXTENSIONS = {
-    ".py",
-    ".js",
-    ".jsx",
-    ".ts",
-    ".tsx",
-    ".html",
-    ".css",
-    ".json"
-}
+SUPPORTED_EXTENSIONS = {".py", ".js", ".jsx", ".ts", ".tsx", ".html", ".css", ".json"}
 
 
-def resolve_import(import_name: str, current_file: str, all_files: set[str]) -> str | None:
+def resolve_import(
+    import_name: str, current_file: str, all_files: set[str]
+) -> str | None:
     """Resolve an import string (like services.scanner_service) to a local relative path."""
     parts = import_name.split(".")
 
@@ -31,7 +24,9 @@ def resolve_import(import_name: str, current_file: str, all_files: set[str]) -> 
         candidate_rel = (cur_dir + "/" + "/".join(parts)).replace("\\", "/") + ".py"
         if candidate_rel in all_files:
             return candidate_rel
-        candidate_rel_init = (cur_dir + "/" + "/".join(parts)).replace("\\", "/") + "/__init__.py"
+        candidate_rel_init = (cur_dir + "/" + "/".join(parts)).replace(
+            "\\", "/"
+        ) + "/__init__.py"
         if candidate_rel_init in all_files:
             return candidate_rel_init
 
@@ -55,7 +50,9 @@ def generate_repository_graph(repo_path: str):
     # Scan files first to gather all node candidates
     for root, dirs, files in os.walk(repo_path):
         dirs[:] = [
-            d for d in dirs if d not in {".git", "__pycache__", "venv", "node_modules", "dist"}
+            d
+            for d in dirs
+            if d not in {".git", "__pycache__", "venv", "node_modules", "dist"}
         ]
 
         for file in files:
@@ -64,31 +61,33 @@ def generate_repository_graph(repo_path: str):
                 file_path = os.path.join(root, file)
                 rel_path = os.path.relpath(file_path, repo_path).replace("\\", "/")
                 all_files_set.add(rel_path)
-                
+
                 try:
                     size = os.path.getsize(file_path)
                 except Exception:
                     size = 0
-                    
+
                 file_metadata[rel_path] = {
                     "path": file_path,
                     "extension": ext,
                     "size": size,
-                    "name": file
+                    "name": file,
                 }
 
     # Create nodes
     for rel_path, meta in file_metadata.items():
-        nodes.append({
-            "id": rel_path,
-            "label": meta["name"],
-            "type": "file",
-            "data": {
-                "path": meta["path"],
-                "extension": meta["extension"],
-                "size": meta["size"]
+        nodes.append(
+            {
+                "id": rel_path,
+                "label": meta["name"],
+                "type": "file",
+                "data": {
+                    "path": meta["path"],
+                    "extension": meta["extension"],
+                    "size": meta["size"],
+                },
             }
-        })
+        )
 
     # Analyze Python imports to build edges
     edges_set = set()
@@ -117,16 +116,15 @@ def generate_repository_graph(repo_path: str):
                     edge_key = (rel_path, resolved)
                     if edge_key not in edges_set:
                         edges_set.add(edge_key)
-                        edges.append({
-                            "id": f"e_{rel_path.replace('/', '_')}_to_{resolved.replace('/', '_')}",
-                            "source": rel_path,
-                            "target": resolved
-                        })
+                        edges.append(
+                            {
+                                "id": f"e_{rel_path.replace('/', '_')}_to_{resolved.replace('/', '_')}",
+                                "source": rel_path,
+                                "target": resolved,
+                            }
+                        )
 
         except Exception as e:
             print(f"Graph Error parsing imports for {rel_path}: {e}")
 
-    return {
-        "nodes": nodes,
-        "edges": edges
-    }
+    return {"nodes": nodes, "edges": edges}

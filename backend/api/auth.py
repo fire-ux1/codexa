@@ -45,7 +45,15 @@ def developer_login(payload: DeveloperLoginPayload):
         avatar_url=avatar_url,
     )
     token = encode_token(user_id=user_id, email=payload.email)
-    return {"token": token, "user": {"id": user_id, "name": payload.name, "email": payload.email, "avatar_url": avatar_url}}
+    return {
+        "token": token,
+        "user": {
+            "id": user_id,
+            "name": payload.name,
+            "email": payload.email,
+            "avatar_url": avatar_url,
+        },
+    }
 
 
 @router.get("/me")
@@ -115,11 +123,16 @@ def callback_github(code: str):
     emails = email_res.json()
     primary_email = next((e["email"] for e in emails if e["primary"]), None)
     if not primary_email:
-        primary_email = user_profile.get("email") or f"{user_profile.get('login')}@github.com"
+        primary_email = (
+            user_profile.get("email") or f"{user_profile.get('login')}@github.com"
+        )
 
     user_id = f"github-{user_profile.get('id')}"
     name = user_profile.get("name") or user_profile.get("login") or "GitHub User"
-    avatar_url = user_profile.get("avatar_url") or f"https://api.dicebear.com/7.x/bottts/svg?seed={name}"
+    avatar_url = (
+        user_profile.get("avatar_url")
+        or f"https://api.dicebear.com/7.x/bottts/svg?seed={name}"
+    )
 
     # 4. Save to DB
     create_user(user_id=user_id, email=primary_email, name=name, avatar_url=avatar_url)
@@ -128,7 +141,9 @@ def callback_github(code: str):
     token = encode_token(user_id=user_id, email=primary_email)
 
     # Redirect user back to frontend callback
-    frontend_redirect = f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}"
+    frontend_redirect = (
+        f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}"
+    )
     return RedirectResponse(url=frontend_redirect)
 
 
@@ -141,8 +156,8 @@ def login_google():
             detail="Google OAuth client credentials are not configured in backend/.env. Please use the Sandbox Login fallback.",
         )
 
-    redirect_uri = f"{settings.llm_site_url.rstrip('/')}/auth-callback" # wait, we will use backend callback to handle user creation first
-    backend_redirect_uri = "http://localhost:8000/auth/callback/google" # standard redirect back to backend callback
+    redirect_uri = f"{settings.llm_site_url.rstrip('/')}/auth-callback"  # wait, we will use backend callback to handle user creation first
+    backend_redirect_uri = "http://localhost:8000/auth/callback/google"  # standard redirect back to backend callback
     auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={settings.google_client_id}&redirect_uri={backend_redirect_uri}&response_type=code&scope=openid%20email%20profile"
     return RedirectResponse(url=auth_url)
 
@@ -187,7 +202,10 @@ def callback_google(code: str):
     email = user_profile.get("email")
     user_id = f"google-{user_profile.get('sub')}"
     name = user_profile.get("name") or "Google User"
-    avatar_url = user_profile.get("picture") or f"https://api.dicebear.com/7.x/bottts/svg?seed={name}"
+    avatar_url = (
+        user_profile.get("picture")
+        or f"https://api.dicebear.com/7.x/bottts/svg?seed={name}"
+    )
 
     # 3. Save to DB
     create_user(user_id=user_id, email=email, name=name, avatar_url=avatar_url)
@@ -196,5 +214,7 @@ def callback_google(code: str):
     token = encode_token(user_id=user_id, email=email)
 
     # Redirect user back to frontend callback
-    frontend_redirect = f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}"
+    frontend_redirect = (
+        f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}"
+    )
     return RedirectResponse(url=frontend_redirect)

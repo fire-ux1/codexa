@@ -5,7 +5,11 @@ from services.scanner_service import scan_repository
 from services.reader_service import read_file
 from services.ast_chunker_service import chunk_python_file
 
-from vector_store.chroma_service import add_chunk, reset_collection, get_collection_name_for_path
+from vector_store.chroma_service import (
+    add_chunk,
+    reset_collection,
+    get_collection_name_for_path,
+)
 
 
 def index_repository_generator(repo_path: str):
@@ -71,10 +75,7 @@ def index_repository_generator(repo_path: str):
             chunks = [{"name": file["name"], "type": "file", "content": content}]
 
         for c in chunks:
-            all_chunks.append({
-                "chunk": c,
-                "file": file
-            })
+            all_chunks.append({"chunk": c, "file": file})
 
     total_chunks = len(all_chunks)
     if total_chunks == 0:
@@ -82,10 +83,7 @@ def index_repository_generator(repo_path: str):
             "progress": 100,
             "stage": "Completed",
             "message": "No code symbols found to index.",
-            "data": {
-                "files_indexed": total_files,
-                "chunks_indexed": 0
-            }
+            "data": {"files_indexed": total_files, "chunks_indexed": 0},
         }
         return
 
@@ -120,7 +118,7 @@ def index_repository_generator(repo_path: str):
                 "symbol": chunk["name"],
                 "symbol_type": chunk["type"],
             },
-            collection_name=collection_name
+            collection_name=collection_name,
         )
         indexed_chunks += 1
 
@@ -129,10 +127,7 @@ def index_repository_generator(repo_path: str):
         "progress": 100,
         "stage": "Completed",
         "message": f"Indexing completed successfully! {total_files} files and {indexed_chunks} code symbols saved.",
-        "data": {
-            "files_indexed": total_files,
-            "chunks_indexed": indexed_chunks
-        }
+        "data": {"files_indexed": total_files, "chunks_indexed": indexed_chunks},
     }
 
 

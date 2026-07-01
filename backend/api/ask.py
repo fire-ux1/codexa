@@ -12,7 +12,7 @@ def ask(payload: QuestionRequest):
     if payload.stream:
         return StreamingResponse(
             ask_codepilot_stream(payload.question, payload.repo_path),
-            media_type="application/x-ndjson"
+            media_type="application/x-ndjson",
         )
 
     return ask_codepilot(payload.question, payload.repo_path)

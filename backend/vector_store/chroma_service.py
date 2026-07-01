@@ -58,7 +58,9 @@ def add_chunk(chunk_id, text, metadata, collection_name: str = COLLECTION_NAME):
         )
 
 
-def search_chunks(query: str, n_results: int = 5, collection_name: str = COLLECTION_NAME):
+def search_chunks(
+    query: str, n_results: int = 5, collection_name: str = COLLECTION_NAME
+):
     collection = get_collection(collection_name)
     return collection.query(
         query_texts=[query],

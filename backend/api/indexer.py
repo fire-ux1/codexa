@@ -6,7 +6,11 @@ import uuid
 from api.schemas import RepositoryPathRequest
 from services.indexing_service import index_repository, index_repository_generator
 from services.auth_service import get_user_id_from_token
-from services.db_service import create_repository, update_repository_status, get_repositories_for_user
+from services.db_service import (
+    create_repository,
+    update_repository_status,
+    get_repositories_for_user,
+)
 
 router = APIRouter()
 
@@ -28,11 +32,13 @@ async def websocket_indexer(websocket: WebSocket):
         repo_path = data.get("repo_path")
 
         if not repo_path:
-            await websocket.send_json({
-                "progress": 100,
-                "stage": "Failed",
-                "message": "Repository path is required."
-            })
+            await websocket.send_json(
+                {
+                    "progress": 100,
+                    "stage": "Failed",
+                    "message": "Repository path is required.",
+                }
+            )
             await websocket.close()
             return
 
@@ -67,7 +73,7 @@ async def websocket_indexer(websocket: WebSocket):
                 name=repo_name,
                 path=repo_path,
                 branch="main",
-                status="indexing"
+                status="indexing",
             )
 
         # Run generator and stream progress
@@ -79,7 +85,7 @@ async def websocket_indexer(websocket: WebSocket):
                     repo_id=repo_id,
                     status="completed",
                     files_indexed=data_metrics.get("files_indexed", 0),
-                    chunks_indexed=data_metrics.get("chunks_indexed", 0)
+                    chunks_indexed=data_metrics.get("chunks_indexed", 0),
                 )
             elif stage == "Failed":
                 update_repository_status(repo_id=repo_id, status="failed")
@@ -93,10 +99,8 @@ async def websocket_indexer(websocket: WebSocket):
     except Exception as e:
         print(f"WS Indexer Error: {e}")
         try:
-            await websocket.send_json({
-                "progress": 100,
-                "stage": "Failed",
-                "message": f"Error: {str(e)}"
-            })
+            await websocket.send_json(
+                {"progress": 100, "stage": "Failed", "message": f"Error: {str(e)}"}
+            )
         except Exception:
             pass
