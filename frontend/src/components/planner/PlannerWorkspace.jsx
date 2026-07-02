@@ -181,10 +181,10 @@ export default function PlannerWorkspace({ repoPath }) {
           )}
         </div>
       ) : (
-        <div className="flex-1 flex min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           
-          {/* Left panel timeline checklist */}
-          <div className="w-[300px] border-r border-white/5 flex flex-col shrink-0 min-h-0 overflow-hidden">
+          {/* Top panel timeline checklist */}
+          <div className="h-[200px] border-b border-white/5 flex flex-col shrink-0 min-h-0 overflow-hidden w-full">
             
             {/* Overview Card */}
             <div className="p-3 bg-white/3 border-b border-white/5 select-none space-y-2">
@@ -216,8 +216,8 @@ export default function PlannerWorkspace({ repoPath }) {
 
           </div>
 
-          {/* Right panel execution viewer */}
-          <div className="flex-1 min-w-0 h-full overflow-hidden">
+          {/* Bottom panel execution viewer */}
+          <div className="flex-1 min-h-0 h-full overflow-hidden w-full">
             <ExecutionPanel
               task={activeTask}
               execData={execResults[activeTask?.id]}

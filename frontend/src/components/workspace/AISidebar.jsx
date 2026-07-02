@@ -3,10 +3,18 @@ import ConversationPanel from "./ConversationPanel";
 
 // Lazy-loaded components
 const PatchHistory = lazy(() => import("../patch/PatchHistory"));
+const AgentChat = lazy(() => import("../agents/AgentChat"));
+const PatchViewer = lazy(() => import("../patch/PatchViewer"));
+const PlannerWorkspace = lazy(() => import("../planner/PlannerWorkspace"));
+const ContextPanel = lazy(() => import("./ContextPanel"));
 
 const TABS = [
-  { key: "chat", label: "Conversation", icon: "💬" },
+  { key: "chat", label: "Chat", icon: "💬" },
+  { key: "agents", label: "Agents", icon: "🤖" },
+  { key: "patch", label: "Patch", icon: "🩹" },
+  { key: "planner", label: "Planner", icon: "📋" },
   { key: "history", label: "History", icon: "⏳" },
+  { key: "workspace", label: "Workspace", icon: "💼" },
 ];
 
 export default function AISidebar({
@@ -29,8 +37,11 @@ export default function AISidebar({
   onNewConversation,
   sessions,
   onLoadSession,
+  patch,
   patchHistory,
+  handleRequestPatch,
   handleSelectHistory,
+  isPatchStreaming,
 }) {
   const handleTabClick = (key) => {
     setActiveTab(key);
@@ -132,6 +143,32 @@ export default function AISidebar({
             />
           )}
 
+          {activeTab === "agents" && (
+            <AgentChat
+              repoPath={repoPath}
+              activeFile={activeFile}
+              activeSymbol={activeSymbol}
+              selectionText={selectionText}
+            />
+          )}
+
+          {activeTab === "patch" && (
+            <PatchViewer
+              status={patch?.status || "idle"}
+              summary={patch?.summary || ""}
+              activeFile={activeFile}
+              selectionRange={selectionRange}
+              isStreaming={isPatchStreaming}
+              onRequestPatch={handleRequestPatch}
+            />
+          )}
+
+          {activeTab === "planner" && (
+            <PlannerWorkspace
+              repoPath={repoPath}
+            />
+          )}
+
           {activeTab === "history" && (
             <div className="p-3 h-full overflow-y-auto scrollbar-thin select-text">
               <PatchHistory
@@ -139,6 +176,18 @@ export default function AISidebar({
                 onSelect={handleSelectHistory}
               />
             </div>
+          )}
+
+          {activeTab === "workspace" && (
+            <ContextPanel
+              repoPath={repoPath}
+              activeFile={activeFile}
+              activeSymbol={activeSymbol}
+              selectionRange={selectionRange}
+              language={language}
+              conversationId={conversationId}
+              isStreaming={isStreaming}
+            />
           )}
         </Suspense>
       </div>
