@@ -1,0 +1,471 @@
+# CodePilot AI Startup Roadmap
+# Stage 1 — Public Beta Readiness (v6.0)
+
+Duration
+========
+4–8 Weeks
+
+Goal
+====
+Prepare CodePilot AI for its first public beta.
+
+The objective is NOT to add major new AI features.
+
+The objective is:
+
+• Fast
+• Stable
+• Beautiful
+• Easy to use
+• Reliable
+
+At the end of Stage 1, strangers should be able to use CodePilot AI without your help.
+
+==========================================================
+MILESTONE 1 — Performance Optimization
+==========================================================
+
+Objective
+---------
+Reduce loading time and improve responsiveness.
+
+Tasks
+-----
+
+Frontend
+
+□ Lazy-load Monaco Editor
+□ Lazy-load React Flow graphs
+□ Lazy-load Analytics
+□ Lazy-load Review dashboard
+□ Lazy-load Knowledge Graph
+□ Lazy-load Planner
+
+□ Code splitting
+□ Bundle optimization
+□ Tree shaking
+□ Dynamic imports
+
+Backend
+
+□ Cache repository metadata
+□ Cache embeddings
+□ Cache AI responses where appropriate
+□ Background indexing queue
+
+Success Criteria
+----------------
+
+Initial page load
+
+<2 seconds
+
+Repository open
+
+<1 second
+
+AI response starts
+
+<2 seconds
+
+==========================================================
+MILESTONE 2 — UX Polish
+==========================================================
+
+Objective
+---------
+Make the application feel premium.
+
+Tasks
+-----
+
+□ Skeleton loaders everywhere
+
+□ Better empty states
+
+□ Better error pages
+
+□ Better animations
+
+□ Success notifications
+
+□ Keyboard shortcuts
+
+Ctrl+K
+
+Search
+
+Ctrl+P
+
+Open File
+
+Ctrl+Shift+A
+
+AI Actions
+
+Esc
+
+Close Modal
+
+□ Command Palette
+
+Like VS Code
+
+Examples
+
+Open Repository
+
+Run AI Review
+
+Generate Tests
+
+Repository Analytics
+
+Git Review
+
+Knowledge Graph
+
+Planner
+
+==========================================================
+MILESTONE 3 — Onboarding
+==========================================================
+
+Objective
+---------
+Help new users succeed within five minutes.
+
+Tasks
+-----
+
+□ Landing page improvements
+
+□ Interactive tour
+
+□ Sample repository
+
+□ "Try Demo"
+
+□ Welcome checklist
+
+Connect repository
+
+Index repository
+
+Open file
+
+Ask AI
+
+Generate review
+
+Done
+
+□ Better first-time user flow
+
+==========================================================
+MILESTONE 4 — Reliability
+==========================================================
+
+Objective
+---------
+Eliminate common failures.
+
+Tasks
+-----
+
+□ Retry failed requests
+
+□ Better timeout handling
+
+□ Offline detection
+
+□ Connection recovery
+
+□ Better websocket reconnect
+
+□ Better API error messages
+
+□ Logging
+
+□ Crash recovery
+
+==========================================================
+MILESTONE 5 — Testing
+==========================================================
+
+Objective
+---------
+Confidence before shipping.
+
+Backend
+
+□ Unit tests
+
+□ API tests
+
+□ Service tests
+
+Frontend
+
+□ Component tests
+
+□ Hook tests
+
+□ Integration tests
+
+End-to-End
+
+□ Repository indexing
+
+□ AI Chat
+
+□ AI Actions
+
+□ Planner
+
+□ Git Review
+
+□ Patch Generation
+
+□ Knowledge Graph
+
+Target
+
+80%+ coverage
+
+==========================================================
+MILESTONE 6 — Security
+==========================================================
+
+Objective
+---------
+Protect users and infrastructure.
+
+Tasks
+-----
+
+□ Rate limiting
+
+□ Request validation
+
+□ File path validation
+
+□ Secure uploads
+
+□ CSP headers
+
+□ XSS protection
+
+□ CSRF review
+
+□ API key protection
+
+□ Secret scanning
+
+□ Audit logs
+
+==========================================================
+MILESTONE 7 — Observability
+==========================================================
+
+Objective
+---------
+Know how the application behaves.
+
+Dashboard
+
+□ Active users
+
+□ Indexed repositories
+
+□ AI requests
+
+□ Average response time
+
+□ Error rate
+
+□ Token usage
+
+□ Model usage
+
+□ Most-used features
+
+□ Failed requests
+
+□ Cache hit rate
+
+Integrations
+
+□ Sentry
+
+□ OpenTelemetry
+
+□ Grafana
+
+==========================================================
+MILESTONE 8 — Documentation
+==========================================================
+
+Objective
+---------
+Professional documentation.
+
+Create
+
+README
+
+Architecture Guide
+
+Deployment Guide
+
+Developer Guide
+
+API Documentation
+
+Plugin Guide
+
+Contributing Guide
+
+Roadmap
+
+Changelog
+
+==========================================================
+MILESTONE 9 — CI/CD
+==========================================================
+
+GitHub Actions
+
+□ Backend tests
+
+□ Frontend tests
+
+□ Build verification
+
+□ Lint
+
+□ Docker build
+
+□ Security scan
+
+□ Dependency updates
+
+Automatic deployment
+
+Render
+
+Vercel
+
+==========================================================
+MILESTONE 10 — Public Beta Launch
+==========================================================
+
+Before Launch
+
+□ Landing Page
+
+□ Privacy Policy
+
+□ Terms of Service
+
+□ Feedback button
+
+□ Bug report form
+
+□ Analytics
+
+□ Error tracking
+
+□ Public changelog
+
+□ Discord Community
+
+□ GitHub Discussions
+
+□ Roadmap page
+
+Launch Checklist
+
+□ 0 build errors
+
+□ 0 lint errors
+
+□ Tests passing
+
+□ Responsive UI
+
+□ Accessibility review
+
+□ Performance audit
+
+□ Security audit
+
+==========================================================
+Definition of Done
+==========================================================
+
+✓ Fast
+
+✓ Stable
+
+✓ Tested
+
+✓ Secure
+
+✓ Beautiful
+
+✓ Easy to use
+
+✓ Documented
+
+✓ Deployable
+
+✓ Public Beta Ready
+
+==========================================================
+Success Metrics
+==========================================================
+
+Google Lighthouse
+
+Performance > 95
+
+Accessibility > 95
+
+Best Practices > 95
+
+SEO > 90
+
+Core Web Vitals
+
+Pass
+
+Backend API
+
+99% success rate
+
+Average AI response
+
+<3 seconds
+
+Repository indexing
+
+<30 seconds
+
+Crash rate
+
+<0.5%
+
+==========================================================
+End Goal
+==========================================================
+
+Release
+
+CodePilot AI v6.0 Public Beta
+
+Focus
+
+Quality over Quantity.
+
+Do not add major features during Stage 1 unless they directly improve user experience or reliability.

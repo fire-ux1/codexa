@@ -116,6 +116,42 @@ def init_db():
     )
     """)
 
+    # Create caching tables for performance
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS embedding_cache (
+        text_hash TEXT PRIMARY KEY,
+        embedding TEXT
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS llm_cache (
+        prompt_hash TEXT PRIMARY KEY,
+        response TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS analytics_cache (
+        repo_path TEXT PRIMARY KEY,
+        analytics_data TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS telemetry_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type TEXT,
+        latency REAL DEFAULT 0,
+        success INTEGER DEFAULT 1,
+        error_message TEXT,
+        token_count INTEGER DEFAULT 0,
+        timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
     conn.commit()
     conn.close()
 

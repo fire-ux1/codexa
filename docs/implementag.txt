@@ -1,0 +1,222 @@
+CodePilot AI v4.1 --- Product Architecture Refactor
+> **Objective**
+>
+> Transform CodePilot AI from a collection of AI features into a
+> cohesive Repository Intelligence platform with a single consistent
+> workspace.
+---
+Core Design Principles
+1. One Workspace
+Do not build multiple applications inside the product.
+Avoid architectures like:
+ArchitectureSplitPane
+CallGraphSplitPane
+ReviewSplitPane
+DiffSplitPane
+Instead create one reusable workspace.
+    WorkspaceShell
+     ├── ActivityBar
+     ├── LeftSidebar
+     ├── MainWorkspace
+     ├── Assistant
+     └── StatusBar
+
+The layout remains constant.
+Only the content changes.
+---
+2. MainWorkspace Renderer
+Create one renderer driven entirely by application state.
+    mode = home
+    mode = editor
+    mode = understand
+    mode = trace
+    mode = review
+    mode = improve
+
+Do not replace the page.
+Render different widgets inside the same layout.
+---
+Phase 1 --- Simplify React Architecture
+Replace
+    GoalContainer
+     ├── ArchitectureSplitPane
+     ├── CallGraphSplitPane
+     ├── ReviewSplitPane
+     └── DiffSplitPane
+
+with
+    MainWorkspace
+     ├── Left Content
+     ├── Center Content
+     └── Right Content
+
+Each area changes according to the active mode.
+Benefits
+Less duplicated code
+Easier maintenance
+Better animations
+Consistent UX
+---
+Phase 2 --- Repository Overview Redesign
+Current approach
+Summary
+Statistics
+Health
+Timeline
+Problem
+The homepage explains repository metadata instead of helping developers
+start working.
+Replace with
+AI Repository Summary
+Large hero section explaining
+What this repository does
+Main technologies
+Entry points
+Architecture overview
+---
+Suggested Starting Points
+Examples
+Authentication
+API Layer
+Database
+Configuration
+Routing
+Selecting one immediately opens the related workflow.
+---
+Continue Working
+Display
+Recent files
+Recent AI conversations
+Bookmarked modules
+---
+Repository Statistics
+Move statistics below the fold.
+Treat them as supporting information.
+---
+Remove the Activity Timeline from the homepage.
+Repository indexing logs belong in diagnostics, not the landing page.
+---
+Phase 3 --- Universal Search
+Remove separate search modes.
+Do not expose
+Semantic Search
+File Search
+Symbol Search
+AI Search
+Instead implement one search bar.
+    Search repository...
+
+Group results automatically.
+AI Answer
+Files
+Symbols
+References
+Documentation
+Git
+The search engine decides which data source to use.
+---
+Phase 4 --- Assistant Redesign
+Current
+Conversation
+Suggested
+Tasks
+History
+Recommended
+Conversation
+History
+Inside Conversation automatically display
+Suggested actions
+Context
+Current file summary
+AI recommendations
+Suggested actions should not require a separate tab.
+---
+Phase 5 --- Automatic Context Engine
+Whenever a file is opened automatically compute
+AI Summary
+Functions
+Classes
+Imports
+References
+Related Files
+Recent Changes
+AI Suggestions
+The user should never have to request context.
+---
+Phase 6 --- Workspace Modes
+Keep the workspace layout fixed.
+Only change the content.
+Home
+Repository Overview
+Editor
+Monaco Editor
+Understand
+Graph + AI Summary
+Trace
+Call Graph + Preview
+Review
+Editor + Review Panel
+Improve
+Diff View + AI Explanation
+---
+Phase 7 --- Better Navigation
+Activity Bar
+Repository
+Search
+Git
+Settings
+Assistant should remain permanently visible.
+Do not place Assistant inside the Activity Bar.
+---
+Phase 8 --- Visual System
+Avoid glassmorphism.
+Use
+Flat surfaces
+Soft borders
+More whitespace
+Subtle shadows
+One accent color
+The UI should resemble modern developer tools rather than marketing
+websites.
+---
+Phase 9 --- Reduce Component Count
+Avoid creating many feature-specific components.
+Prefer reusable widgets driven by props and state.
+Example
+    <SplitLayout
+        left={<Graph />}
+        center={<Summary />}
+        right={<Assistant />}
+     />
+
+instead of creating a new React component for every workflow.
+---
+Phase 10 --- Product Identity
+Every screen should answer one developer question.
+Examples
+Understand this repository
+Find where this API is used
+Review this file
+Improve this code
+Architecture graphs, dependency graphs and AI explanations should appear
+automatically as part of those workflows.
+Never ask users which internal tool they want.
+---
+Success Criteria
+The redesign is complete when
+One consistent workspace powers every workflow.
+Search feels unified.
+Repository Overview guides users instead of displaying metrics.
+Context is generated automatically.
+Assistant is always available.
+Layout remains stable while content changes.
+React architecture is reusable and easy to extend.
+CodePilot feels like a single product instead of multiple connected
+tools.
+---
+Final Principle
+Sourcegraph helps developers find code.
+Cursor helps developers edit code.
+CodePilot should help developers understand code.
+Every future feature should strengthen that identity rather than
+introduce another standalone tool or navigation item.

@@ -1,0 +1,109 @@
+                React + TypeScript
+                       │
+                       ▼
+                FastAPI API Gateway
+                       │
+ ┌─────────────────────┼─────────────────────┐
+ │                     │                     │
+ ▼                     ▼                     ▼
+Auth Service      AI Workspace        Repository Service
+(Python)          (Python)            (Python)
+
+ │                     │                     │
+ └──────────────┬──────┴──────────────┬──────┘
+                ▼                     ▼
+        Event Bus (NATS/Kafka)    Redis
+                │
+ ┌──────────────┼────────────────────────────┐
+ ▼              ▼                            ▼
+Git Engine   Knowledge Graph            Search Engine
+(Python)        (Rust)                    (Rust)
+
+ ▼
+Realtime Service
+(Go)
+
+ ▼
+Storage Layer
+
+PostgreSQL
+Neo4j
+Vector DB
+S3
+
+Frontend
+---------
+React + TypeScript
+Vite
+Monaco
+React Flow
+
+↓
+
+API Gateway
+---------
+FastAPI
+
+↓
+
+Services
+---------
+Auth (Python)
+
+AI Workspace (Python)
+
+Planner (Python)
+
+Multi-Agent (Python)
+
+Git Intelligence (Python)
+
+Knowledge Graph (Rust)
+
+Search (Rust)
+
+Realtime Collaboration (Go)
+
+↓
+
+Infrastructure
+---------
+PostgreSQL
+
+Redis
+
+Neo4j
+
+Object Storage (S3-compatible)
+
+Kafka/NATS
+
+Vector Database
+
+Kubernetes
+
+                    CodePilot AI
+
+                         │
+
+        ┌────────────────┼────────────────┐
+
+        ▼                ▼                ▼
+
+ Repository        Knowledge Graph     AI Brain
+
+        ▼                ▼                ▼
+
+ Planner         Documentation       Git Intelligence
+
+        ▼                ▼                ▼
+
+ Patch Engine     Review Engine      Team Workspace
+
+                         ▼
+
+                  Deployment
+
+                         ▼
+
+                 Production System

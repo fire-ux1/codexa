@@ -7,4 +7,18 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('@xyflow/react')) {
+            return 'flow';
+          }
+          if (id.includes('@monaco-editor/react') || id.includes('monaco-editor')) {
+            return 'monaco';
+          }
+        }
+      }
+    }
+  }
 })

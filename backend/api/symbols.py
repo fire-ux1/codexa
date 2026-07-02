@@ -2,6 +2,7 @@ import os
 import ast
 import re
 from fastapi import APIRouter, HTTPException
+from utils.security import validate_safe_path
 
 router = APIRouter()
 
@@ -100,12 +101,7 @@ def parse_generic_symbols(code: str, ext: str):
 
 @router.get("")
 def get_file_symbols(path: str):
-    abs_path = os.path.abspath(path)
-    abs_repos = os.path.abspath("repos")
-    abs_workspace = os.path.abspath(".")
-
-    if not (abs_path.startswith(abs_repos) or abs_path.startswith(abs_workspace)):
-        raise HTTPException(status_code=403, detail="Access denied")
+    abs_path = validate_safe_path(path)
     if not os.path.exists(abs_path):
         raise HTTPException(status_code=404, detail="File not found")
 

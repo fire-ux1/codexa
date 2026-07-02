@@ -1,0 +1,578 @@
+# CodePilot AI v7.0
+# IDE Experience Redesign
+
+Objective
+=========
+
+Transform CodePilot AI from an AI dashboard into a professional IDE.
+
+The goal is NOT to add more AI.
+
+The goal is to make existing AI effortless to use.
+
+Core Principle
+==============
+
+Reduce visual clutter.
+
+Show only what the developer needs.
+
+Everything else should appear only when requested.
+
+Inspired By
+
+VS Code
+
+Cursor
+
+JetBrains IDEs
+
+GitHub Desktop
+
+Linear
+
+=========================================================
+MILESTONE 1 — IDE Layout Redesign
+=========================================================
+
+Current
+
+Explorer
+
+Editor
+
+Bottom Tabs
+
+Chat
+
+Workspace Context
+
+Everything visible
+
+Problem
+
+Too many panels compete for attention.
+
+Target
+
+----------------------------------------------------
+
+Explorer
+
+|
+
+Editor
+
+|
+
+AI Sidebar
+
+----------------------------------------------------
+
+Bottom panel hidden by default.
+
+Only appears when requested.
+
+Tasks
+
+□ Remove permanent Workspace Context panel
+
+□ Merge Context into AI Sidebar
+
+□ Collapse bottom dock by default
+
+□ Resizable panels
+
+□ Draggable divider
+
+□ Better spacing
+
+□ Better typography
+
+□ Consistent margins
+
+Success
+
+The editor occupies 70–75% of screen space.
+
+=========================================================
+MILESTONE 2 — Editor First
+=========================================================
+
+Objective
+
+The editor becomes the center of everything.
+
+Tasks
+
+□ Remove File Preview Modal
+
+□ Open files directly inside Monaco tabs
+
+□ Multiple editor tabs
+
+□ Close tabs
+
+□ Unsaved indicator
+
+□ Reopen previous tabs
+
+□ Split editor architecture ready
+
+□ Restore open files after refresh
+
+Future
+
+Split Editor
+
+Horizontal
+
+Vertical
+
+=========================================================
+MILESTONE 3 — Unified AI Sidebar
+=========================================================
+
+Current
+
+Chat
+
+Workspace
+
+Context
+
+Patch
+
+History
+
+Problem
+
+Too many sidebars.
+
+Target
+
+One sidebar
+
+Tabs
+
+Chat
+
+Agents
+
+Patch
+
+Planner
+
+History
+
+Workspace
+
+Tasks
+
+Create
+
+AISidebar.jsx
+
+Move
+
+Conversation
+
+Workspace
+
+History
+
+Agent Selection
+
+Into
+
+AISidebar
+
+Workspace Context
+
+Repository
+
+File
+
+Selection
+
+Language
+
+Model
+
+Only shown when Workspace tab is active.
+
+=========================================================
+MILESTONE 4 — Bottom Analysis Workspace
+=========================================================
+
+Current
+
+Architecture
+
+Review
+
+Analytics
+
+Call Graph
+
+Knowledge Graph
+
+Planner
+
+Git
+
+Telemetry
+
+Always visible.
+
+Problem
+
+Consumes too much space.
+
+Target
+
+One button
+
+Analysis
+
+↓
+
+Architecture
+
+Review
+
+Analytics
+
+Knowledge Graph
+
+Call Graph
+
+Git
+
+Telemetry
+
+Only one tool visible.
+
+Tasks
+
+Replace tab bar
+
+↓
+
+Analysis Workspace
+
+Support
+
+Expand
+
+Collapse
+
+Fullscreen
+
+=========================================================
+MILESTONE 5 — Command Palette 2.0
+=========================================================
+
+Ctrl + K
+
+Search Everything
+
+Files
+
+Symbols
+
+Functions
+
+Classes
+
+Commands
+
+Repositories
+
+Chats
+
+History
+
+Agents
+
+Documentation
+
+Planner Tasks
+
+Git Commits
+
+Recent Files
+
+Recent Chats
+
+Keyboard only.
+
+No mouse required.
+
+=========================================================
+MILESTONE 6 — Navigation
+=========================================================
+
+Breadcrumbs
+
+Repository
+
+↓
+
+Folder
+
+↓
+
+File
+
+↓
+
+Class
+
+↓
+
+Function
+
+Tabs
+
+Recent Files
+
+Pinned Files
+
+Jump Back
+
+Jump Forward
+
+Mini Map
+
+Outline
+
+Problems
+
+References
+
+=========================================================
+MILESTONE 7 — Workspace System
+=========================================================
+
+Save Workspace
+
+Workspace
+
+Contains
+
+Repository
+
+Opened Files
+
+Cursor Position
+
+Chat
+
+Planner
+
+Knowledge Graph
+
+Git State
+
+Layout
+
+Panels
+
+Restore automatically.
+
+Support
+
+Multiple Workspaces
+
+=========================================================
+MILESTONE 8 — Visual Polish
+=========================================================
+
+Reduce glow
+
+50%
+
+Increase whitespace
+
+Improve typography
+
+Improve icon consistency
+
+Reduce button count
+
+Consistent border radius
+
+Smooth animations
+
+Hover transitions
+
+Better empty states
+
+Better loading
+
+Better scrollbars
+
+=========================================================
+MILESTONE 9 — Professional Window Management
+=========================================================
+
+Collapsible Explorer
+
+Collapsible AI Sidebar
+
+Collapsible Bottom Panel
+
+Fullscreen Editor
+
+Zen Mode
+
+Focus Mode
+
+Presentation Mode
+
+Distraction Free Mode
+
+=========================================================
+MILESTONE 10 — Settings
+=========================================================
+
+Appearance
+
+Themes
+
+Accent Color
+
+Fonts
+
+Font Size
+
+Tab Size
+
+AI Provider
+
+Models
+
+Workspace
+
+Plugins
+
+Keyboard Shortcuts
+
+Privacy
+
+Performance
+
+=========================================================
+MILESTONE 11 — Startup Performance
+=========================================================
+
+Instant startup
+
+Restore session
+
+Restore tabs
+
+Restore layout
+
+Restore AI context
+
+Lazy load everything
+
+Only load
+
+Monaco
+
+When editor opens.
+
+Graphs
+
+When graph opens.
+
+Planner
+
+When planner opens.
+
+Telemetry
+
+When requested.
+
+=========================================================
+MILESTONE 12 — IDE Quality
+=========================================================
+
+Keyboard navigation
+
+Accessibility
+
+Responsive
+
+Dockable Panels
+
+Resizable Panels
+
+Window Persistence
+
+Error Recovery
+
+Smooth Animations
+
+No Layout Shift
+
+Professional feel
+
+=========================================================
+Verification
+=========================================================
+
+✓ No file preview modal
+
+✓ Multi-tab editor
+
+✓ Unified AI sidebar
+
+✓ Analysis workspace
+
+✓ Command Palette
+
+✓ Session restore
+
+✓ Responsive layout
+
+✓ Lazy loading
+
+✓ Build passes
+
+✓ Zero console errors
+
+=========================================================
+Git Commit
+=========================================================
+
+git add .
+
+git commit -m "Redesign CodePilot AI into a professional IDE"
+
+=========================================================
+Success Criteria
+=========================================================
+
+A developer opening CodePilot AI should immediately understand:
+
+Explorer
+
+↓
+
+Editor
+
+↓
+
+AI
+
+Everything else should stay out of the way until needed.
+
+The interface should feel closer to VS Code than to a traditional dashboard.
+
+CodePilot AI should no longer look like an AI tool.
+
+It should look like a software engineering operating system.

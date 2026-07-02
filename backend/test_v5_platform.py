@@ -46,8 +46,8 @@ def test_knowledge_graph_builder():
     # Initialize DB
     init_db()
 
-    # We build graph of backend directory as a test
-    repo_path = "backend"
+    # Resolve repo_path absolutely to the test file's directory
+    repo_path = os.path.abspath(os.path.dirname(__file__))
     repo_id = "test-repo-v5"
 
     build_knowledge_graph(repo_path, repo_id)
@@ -65,7 +65,7 @@ def test_knowledge_graph_builder():
 
 def test_task_planner():
     print("Testing Task Planner...")
-    repo_path = "backend"
+    repo_path = os.path.abspath(os.path.dirname(__file__))
     user_request = "Add validation to the login route in api/auth.py"
 
     # Run task planner mock/live plan
@@ -81,7 +81,8 @@ def test_task_planner():
 def test_devops_generator():
     print("Testing DevOps Asset Generator...")
     # Test dockerfile generator output
-    dockerfile_content = generate_devops_asset("backend", "dockerfile")
+    repo_path = os.path.abspath(os.path.dirname(__file__))
+    dockerfile_content = generate_devops_asset(repo_path, "dockerfile")
     assert len(dockerfile_content) > 0
     assert (
         "FROM" in dockerfile_content

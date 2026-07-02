@@ -35,3 +35,6 @@ jobs:
 
       - name: Verify FastAPI imports
         run: python -c "import main"
+
+      - name: Run Unit Tests
+        run: python -m pytest --ignore=repos

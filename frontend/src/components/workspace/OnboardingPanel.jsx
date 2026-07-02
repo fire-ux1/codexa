@@ -1,4 +1,5 @@
 import { IconSparkles, IconLink, IconDatabase, IconCheck } from "../icons/Icons";
+import WelcomeChecklist from "./WelcomeChecklist";
 
 export default function OnboardingPanel({
   indexingProgress,
@@ -128,55 +129,62 @@ export default function OnboardingPanel({
             </p>
           </div>
 
-          {/* Input Card */}
-          <div className="p-8 rounded-3xl border border-white/10 bg-gray-900/50 backdrop-blur-xl shadow-2xl relative overflow-hidden glass">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full filter blur-3xl pointer-events-none"></div>
-            
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2.5">
-                  Repository URL (GitHub or HTTPS Git endpoints)
-                </label>
-                <div className="relative rounded-2xl shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
-                    <IconLink className="w-5 h-5 text-indigo-400" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+            {/* Input Card */}
+            <div className="md:col-span-2 p-8 rounded-3xl border border-white/10 bg-gray-900/50 backdrop-blur-xl shadow-2xl relative overflow-hidden glass">
+              <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full filter blur-3xl pointer-events-none"></div>
+              
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2.5">
+                    Repository URL (GitHub or HTTPS Git endpoints)
+                  </label>
+                  <div className="relative rounded-2xl shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
+                      <IconLink className="w-5 h-5 text-indigo-400" />
+                    </div>
+                    <input
+                      type="url"
+                      value={repoUrl}
+                      onChange={(e) => setRepoUrl(e.target.value)}
+                      placeholder="https://github.com/owner/repository"
+                      disabled={isCloning}
+                      className="block w-full pl-12 pr-4 py-4 rounded-2xl bg-black/40 border border-white/10 focus:border-indigo-500/70 focus:ring-1 focus:ring-indigo-500/70 text-white placeholder-gray-500 focus:outline-none transition-all font-mono text-[14px]"
+                    />
                   </div>
-                  <input
-                    type="url"
-                    value={repoUrl}
-                    onChange={(e) => setRepoUrl(e.target.value)}
-                    placeholder="https://github.com/owner/repository"
-                    disabled={isCloning}
-                    className="block w-full pl-12 pr-4 py-4 rounded-2xl bg-black/40 border border-white/10 focus:border-indigo-500/70 focus:ring-1 focus:ring-indigo-500/70 text-white placeholder-gray-500 focus:outline-none transition-all font-mono text-[14px]"
-                  />
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <button
+                    onClick={onIndexRepository}
+                    disabled={isCloning || !repoUrl.trim()}
+                    className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white font-semibold text-sm transition-all duration-150 flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-[0.98]"
+                  >
+                    {isCloning ? (
+                      <>
+                        <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
+                        Configuring Indexer...
+                      </>
+                    ) : (
+                      <>
+                        <IconDatabase className="w-4 h-4" />
+                        Clone + Index Repository
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setRepoUrl("https://github.com/abhishek-s12/codepilot-ai")}
+                    className="px-5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-sm transition-all border border-white/10 hover:border-white/20"
+                  >
+                    Try Sample Repository
+                  </button>
                 </div>
               </div>
+            </div>
 
-              <div className="flex flex-wrap items-center gap-3 pt-2">
-                <button
-                  onClick={onIndexRepository}
-                  disabled={isCloning || !repoUrl.trim()}
-                  className="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white font-semibold text-sm transition-all duration-150 flex items-center gap-2 shadow-lg shadow-indigo-600/20 active:scale-[0.98]"
-                >
-                  {isCloning ? (
-                    <>
-                      <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></span>
-                      Configuring Indexer...
-                    </>
-                  ) : (
-                    <>
-                      <IconDatabase className="w-4 h-4" />
-                      Clone + Index Repository
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => setRepoUrl("https://github.com/abhishek-s12/codepilot-ai")}
-                  className="px-5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 font-medium text-sm transition-all border border-white/10 hover:border-white/20"
-                >
-                  Try Sample Repository
-                </button>
-              </div>
+            {/* Checklist Card */}
+            <div className="md:col-span-1">
+              <WelcomeChecklist repoUrl={repoUrl} />
             </div>
           </div>
         </div>

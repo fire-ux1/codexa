@@ -5,6 +5,7 @@ const API_BASE_URL =
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 45000, // 45 seconds timeout
   headers: {
     "Content-Type": "application/json",
   },
@@ -20,6 +21,35 @@ api.interceptors.request.use((config) => {
 }, (error) => {
   return Promise.reject(error);
 });
+
+// Automatically retry failed transient requests (network drops or 5xx status codes) with exponential backoff
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const { config } = error;
+    if (!config) return Promise.reject(error);
+
+    // Initializing retry state
+    config.retryCount = config.retryCount ?? 0;
+
+    // Retry settings
+    const MAX_RETRIES = 3;
+    const isNetworkOr5xxError =
+      !error.response || (error.response.status >= 500 && error.response.status <= 599);
+
+    if (isNetworkOr5xxError && config.retryCount < MAX_RETRIES) {
+      config.retryCount += 1;
+      
+      // Calculate exponential backoff duration (1s, 2s, 4s)
+      const backoffDelay = Math.pow(2, config.retryCount) * 1000;
+      console.warn(`[API] Retrying request (${config.retryCount}/${MAX_RETRIES}) in ${backoffDelay}ms: ${config.url}`);
+      
+      await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+      return api(config);
+    }
+    return Promise.reject(error);
+  }
+);
 
 export function getErrorMessage(error, fallbackMessage) {
   return error?.response?.data?.detail ?? error?.message ?? fallbackMessage;
@@ -54,6 +84,14 @@ export async function deleteRepository(repoId) {
 export async function fetchFileContent(filePath) {
   const response = await api.get("/repository/file", {
     params: { path: filePath },
+  });
+  return response.data;
+}
+
+export async function saveFileContent(filePath, content) {
+  const response = await api.post("/repository/save-file", {
+    path: filePath,
+    content: content,
   });
   return response.data;
 }
@@ -154,6 +192,11 @@ export async function runAIActionStream(payload) {
     },
     body: JSON.stringify(payload),
   });
+}
+
+export async function fetchObservabilityMetrics() {
+  const response = await api.get("/observability/metrics");
+  return response.data;
 }
 
 export { API_BASE_URL };

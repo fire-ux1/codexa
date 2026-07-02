@@ -41,11 +41,28 @@ export default function App() {
   const [showSandboxForm, setShowSandboxForm] = useState(false);
   const [sandboxName, setSandboxName] = useState("Sandbox Developer");
   const [sandboxEmail, setSandboxEmail] = useState("sandbox@codepilot.ai");
-
-
-
   // Hooks Integration
   const { toasts, showToast } = useToast();
+
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Online / Offline Detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      showToast("Internet connection restored. Reconnecting...", "success");
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      showToast("Internet connection lost. You are currently offline.", "error");
+    };
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [showToast]);
 
   const {
     repoUrl,
@@ -229,6 +246,12 @@ export default function App() {
     <div className="min-h-screen h-screen flex flex-col overflow-hidden">
       {/* Toast Alert Notification system */}
       <ToastContainer toasts={toasts} />
+
+      {!isOnline && (
+        <div className="bg-rose-600 text-white py-2 px-4 text-center text-xs font-mono font-bold tracking-wider z-[9999] animate-pulse shrink-0 flex items-center justify-center gap-2">
+          <span>⚠️ Connection Lost: You are currently offline. Retrying requests when connectivity is restored...</span>
+        </div>
+      )}
 
       {!repositoryReady ? (
         /* ONBOARDING STATE */

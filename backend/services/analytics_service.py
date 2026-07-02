@@ -2,6 +2,7 @@ import os
 import ast
 import re
 import json
+import sqlite3
 from services.scanner_service import scan_repository
 
 
@@ -101,7 +102,26 @@ def calculate_general_file_lines(file_path: str):
 
 
 def get_repository_analytics(repo_path: str):
-    """Calculates all repository dashboard analytics."""
+    """Calculates all repository dashboard analytics, with SQLite caching."""
+    db_path = "codepilot.db"
+
+    # Read from cache
+    try:
+        conn = sqlite3.connect(db_path, timeout=15)
+        cursor = conn.cursor()
+        cursor.execute("SELECT analytics_data FROM analytics_cache WHERE repo_path = ?", (repo_path,))
+        row = cursor.fetchone()
+        if row:
+            conn.close()
+            return json.loads(row[0])
+    except Exception as e:
+        print(f"[Analytics Cache] Read error: {e}")
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
     scan_res = scan_repository(repo_path)
     files = scan_res["files"]
 
@@ -235,7 +255,7 @@ def get_repository_analytics(repo_path: str):
     health_penalty = (avg_complexity - 2) * 8 + (large_files_count * 15)
     health_score = max(35, min(100, int(100 - health_penalty)))
 
-    return {
+    result = {
         "files_indexed": files_indexed,
         "languages": lang_distribution,
         "functions": total_functions,
@@ -251,3 +271,19 @@ def get_repository_analytics(repo_path: str):
         ],
         "repository_health": health_score,
     }
+
+    # Write to cache
+    try:
+        conn = sqlite3.connect(db_path, timeout=15)
+        cursor = conn.cursor()
+        cursor.execute("INSERT OR REPLACE INTO analytics_cache (repo_path, analytics_data) VALUES (?, ?)", (repo_path, json.dumps(result)))
+        conn.commit()
+    except Exception as e:
+        print(f"[Analytics Cache] Write error: {e}")
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+    return result

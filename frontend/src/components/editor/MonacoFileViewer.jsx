@@ -14,6 +14,7 @@ export default function MonacoFileViewer({
   onFindReferences,
   onRunSelectionAction,
   onSelectionChange,
+  onChange,
   repoPath,
 }) {
   const language = getEditorLanguage(filePath);
@@ -103,6 +104,14 @@ export default function MonacoFileViewer({
     if (editorRef) {
       editorRef.current = editor;
     }
+
+    // Handle content modifications and propagate back to the parent
+    editor.onDidChangeModelContent(() => {
+      const val = editor.getValue();
+      if (onChange) {
+        onChange(val);
+      }
+    });
 
     // Propagate selection changes to parent (Phase 19 AI Workspace)
     if (onSelectionChange) {

@@ -1,0 +1,284 @@
+CodePilot AI v4 - Implementation Plan
+
+Vision
+
+Transform CodePilot AI from a feature-rich engineering demo into a
+premium AI-powered Repository Intelligence platform.
+
+Core Product Statement: “CodePilot helps developers understand
+unfamiliar codebases with AI.”
+
+This redesign focuses on: - Simplicity - Workflow-first UX - Progressive
+disclosure - Premium UI - Repository understanding
+
+Do NOT redesign around features. Design around developer goals.
+
+  ------------------
+  CURRENT PROBLEMS
+  ------------------
+
+-   Too many top-level features.
+-   Navigation exposes implementation details.
+-   No clear primary workflow.
+-   Editor is not the main focus.
+-   Two competing dashboards.
+-   Right sidebar is overloaded.
+-   Too many borders/cards.
+-   Empty states feel unfinished.
+
+  ---------------------
+  TECHNICAL DECISIONS
+  ---------------------
+
+Frontend: - React - JSX - Vite - Tailwind CSS - Zustand - Monaco
+Editor - React Flow
+
+Backend: - FastAPI - Python - OpenRouter - Docker
+
+Decision: Stay on JSX. Do NOT migrate to TypeScript during v4. Migrate
+only after the product architecture stabilizes.
+
+Recommended libraries: - Framer Motion - cmdk - TanStack Virtual -
+Lucide React - shadcn/ui (selectively)
+
+  ------------------------------------
+  PHASE 1 — INFORMATION ARCHITECTURE
+  ------------------------------------
+
+Replace feature-driven navigation with workflow-driven navigation.
+
+Primary Navigation
+
+Repository Search Editor Assistant
+
+Everything else becomes contextual.
+
+Repository - Overview - Explorer - Recent Files - Bookmarks - Statistics
+
+Search - Semantic Search - File Search - Symbol Search - AI Search
+
+Editor - Monaco - Tabs - Diff View - Problems
+
+Assistant - Chat - AI Actions - History - Tasks
+
+Remove from top-level navigation: - Planner - Workspace - Patch -
+Telemetry - Knowledge Graph - Analytics
+
+  -------------------------------
+  PHASE 2 — REPOSITORY OVERVIEW
+  -------------------------------
+
+Create a real landing page.
+
+Sections:
+
+1.  AI Repository Summary
+
+2.  Repository Statistics
+
+-   Files
+-   Packages
+-   Classes
+-   Functions
+-   Symbols
+-   Languages
+-   Last Indexed
+
+3.  Repository Health
+
+-   Git Branch
+-   Index Status
+-   Embedding Status
+-   Build Status
+
+4.  Quick Actions
+
+-   Explain Repository
+-   Generate Architecture
+-   Review Repository
+-   Generate Documentation
+-   Find Dead Code
+-   Security Scan
+
+5.  Recent Activity Timeline
+
+This becomes the default homepage.
+
+  ------------------------
+  PHASE 3 — EDITOR FIRST
+  ------------------------
+
+Layout
+
+Explorer 15% Editor 60% Assistant 25%
+
+Goals: - Larger Monaco editor - Reduce chrome - Reduce padding - Smaller
+header - More visible code
+
+  ------------------------------------
+  PHASE 4 — REMOVE ANALYSIS DROPDOWN
+  ------------------------------------
+
+Replace dropdown with bottom panel.
+
+Problems Architecture Dependencies Review Git Performance
+
+No dropdown menus.
+
+  ------------------------------
+  PHASE 5 — ASSISTANT REDESIGN
+  ------------------------------
+
+Replace:
+
+Chat Planner Patch Workspace Agents History
+
+With:
+
+Assistant
+
+-   Conversation
+-   Suggested Actions
+-   Tasks
+-   History
+
+Context-aware actions: - Explain File - Review Code - Generate Tests -
+Generate Docs - Refactor - Find Bugs
+
+  ----------------------------
+  PHASE 6 — UNIVERSAL SEARCH
+  ----------------------------
+
+Global search supporting: - Files - Symbols - Classes - Functions - AI
+Answers - Documentation - Commits
+
+  --------------------------
+  PHASE 7 — CONTEXT PANELS
+  --------------------------
+
+Opening a file automatically shows: - AI Summary - Functions - Imports -
+References - Dependencies - Quick Actions
+
+  ----------------------------------
+  PHASE 8 — PROGRESSIVE DISCLOSURE
+  ----------------------------------
+
+User Goal ↓
+
+Understand Repository
+
+↓
+
+Architecture Dependencies Call Graph
+
+↓
+
+Graph
+
+↓
+
+AI Explanation
+
+Never expose every feature simultaneously.
+
+  --------------------
+  PHASE 9 — INSIGHTS
+  --------------------
+
+Dedicated Insights workspace.
+
+Contains: - Architecture - Dependencies - Call Graph - Knowledge Graph -
+Git Activity - Metrics
+
+Secondary destination only.
+
+  ----------------------------
+  PHASE 10 — COMMAND PALETTE
+  ----------------------------
+
+Shortcut: Ctrl + K
+
+Commands: - Explain Repository - Review File - Generate README -
+Generate Tests - Search Symbols - Open Architecture - Refactor Module -
+Summarize Commit
+
+  --------------------------
+  PHASE 11 — DESIGN SYSTEM
+  --------------------------
+
+Typography - H1 - H2 - Body - Caption
+
+Spacing Scale 4 8 12 16 24 32 48
+
+Border Radius 12px
+
+Icon Library Lucide React
+
+Rules - Remove ~70% of borders. - Use whitespace. - Purple only for
+active states. - Neutral inactive UI.
+
+  -------------------------
+  PHASE 12 — EMPTY STATES
+  -------------------------
+
+Replace empty screens with actionable dashboards.
+
+Show: - Repository Ready - Files Indexed - Packages - Generate
+Architecture - Start AI Chat - Review Repository
+
+  -----------------------
+  PHASE 13 — STATUS BAR
+  -----------------------
+
+Persistent bottom bar.
+
+Display: - Branch - Indexed - Symbols - Active Model - Background
+Tasks - Repository Status
+
+  ---------------------------
+  PHASE 14 — KEYBOARD FIRST
+  ---------------------------
+
+Ctrl + K Command Palette
+
+Ctrl + P Quick Open
+
+Ctrl + Shift + F Semantic Search
+
+Alt + Enter AI Actions
+
+  -------------------------------
+  PHASE 15 — MICRO INTERACTIONS
+  -------------------------------
+
+-   Smooth transitions
+-   Skeleton loaders
+-   Hover effects
+-   AI typing
+-   Graph loading
+-   Panel animations
+-   Tab animations
+
+  ------------------
+  SUCCESS CRITERIA
+  ------------------
+
+The redesign is complete when:
+
+-   Users understand the product within 30 seconds.
+-   Repository Overview is the default landing page.
+-   Editor dominates the interface.
+-   Navigation reflects workflows, not implementation.
+-   Features are progressively disclosed.
+-   The UI feels cohesive, premium, and purpose-built for repository
+    intelligence.
+
+FINAL PRINCIPLE
+
+Do not try to become Sourcegraph.
+
+Sourcegraph helps developers FIND code.
+
+CodePilot should help developers UNDERSTAND code.
+
+That is the product identity.

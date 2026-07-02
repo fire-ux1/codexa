@@ -12,6 +12,9 @@ export default function useConversation() {
   const sendMessage = useCallback(async ({ repo, file, symbol, selection, message }) => {
     if (!message.trim()) return;
 
+    // Set AI chat flag for Welcome checklist
+    localStorage.setItem("codepilot_ai_asked", "true");
+
     // Optimistically add user message
     const userMsg = { role: "user", content: message };
     setMessages((prev) => [...prev, userMsg]);

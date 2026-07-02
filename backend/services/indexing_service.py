@@ -1,5 +1,6 @@
 import uuid
 import os
+import sqlite3
 
 from services.scanner_service import scan_repository
 from services.reader_service import read_file
@@ -50,6 +51,20 @@ def index_repository_generator(repo_path: str):
 
     # Reset collection for this repository
     reset_collection(collection_name)
+
+    # Invalidate analytics cache for this repository path
+    try:
+        conn = sqlite3.connect("codepilot.db", timeout=15)
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM analytics_cache WHERE repo_path = ?", (repo_path,))
+        conn.commit()
+    except Exception as e:
+        print(f"[Analytics Cache] Invalidation error: {e}")
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
     # 3. Chunk generation
     yield {

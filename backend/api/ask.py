@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from api.schemas import QuestionRequest
 from services.rag_service import ask_codepilot, ask_codepilot_stream
 from services.llm_service import generate_answer, generate_answer_stream
+from utils.security import validate_safe_path
 
 router = APIRouter()
 
@@ -53,13 +54,7 @@ def ask(payload: QuestionRequest):
 
 @router.post("/action")
 def run_ai_action(payload: AIActionPayload):
-    abs_path = os.path.abspath(payload.file)
-    abs_repos = os.path.abspath("repos")
-    abs_workspace = os.path.abspath(".")
-
-    if not (abs_path.startswith(abs_repos) or abs_path.startswith(abs_workspace)):
-        raise HTTPException(status_code=403, detail="Access denied")
-
+    abs_path = validate_safe_path(payload.file)
     if not os.path.exists(abs_path):
         raise HTTPException(status_code=404, detail="File not found")
 

@@ -1,5 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+import time
+from collections import defaultdict
 
 from api.repository import router as repo_router
 from api.scanner import router as scanner_router
@@ -23,8 +27,51 @@ from api.knowledge import router as knowledge_router
 from api.planner import router as planner_router
 from api.collaboration import router as collaboration_router
 from api.devops import router as devops_router
+from api.observability import router as observability_router
 from settings import get_settings
 from services.db_service import init_db
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    def __init__(self, app, limit_seconds: int = 60, max_requests: int = 200):
+        super().__init__(app)
+        self.limit_seconds = limit_seconds
+        self.max_requests = max_requests
+        self.request_history = defaultdict(list)
+
+    async def dispatch(self, request: Request, call_next):
+        if request.url.path in {"/health", "/"}:
+            return await call_next(request)
+        client_ip = request.client.host if request.client else "unknown"
+        current_time = time.time()
+        
+        self.request_history[client_ip] = [
+            t for t in self.request_history[client_ip]
+            if current_time - t < self.limit_seconds
+        ]
+        
+        if len(self.request_history[client_ip]) >= self.max_requests:
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Too many requests. Please try again later."}
+            )
+            
+        self.request_history[client_ip].append(current_time)
+        return await call_next(request)
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; "
+            "img-src 'self' data: https:;"
+        )
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
 
 settings = get_settings()
 
@@ -32,6 +79,10 @@ app = FastAPI(title=settings.api_title, version=settings.api_version)
 
 # Initialize the SQLite database on app load
 init_db()
+
+# Apply rate limiting and security headers
+app.add_middleware(RateLimitMiddleware)
+app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
@@ -90,3 +141,4 @@ app.include_router(
     collaboration_router, prefix="/collaboration", tags=["Team Collaboration"]
 )
 app.include_router(devops_router, prefix="/devops", tags=["AI DevOps & Documentation"])
+app.include_router(observability_router, prefix="/observability", tags=["Observability Telemetry & Metrics"])

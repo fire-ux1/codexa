@@ -4,7 +4,7 @@ export default function WorkspaceHeader({ repoPath, activeFile }) {
   const fileName = activeFile ? activeFile.split(/[\\/]/).pop() : null;
 
   return (
-    <div className="flex items-center gap-3 px-4 h-10 bg-[#0a0d14] border-b border-white/5 shrink-0 select-none">
+    <div className="flex items-center gap-3 px-4 h-10 bg-[#0c0f16] border-b border-[#1c2230] shrink-0 select-none">
       {/* Logo mark */}
       <div className="flex items-center gap-1.5">
         <div className="w-4 h-4 rounded bg-indigo-600 flex items-center justify-center">
@@ -26,7 +26,7 @@ export default function WorkspaceHeader({ repoPath, activeFile }) {
 
       <div className="ml-auto flex items-center gap-2">
         <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold font-mono uppercase tracking-wide">
-          v3.0 Workspace
+          v4.1 Workspace
         </span>
       </div>
     </div>
