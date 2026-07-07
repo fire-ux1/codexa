@@ -19,6 +19,7 @@ from services.storage_service import (
     generate_presigned_url,
 )
 from services.redis_service import acquire_repo_lock, release_repo_lock
+
 logger = logging.getLogger("repo_service")
 
 CLONE_DIR = "repos"
@@ -80,16 +81,12 @@ def archive_and_upload_repo(
             compress_duration = time.time() - compress_start
 
             compressed_size = os.path.getsize(zip_path)
-            ratio = (
-                (compressed_size / original_size) if original_size > 0 else 1.0
-            )
+            ratio = (compressed_size / original_size) if original_size > 0 else 1.0
 
             # Versioned naming structure
             timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
             s3_key = f"repositories/{repo_name}/commit_{commit_sha}_{timestamp}.zip"
-            manifest_key = (
-                f"repositories/{repo_name}/commit_{commit_sha}_{timestamp}.manifest.json"
-            )
+            manifest_key = f"repositories/{repo_name}/commit_{commit_sha}_{timestamp}.manifest.json"
 
             metadata = {
                 "repository_url": repo_url or repo_name,
@@ -164,9 +161,7 @@ def archive_and_upload_repo(
 
             return success
         except Exception as e:
-            logger.error(
-                f"event=archive_failed repo={repo_name} error='{str(e)}'"
-            )
+            logger.error(f"event=archive_failed repo={repo_name} error='{str(e)}'")
             if repo_id:
                 update_repository_status(repo_id, "failed")
             return False
@@ -209,9 +204,7 @@ def restore_repo_from_s3(
                 update_repository_status(repo_id, "failed")
             return False
 
-        logger.info(
-            f"event=restore_started repo={repo_name} key={latest_key}"
-        )
+        logger.info(f"event=restore_started repo={repo_name} key={latest_key}")
 
         broadcast_progress("downloading", 30)
 
@@ -252,7 +245,7 @@ def restore_repo_from_s3(
 
         # Record metrics for Prometheus
         storage_metrics["downloads"] += 1
-        storage_metrics["restore_duration_sum"] += (download_duration + restore_duration)
+        storage_metrics["restore_duration_sum"] += download_duration + restore_duration
 
         broadcast_progress("completed", 100)
         if repo_id:
@@ -269,9 +262,7 @@ def restore_repo_from_s3(
         return False
 
 
-def clone_repository(
-    repo_url: str, user_id: str = "mock-dev", project_id: str = None
-):
+def clone_repository(repo_url: str, user_id: str = "mock-dev", project_id: str = None):
     """Clones a repository locally, using S3 object storage cache as primary restore mechanism."""
     os.makedirs(CLONE_DIR, exist_ok=True)
 
@@ -325,9 +316,7 @@ def clone_repository(
             release_repo_lock(repo_name)
             return repo_path, repo_name, repo_id, False
 
-        logger.info(
-            f"event=clone_git_fallback repo={repo_name} url={repo_url}"
-        )
+        logger.info(f"event=clone_git_fallback repo={repo_name} url={repo_url}")
         Repo.clone_from(repo_url, repo_path)
 
         # Lock remains held for background S3 upload task

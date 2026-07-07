@@ -111,7 +111,7 @@ class ConnectionManager:
 
     async def disconnect(self, websocket: WebSocket, project_id: str):
         conn_id = self.connection_ids.get(websocket, "unknown")
-        
+
         # Remove from active connections
         if project_id in self.active_connections:
             if websocket in self.active_connections[project_id]:

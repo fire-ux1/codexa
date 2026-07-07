@@ -80,6 +80,7 @@ settings = get_settings()
 
 app = FastAPI(title=settings.api_title, version=settings.api_version)
 
+
 # Validate configuration variables (fail-fast)
 def validate_config():
     missing = []
@@ -121,6 +122,7 @@ async def shutdown_event():
         await manager.shutdown()
     except Exception as err:
         print(f"[App Shutdown] Error shutting down WS manager: {err}")
+
 
 # Apply rate limiting and security headers
 app.add_middleware(RateLimitMiddleware)

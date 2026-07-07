@@ -56,6 +56,7 @@ def ensure_bucket_exists() -> bool:
         )
         return False
 
+
 def calculate_sha256(file_path: str) -> str:
     """Calculates the SHA-256 hash of a file."""
     sha256_hash = hashlib.sha256()
@@ -98,9 +99,7 @@ def upload_file(
         client.upload_file(local_path, bucket, s3_key, ExtraArgs=extra_args)
         return True
     except Exception as e:
-        print(
-            f"[Storage Service] Failed to upload {local_path} to {s3_key}: {e}"
-        )
+        print(f"[Storage Service] Failed to upload {local_path} to {s3_key}: {e}")
         return False
 
 
@@ -118,9 +117,7 @@ def download_file(s3_key: str, local_path: str, bucket_name: str = None) -> bool
     try:
         client.download_file(bucket, s3_key, local_path)
     except Exception as e:
-        print(
-            f"[Storage Service] Failed to download {s3_key} to {local_path}: {e}"
-        )
+        print(f"[Storage Service] Failed to download {s3_key} to {local_path}: {e}")
         return False
 
     # Verify checksum integrity
@@ -213,10 +210,14 @@ def get_latest_version_key(repo_name: str, bucket_name: str = None) -> str | Non
         if not contents:
             return None
         # Sort by LastModified descending
-        sorted_contents = sorted(contents, key=lambda x: x["LastModified"], reverse=True)
+        sorted_contents = sorted(
+            contents, key=lambda x: x["LastModified"], reverse=True
+        )
         return sorted_contents[0]["Key"]
     except Exception as e:
-        print(f"[Storage Service] Failed to find latest version key for {repo_name}: {e}")
+        print(
+            f"[Storage Service] Failed to find latest version key for {repo_name}: {e}"
+        )
         return None
 
 

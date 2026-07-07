@@ -36,7 +36,10 @@ def test_storage_service_offline_or_online():
 
     s3_key = "tests/dummy.txt"
     try:
-        custom_metadata = {"repository_url": "https://github.com/dummy", "branch": "test-branch"}
+        custom_metadata = {
+            "repository_url": "https://github.com/dummy",
+            "branch": "test-branch",
+        }
         assert upload_file(test_file, s3_key, metadata=custom_metadata) is True
 
         files = list_files(prefix="tests/")
@@ -64,6 +67,7 @@ def test_storage_service_offline_or_online():
 
         # Verify retention policy pruning (latest 10 versions)
         from services.storage_service import prune_old_archives
+
         # Upload 12 versioned test keys
         test_keys = []
         for i in range(12):

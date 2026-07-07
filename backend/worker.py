@@ -37,7 +37,9 @@ def run_worker():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    print("[Worker] Worker successfully started. Listening for indexing tasks and background S3 jobs...")
+    print(
+        "[Worker] Worker successfully started. Listening for indexing tasks and background S3 jobs..."
+    )
 
     from services.redis_service import dequeue_background_job
 
@@ -164,8 +166,10 @@ def process_background_job(job: dict):
 
         print(f"[Worker] Archiving and uploading repository {repo_name} to S3...")
         from services.repo_service import archive_and_upload_repo
-        
-        success = archive_and_upload_repo(path, repo_name, repo_url=repo_url, repo_id=repo_id)
+
+        success = archive_and_upload_repo(
+            path, repo_name, repo_url=repo_url, repo_id=repo_id
+        )
         if success:
             print(f"[Worker] Repository {repo_name} successfully uploaded to S3.")
         else:

@@ -253,6 +253,7 @@ async def websocket_collaboration(
     try:
         import json
         from settings import get_settings
+
         max_size = get_settings().max_ws_message_size
 
         while True:
