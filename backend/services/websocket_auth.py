@@ -38,7 +38,9 @@ def verify_project_membership(user_id: str, project_id: str) -> bool:
         conn.close()
 
 
-def verify_project_role(user_id: str, project_id: str, allowed_roles: list[str]) -> bool:
+def verify_project_role(
+    user_id: str, project_id: str, allowed_roles: list[str]
+) -> bool:
     """Verifies if the user has one of the allowed roles in the requested collaboration project."""
     if user_id == "mock-dev" and settings.allow_sandbox_login:
         return True

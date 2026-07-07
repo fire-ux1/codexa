@@ -7,5 +7,7 @@ router = APIRouter()
 
 
 @router.post("/architecture")
-def architecture(payload: RepositoryPathRequest, repo: dict = Depends(require_repo_read)):
+def architecture(
+    payload: RepositoryPathRequest, repo: dict = Depends(require_repo_read)
+):
     return explain_architecture(repo["repository_path"])

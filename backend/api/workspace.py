@@ -19,7 +19,9 @@ class WorkspaceChatPayload(BaseModel):
 
 
 @router.post("/chat")
-def workspace_chat(payload: WorkspaceChatPayload, user_id: str = Depends(get_current_user_id)):
+def workspace_chat(
+    payload: WorkspaceChatPayload, user_id: str = Depends(get_current_user_id)
+):
     """Router to stream conversation completions under workspace context constraints."""
     if not payload.message or not payload.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")

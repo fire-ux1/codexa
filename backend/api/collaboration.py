@@ -45,7 +45,9 @@ class RoleUpdatePayload(BaseModel):
 
 # 1. Organizations
 @router.post("/organizations")
-def create_organization(payload: OrgCreatePayload, user_id: str = Depends(get_current_user_id)):
+def create_organization(
+    payload: OrgCreatePayload, user_id: str = Depends(get_current_user_id)
+):
     conn = get_db()
     cursor = conn.cursor()
     org_id = str(uuid.uuid4())
@@ -74,7 +76,9 @@ def list_organizations(user_id: str = Depends(get_current_user_id)):
 
 # 2. Projects
 @router.post("/projects")
-def create_project(payload: ProjectCreatePayload, user_id: str = Depends(get_current_user_id)):
+def create_project(
+    payload: ProjectCreatePayload, user_id: str = Depends(get_current_user_id)
+):
     # 1. Verify that the user has write access to the repository they are trying to link
     verify_repo_write_access(payload.repository_id, user_id)
 
@@ -100,7 +104,9 @@ def create_project(payload: ProjectCreatePayload, user_id: str = Depends(get_cur
 
 
 @router.get("/projects")
-def list_projects(org_id: str = Query(...), user_id: str = Depends(get_current_user_id)):
+def list_projects(
+    org_id: str = Query(...), user_id: str = Depends(get_current_user_id)
+):
     conn = get_db()
     cursor = conn.cursor()
     try:
@@ -130,7 +136,9 @@ def add_comment(
     from services.websocket_auth import verify_project_role
 
     # Enforce write access (only owner, admin, or member can comment)
-    if not verify_project_role(user_id, payload.project_id, ["owner", "admin", "member"]):
+    if not verify_project_role(
+        user_id, payload.project_id, ["owner", "admin", "member"]
+    ):
         raise HTTPException(
             status_code=403,
             detail="Access Denied: You do not have permissions to comment on this project.",
@@ -189,7 +197,7 @@ def add_comment(
             user_id=user_id,
             action="add_comment",
             project_id=payload.project_id,
-            details={"file": payload.file, "line": payload.line}
+            details={"file": payload.file, "line": payload.line},
         )
 
         return {"status": "success", "id": comment_id, "author": author_name}
@@ -241,7 +249,9 @@ def delete_comment(comment_id: str, user_id: str = Depends(get_current_user_id))
     cursor = conn.cursor()
 
     # Get comment details to check ownership
-    cursor.execute("SELECT project_id, author FROM comments WHERE id = %s", (comment_id,))
+    cursor.execute(
+        "SELECT project_id, author FROM comments WHERE id = %s", (comment_id,)
+    )
     comment = cursor.fetchone()
     if not comment:
         conn.close()
@@ -255,7 +265,7 @@ def delete_comment(comment_id: str, user_id: str = Depends(get_current_user_id))
     user_row = cursor.fetchone()
     is_author = False
     if user_row:
-        is_author = (author == user_row["name"] or author == user_row["email"])
+        is_author = author == user_row["name"] or author == user_row["email"]
 
     # Check if user is project admin or owner
     is_admin_or_owner = verify_project_role(user_id, project_id, ["owner", "admin"])
@@ -283,7 +293,7 @@ def delete_comment(comment_id: str, user_id: str = Depends(get_current_user_id))
             user_id=user_id,
             action="delete_comment",
             project_id=project_id,
-            details={"comment_id": comment_id}
+            details={"comment_id": comment_id},
         )
 
         return {"status": "success", "message": "Comment deleted."}
@@ -293,7 +303,9 @@ def delete_comment(comment_id: str, user_id: str = Depends(get_current_user_id))
 
 # 4. Activity Feed
 @router.get("/activity")
-def get_activity_feed(project_id: str = Query(...), user_id: str = Depends(get_current_user_id)):
+def get_activity_feed(
+    project_id: str = Query(...), user_id: str = Depends(get_current_user_id)
+):
     from services.websocket_auth import verify_project_membership
 
     if not verify_project_membership(user_id, project_id):
@@ -365,10 +377,13 @@ def add_project_member(
             user_id=current_user_id,
             action="add_member",
             project_id=project_id,
-            details={"target_user": payload.user_id, "role": payload.role}
+            details={"target_user": payload.user_id, "role": payload.role},
         )
 
-        return {"status": "success", "message": f"User {payload.user_id} added as {payload.role}."}
+        return {
+            "status": "success",
+            "message": f"User {payload.user_id} added as {payload.role}.",
+        }
     finally:
         conn.close()
 
@@ -381,7 +396,7 @@ def remove_project_member(
 ):
     from services.websocket_auth import verify_project_role
 
-    is_self = (current_user_id == user_id)
+    is_self = current_user_id == user_id
     is_authorized = verify_project_role(current_user_id, project_id, ["owner", "admin"])
 
     if not (is_self or is_authorized):
@@ -425,7 +440,7 @@ def remove_project_member(
             user_id=current_user_id,
             action="remove_member",
             project_id=project_id,
-            details={"target_user": user_id}
+            details={"target_user": user_id},
         )
 
         return {"status": "success", "message": "Member removed successfully."}
@@ -478,7 +493,7 @@ def update_project_member_role(
             user_id=current_user_id,
             action="update_role",
             project_id=project_id,
-            details={"target_user": user_id, "role": payload.role}
+            details={"target_user": user_id, "role": payload.role},
         )
 
         return {"status": "success", "message": f"Role updated to {payload.role}."}

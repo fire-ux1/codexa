@@ -88,7 +88,9 @@ def git_file_blame(
 
 
 @router.post("/commit-message")
-def git_suggest_commit_message(payload: CommitMessagePayload, user_id: str = Depends(get_current_user_id)):
+def git_suggest_commit_message(
+    payload: CommitMessagePayload, user_id: str = Depends(get_current_user_id)
+):
     """Suggests an conventional commit message based on staged changes."""
     verify_repo_access(payload.repo, user_id)
     msg = generate_commit_msg(payload.repo)
@@ -110,7 +112,9 @@ def git_explain_commit(
 
 
 @router.post("/review")
-def git_review_pull_request(payload: ReviewPayload, user_id: str = Depends(get_current_user_id)):
+def git_review_pull_request(
+    payload: ReviewPayload, user_id: str = Depends(get_current_user_id)
+):
     """Runs a simulated Pull Request code review using AI Specialists (bugs, security, performance)."""
     verify_repo_access(payload.repo, user_id)
     res = review_pull_request(payload.repo, payload.source, payload.target)

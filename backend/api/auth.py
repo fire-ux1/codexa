@@ -61,7 +61,9 @@ def get_current_user_id(authorization: str = Header(None)) -> str:
                 if isinstance(expires_at, str):
                     try:
                         clean_ts = expires_at.split(".")[0].replace("Z", "")
-                        expires_dt = datetime.datetime.strptime(clean_ts, "%Y-%m-%d %H:%M:%S")
+                        expires_dt = datetime.datetime.strptime(
+                            clean_ts, "%Y-%m-%d %H:%M:%S"
+                        )
                     except Exception:
                         expires_dt = None
                 else:
@@ -132,8 +134,12 @@ def developer_login(payload: DeveloperLoginPayload):
     )
     user = get_user(user_id)
     token_version = user["token_version"] if user and "token_version" in user else 1
-    token = encode_token(user_id=user_id, email=payload.email, token_version=token_version)
-    refresh_token = encode_refresh_token(user_id=user_id, email=payload.email, token_version=token_version)
+    token = encode_token(
+        user_id=user_id, email=payload.email, token_version=token_version
+    )
+    refresh_token = encode_refresh_token(
+        user_id=user_id, email=payload.email, token_version=token_version
+    )
     return {
         "token": token,
         "refresh_token": refresh_token,
@@ -179,10 +185,7 @@ def refresh_session_token(payload: RefreshTokenPayload):
         new_access = encode_token(user_id, email, token_version_in_db)
         new_refresh = encode_refresh_token(user_id, email, token_version_in_db)
 
-        return {
-            "token": new_access,
-            "refresh_token": new_refresh
-        }
+        return {"token": new_access, "refresh_token": new_refresh}
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh token has expired.")
     except Exception as e:
@@ -200,15 +203,17 @@ def logout_user(user_id: str = Depends(get_current_user_id)):
             (user_id,),
         )
         conn.commit()
-        return {"status": "success", "message": "Successfully logged out of all devices."}
+        return {
+            "status": "success",
+            "message": "Successfully logged out of all devices.",
+        }
     finally:
         conn.close()
 
 
 @router.post("/api-keys")
 def create_personal_api_key(
-    payload: ApiKeyCreatePayload,
-    user_id: str = Depends(get_current_user_id)
+    payload: ApiKeyCreatePayload, user_id: str = Depends(get_current_user_id)
 ):
     """Generates a personal API Key starting with sk_live_, returning the plaintext token once."""
     raw_key = "sk_live_" + secrets.token_hex(24)
@@ -218,7 +223,9 @@ def create_personal_api_key(
 
     expires_at = None
     if payload.expires_in_days:
-        expires_at = datetime.datetime.utcnow() + datetime.timedelta(days=payload.expires_in_days)
+        expires_at = datetime.datetime.utcnow() + datetime.timedelta(
+            days=payload.expires_in_days
+        )
 
     conn = get_db()
     cursor = conn.cursor()
@@ -270,7 +277,9 @@ def revoke_personal_api_key(key_id: str, user_id: str = Depends(get_current_user
             raise HTTPException(status_code=404, detail="API Key not found.")
 
         if row["user_id"] != user_id:
-            raise HTTPException(status_code=403, detail="Access Denied: You do not own this API key.")
+            raise HTTPException(
+                status_code=403, detail="Access Denied: You do not own this API key."
+            )
 
         cursor.execute("DELETE FROM api_keys WHERE id = %s", (key_id,))
         conn.commit()
@@ -348,12 +357,14 @@ def callback_github(code: str):
 
     user = get_user(user_id)
     token_version = user["token_version"] if user and "token_version" in user else 1
-    token = encode_token(user_id=user_id, email=primary_email, token_version=token_version)
-    refresh_token = encode_refresh_token(user_id=user_id, email=primary_email, token_version=token_version)
-
-    frontend_redirect = (
-        f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}&refresh_token={refresh_token}"
+    token = encode_token(
+        user_id=user_id, email=primary_email, token_version=token_version
     )
+    refresh_token = encode_refresh_token(
+        user_id=user_id, email=primary_email, token_version=token_version
+    )
+
+    frontend_redirect = f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}&refresh_token={refresh_token}"
     return RedirectResponse(url=frontend_redirect)
 
 
@@ -419,9 +430,9 @@ def callback_google(code: str):
     user = get_user(user_id)
     token_version = user["token_version"] if user and "token_version" in user else 1
     token = encode_token(user_id=user_id, email=email, token_version=token_version)
-    refresh_token = encode_refresh_token(user_id=user_id, email=email, token_version=token_version)
-
-    frontend_redirect = (
-        f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}&refresh_token={refresh_token}"
+    refresh_token = encode_refresh_token(
+        user_id=user_id, email=email, token_version=token_version
     )
+
+    frontend_redirect = f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}&refresh_token={refresh_token}"
     return RedirectResponse(url=frontend_redirect)

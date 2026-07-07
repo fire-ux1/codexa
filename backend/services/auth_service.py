@@ -43,4 +43,3 @@ def get_user_id_from_token(token: str) -> str | None:
         return payload.get("user_id") if payload else None
     except Exception:
         return None
-

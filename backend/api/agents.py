@@ -20,7 +20,9 @@ class AgentChatPayload(BaseModel):
 
 
 @router.post("/agents/chat")
-def run_agent_chat(payload: AgentChatPayload, user_id: str = Depends(get_current_user_id)):
+def run_agent_chat(
+    payload: AgentChatPayload, user_id: str = Depends(get_current_user_id)
+):
     """Router to stream specialized agent chat completions."""
     if not payload.message or not payload.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")

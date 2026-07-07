@@ -130,13 +130,17 @@ def init_db():
                 cursor.execute("PRAGMA table_info(users)")
                 cols = [col[1] for col in cursor.fetchall()]
                 if "token_version" not in cols:
-                    cursor.execute("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1")
+                    cursor.execute(
+                        "ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1"
+                    )
             else:
                 cursor.execute(
                     "SELECT column_name FROM information_schema.columns WHERE table_name='users' AND column_name='token_version'"
                 )
                 if not cursor.fetchone():
-                    cursor.execute("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1")
+                    cursor.execute(
+                        "ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1"
+                    )
             conn.commit()
         except Exception as e:
             print(f"[DB Warning] Could not check or add token_version column: {e}")
@@ -170,7 +174,9 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         )
         """)
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)"
+        )
         conn.commit()
 
         # Create repositories table

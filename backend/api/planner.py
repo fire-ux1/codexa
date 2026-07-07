@@ -21,7 +21,9 @@ class ExecuteStepPayload(BaseModel):
 
 
 @router.post("/plan")
-def plan_feature_implementation(payload: PlanPayload, user_id: str = Depends(get_current_user_id)):
+def plan_feature_implementation(
+    payload: PlanPayload, user_id: str = Depends(get_current_user_id)
+):
     """Generates a complete multi-file implementation plan for a user feature request."""
     # Write permission required for planning changes to repo
     verify_repo_write_access(payload.repo_path, user_id)
@@ -37,7 +39,9 @@ def plan_feature_implementation(payload: PlanPayload, user_id: str = Depends(get
 
 
 @router.post("/execute-step")
-def execute_single_plan_step(payload: ExecuteStepPayload, user_id: str = Depends(get_current_user_id)):
+def execute_single_plan_step(
+    payload: ExecuteStepPayload, user_id: str = Depends(get_current_user_id)
+):
     """Generates code patches, test suites, and audits for a planned task step."""
     # Write permission required for executing changes on repo
     verify_repo_write_access(payload.repo_path, user_id)

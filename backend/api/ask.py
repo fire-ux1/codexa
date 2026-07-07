@@ -58,7 +58,9 @@ def ask(payload: QuestionRequest, user_id: str = Depends(get_current_user_id)):
 
 
 @router.post("/action")
-def run_ai_action(payload: AIActionPayload, user_id: str = Depends(get_current_user_id)):
+def run_ai_action(
+    payload: AIActionPayload, user_id: str = Depends(get_current_user_id)
+):
     verify_repo_access(payload.repo, user_id)
     abs_path = validate_safe_path(payload.file)
     if not os.path.exists(abs_path):

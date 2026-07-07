@@ -102,6 +102,7 @@ def parse_generic_symbols(code: str, ext: str):
 from api.auth import get_current_user_id
 from services.auth_validation import verify_file_access
 
+
 @router.get("")
 def get_file_symbols(path: str, user_id: str = Depends(get_current_user_id)):
     # Verify read access to target file and repository
@@ -121,4 +122,3 @@ def get_file_symbols(path: str, user_id: str = Depends(get_current_user_id)):
         symbols = parse_generic_symbols(code, ext)
 
     return symbols
-

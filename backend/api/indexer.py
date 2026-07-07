@@ -24,7 +24,9 @@ settings = get_settings()
 
 
 @router.post("/index")
-def index_repo(payload: RepositoryPathRequest, user_id: str = Depends(get_current_user_id)):
+def index_repo(
+    payload: RepositoryPathRequest, user_id: str = Depends(get_current_user_id)
+):
     # 1. If repo already exists in DB, check permission
     repo = get_repository_by_path_or_id(payload.repo_path)
     if repo:
@@ -49,14 +51,14 @@ def index_repo(payload: RepositoryPathRequest, user_id: str = Depends(get_curren
     )
     if not success:
         raise HTTPException(
-            status_code=500, detail="Failed to queue indexing task. Ensure Redis is running."
+            status_code=500,
+            detail="Failed to queue indexing task. Ensure Redis is running.",
         )
 
     from services.audit_service import log_audit_event
+
     log_audit_event(
-        user_id=user_id,
-        action="index_repository",
-        details={"path": payload.repo_path}
+        user_id=user_id, action="index_repository", details={"path": payload.repo_path}
     )
 
     return {"status": "success", "message": "Indexing queued successfully."}

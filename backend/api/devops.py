@@ -14,7 +14,9 @@ class DevOpsGeneratePayload(BaseModel):
 
 
 @router.post("/generate")
-def generate_devops_or_doc_asset(payload: DevOpsGeneratePayload, user_id: str = Depends(get_current_user_id)):
+def generate_devops_or_doc_asset(
+    payload: DevOpsGeneratePayload, user_id: str = Depends(get_current_user_id)
+):
     """Router to generate documentation pages or DevOps pipeline infrastructure assets."""
     # Write permission required for generating changes/documentation for repository
     verify_repo_write_access(payload.repo_path, user_id)

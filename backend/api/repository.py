@@ -50,11 +50,12 @@ def clone_repo(
         )
 
     from services.audit_service import log_audit_event
+
     log_audit_event(
         user_id=user_id,
         action="clone_repository",
         project_id=project_id,
-        details={"url": str(payload.repo_url), "path": path}
+        details={"url": str(payload.repo_url), "path": path},
     )
 
     return {"status": "success", "path": path}
@@ -74,7 +75,9 @@ def get_file_content(path: str, user_id: str = Depends(get_current_user_id)):
 
 
 @router.post("/save-file")
-def save_file_content(payload: SaveFileRequest, user_id: str = Depends(get_current_user_id)):
+def save_file_content(
+    payload: SaveFileRequest, user_id: str = Depends(get_current_user_id)
+):
     # 1. Enforce file bounds and write access
     verify_file_access(payload.path, user_id, write=True)
 

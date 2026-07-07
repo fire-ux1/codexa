@@ -45,7 +45,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         client_ip = request.client.host if request.client else "unknown"
-        
+
         is_ai_path = (
             path.startswith("/ai")
             or path.startswith("/workspace")
@@ -58,6 +58,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         try:
             from services.redis_service import get_redis
+
             r = get_redis()
             if r is not None:
                 redis_key = f"rate_limit:{client_ip}:{category}"
@@ -72,7 +73,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 if current_count > max_requests:
                     return JSONResponse(
                         status_code=429,
-                        content={"detail": "Too many requests. Please try again later."},
+                        content={
+                            "detail": "Too many requests. Please try again later."
+                        },
                     )
                 return await call_next(request)
         except Exception as e:
@@ -106,7 +109,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=63072000; includeSubDomains; preload"
+        )
         return response
 
 

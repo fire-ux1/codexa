@@ -27,7 +27,9 @@ class PatchApplyPayload(BaseModel):
 
 
 @router.post("/patch")
-def generate_patch(payload: PatchRequestPayload, user_id: str = Depends(get_current_user_id)):
+def generate_patch(
+    payload: PatchRequestPayload, user_id: str = Depends(get_current_user_id)
+):
     """Streams the generated patch summary and unified diff for review."""
     # Verify write access to file and repository
     verify_file_access(payload.file_path, user_id, write=True)
@@ -43,10 +45,9 @@ def generate_patch(payload: PatchRequestPayload, user_id: str = Depends(get_curr
     selection = payload.content if payload.selection_range else None
 
     from services.audit_service import log_audit_event
+
     log_audit_event(
-        user_id=user_id,
-        action="generate_patch",
-        details={"file": payload.file_path}
+        user_id=user_id, action="generate_patch", details={"file": payload.file_path}
     )
 
     return StreamingResponse(
@@ -61,7 +62,9 @@ def generate_patch(payload: PatchRequestPayload, user_id: str = Depends(get_curr
 
 
 @router.post("/apply")
-def apply_patch(payload: PatchApplyPayload, user_id: str = Depends(get_current_user_id)):
+def apply_patch(
+    payload: PatchApplyPayload, user_id: str = Depends(get_current_user_id)
+):
     """Applies the approved patch by overwriting the file on disk (security-checked)."""
     if not payload.file_path:
         raise HTTPException(status_code=400, detail="File path is required")
@@ -85,10 +88,9 @@ def apply_patch(payload: PatchApplyPayload, user_id: str = Depends(get_current_u
             f.write(payload.content)
 
         from services.audit_service import log_audit_event
+
         log_audit_event(
-            user_id=user_id,
-            action="apply_patch",
-            details={"file": payload.file_path}
+            user_id=user_id, action="apply_patch", details={"file": payload.file_path}
         )
 
         return {"status": "success", "message": "Patch applied successfully"}
