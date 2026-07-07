@@ -38,11 +38,11 @@ jobs:
 
     env:
       LLM_BASE_URL: https://openrouter.ai/api/v1
-      LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+      LLM_API_KEY: ""  # Empty so test mocks activate correctly
       LLM_MODEL: openai/gpt-4o-mini
       LLM_APP_NAME: CodePilot AI
       LLM_SITE_URL: http://localhost:5173
-      DATABASE_URL: sqlite:///./codepilot_test.db
+      # No DATABASE_URL — db_service auto-falls back to SQLite cleanly
       REDIS_URL: redis://localhost:6379/0
       QDRANT_HOST: localhost
       QDRANT_PORT: 6333
@@ -50,9 +50,7 @@ jobs:
       S3_ACCESS_KEY: test-access-key
       S3_SECRET_KEY: test-secret-key
       S3_BUCKET_NAME: codepilot-test
-      JWT_SECRET_KEY: ci-test-jwt-secret-key
-      JWT_ALGORITHM: HS256
-      JWT_EXPIRE_MINUTES: 60
+      JWT_SECRET: ci-test-jwt-secret-key
       API_TITLE: CodePilot AI
       API_VERSION: 1.0.0
       CORS_ORIGINS: '["http://localhost:5173"]'
