@@ -213,7 +213,6 @@ def verify_file_access(file_path: str, user_id: str, write: bool = False) -> str
     return None
 
 
-
 async def require_repo_read(
     request: Request, user_id: str = Depends(get_current_user_id)
 ) -> dict:

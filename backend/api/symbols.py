@@ -101,7 +101,6 @@ def parse_generic_symbols(code: str, ext: str):
     return symbols
 
 
-
 @router.get("")
 def get_file_symbols(path: str, user_id: str = Depends(get_current_user_id)):
     # Verify read access to target file and repository
