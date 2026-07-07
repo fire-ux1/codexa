@@ -37,23 +37,31 @@ def run_worker():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    print("[Worker] Worker successfully started. Listening for indexing tasks...")
+    print("[Worker] Worker successfully started. Listening for indexing tasks and background S3 jobs...")
+
+    from services.redis_service import dequeue_background_job
 
     while not shutdown_requested:
         try:
-            # Poll for task with 2 second timeout to allow checking shutdown_requested
-            task = dequeue_indexing_task(timeout=2)
-            if task is None:
+            # Poll for indexing task first (with 1 second timeout)
+            task = dequeue_indexing_task(timeout=1)
+            if task is not None:
+                repo_path = task.get("repo_path")
+                repo_id = task.get("repo_id")
+                user_id = task.get("user_id")
+
+                print(
+                    f"[Worker] Picked up indexing task for repository: {repo_path} (ID: {repo_id})"
+                )
+                process_indexing_task(repo_path, repo_id, user_id)
                 continue
 
-            repo_path = task.get("repo_path")
-            repo_id = task.get("repo_id")
-            user_id = task.get("user_id")
-
-            print(
-                f"[Worker] Picked up task for repository: {repo_path} (ID: {repo_id})"
-            )
-            process_indexing_task(repo_path, repo_id, user_id)
+            # Poll for S3 background jobs
+            job = dequeue_background_job(timeout=1)
+            if job is not None:
+                print(f"[Worker] Picked up background job: {job.get('job_type')}")
+                process_background_job(job)
+                continue
 
         except Exception as err:
             print(f"[Worker] Loop error: {err}")
@@ -141,6 +149,27 @@ def process_indexing_task(repo_path: str, repo_id: str, user_id: str):
         }
         update_indexing_progress(repo_path, fail_status)
         update_repository_status(repo_id, status="failed")
+
+
+def process_background_job(job: dict):
+    """Processes background tasks dequeued from Redis background jobs queue."""
+    job_type = job.get("job_type")
+    payload = job.get("payload", {})
+
+    if job_type == "archive_and_upload":
+        path = payload.get("path")
+        repo_name = payload.get("repo_name")
+        repo_url = payload.get("repo_url", "")
+        repo_id = payload.get("repo_id")
+
+        print(f"[Worker] Archiving and uploading repository {repo_name} to S3...")
+        from services.repo_service import archive_and_upload_repo
+        
+        success = archive_and_upload_repo(path, repo_name, repo_url=repo_url, repo_id=repo_id)
+        if success:
+            print(f"[Worker] Repository {repo_name} successfully uploaded to S3.")
+        else:
+            print(f"[Worker] Failed to upload repository {repo_name} to S3.")
 
 
 if __name__ == "__main__":

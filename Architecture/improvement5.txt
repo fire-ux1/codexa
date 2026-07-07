@@ -1,0 +1,163 @@
+1. Replace Local BackgroundTasks with a Distributed Job Queue
+
+Currently:
+
+API Request
+    ↓
+BackgroundTasks
+    ↓
+Compress
+    ↓
+Upload to S3
+
+BackgroundTasks work well for a single FastAPI instance but won't survive process crashes and don't scale across multiple backend replicas.
+
+For future production deployment, migrate long-running tasks to a queue such as:
+
+Celery + Redis
+RQ + Redis
+Dramatiq
+Arq
+
+Examples of queued jobs:
+
+Repository compression
+S3 uploads
+Repository restoration
+AI indexing
+Embedding generation
+Cleanup tasks
+
+This will make the system fault-tolerant and horizontally scalable.
+
+2. Signed Download URLs
+
+Instead of always streaming repository archives through the backend, support pre-signed URLs.
+
+Benefits:
+
+Reduces backend bandwidth
+Faster downloads
+Works seamlessly with AWS S3 or MinIO
+Simplifies future cloud deployments
+3. Repository Manifest File
+
+Alongside every archive, store a manifest describing its contents.
+
+Example:
+
+{
+  "repository": "codepilot-ai",
+  "branch": "main",
+  "commit": "ab12cd34",
+  "created_at": "...",
+  "archive_version": 3,
+  "file_count": 2418,
+  "compressed_size": 8349201,
+  "sha256": "..."
+}
+
+This makes restoration, auditing, and debugging much easier.
+
+4. Restore Progress Events
+
+Since WebSockets are already implemented, publish progress events during repository restore.
+
+Example events:
+
+restore_started
+restore_progress
+restore_completed
+restore_failed
+
+The frontend can display a live progress indicator instead of waiting silently.
+
+5. Bucket Health Endpoint
+
+Expose an internal health endpoint that reports the status of object storage.
+
+Example:
+
+GET /api/v1/system/storage/health
+
+Suggested response:
+
+{
+  "status": "healthy",
+  "provider": "MinIO",
+  "bucket": "repositories",
+  "reachable": true
+}
+
+This simplifies monitoring and troubleshooting.
+
+6. Repository Lifecycle State
+
+Track repository status in the database.
+
+Suggested states:
+
+cloning
+uploading
+uploaded
+restoring
+indexing
+ready
+failed
+
+This provides a reliable source of truth for both the frontend and background workers.
+
+7. Prometheus Metrics
+
+Instead of relying only on log messages, expose metrics for:
+
+WebSocket connections
+Messages sent
+Redis Pub/Sub activity
+S3 uploads/downloads
+Upload latency
+Compression ratio
+Restore duration
+
+This prepares the project for Prometheus and Grafana integration.
+
+8. Configuration Validation
+
+Validate critical environment variables during application startup.
+
+Examples:
+
+S3 endpoint
+Bucket name
+Access key
+Secret key
+Redis URL
+PostgreSQL URL
+
+Fail fast if required configuration is missing or invalid.
+
+9. Repository Locks
+
+Prevent concurrent operations on the same repository.
+
+For example:
+
+Block two uploads at the same time.
+Prevent restore while indexing is running.
+Avoid cleanup during an active upload.
+
+A simple distributed lock using Redis is sufficient and avoids race conditions.
+
+10. Disaster Recovery Documentation
+
+Document the recovery process for object storage.
+
+Include steps for:
+
+Restoring MinIO data from backup.
+Rebuilding missing local repositories from S3.
+Re-indexing repositories if required.
+Handling checksum mismatches.
+Recovering from interrupted uploads.
+
+This is valuable for operational readiness.

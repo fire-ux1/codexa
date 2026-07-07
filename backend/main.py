@@ -80,6 +80,27 @@ settings = get_settings()
 
 app = FastAPI(title=settings.api_title, version=settings.api_version)
 
+# Validate configuration variables (fail-fast)
+def validate_config():
+    missing = []
+    for field in [
+        "s3_endpoint_url",
+        "s3_access_key",
+        "s3_secret_key",
+        "s3_bucket_name",
+        "redis_url",
+    ]:
+        val = getattr(settings, field, "")
+        if not val:
+            missing.append(field)
+    if missing:
+        raise RuntimeError(
+            f"Missing required configuration variables: {', '.join(missing)}"
+        )
+
+
+validate_config()
+
 # Initialize the SQLite database on app load
 init_db()
 

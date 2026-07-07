@@ -114,3 +114,60 @@ def get_indexing_progress(repo_path: str) -> dict:
     except Exception as e:
         print(f"[Redis Queue] Get progress error: {e}")
         return None
+
+
+BACKGROUND_JOBS_QUEUE = "background_jobs"
+
+
+def enqueue_background_job(job_type: str, payload: dict) -> bool:
+    """Enqueues a background task to the Redis-backed distributed queue."""
+    client = get_redis()
+    if client is None:
+        return False
+    try:
+        job_data = {"job_type": job_type, "payload": payload}
+        client.rpush(BACKGROUND_JOBS_QUEUE, json.dumps(job_data))
+        return True
+    except Exception as e:
+        print(f"[Redis Queue] Enqueue background job error: {e}")
+        return False
+
+
+def dequeue_background_job(timeout: int = 0) -> dict:
+    """Blocks and retrieves a background task from the Redis distributed queue."""
+    client = get_redis()
+    if client is None:
+        return None
+    try:
+        res = client.blpop(BACKGROUND_JOBS_QUEUE, timeout=timeout)
+        if res:
+            return json.loads(res[1])
+        return None
+    except Exception as e:
+        print(f"[Redis Queue] Dequeue background job error: {e}")
+        return None
+
+
+def acquire_repo_lock(repo_name: str, expire_seconds: int = 300) -> bool:
+    """Acquires a distributed Redis lock to prevent concurrent S3/Git operations on the same repository."""
+    client = get_redis()
+    if client is None:
+        return True  # Fallback: proceed if Redis is offline
+    try:
+        lock_key = f"lock:repo:{repo_name}"
+        return bool(client.set(lock_key, "1", ex=expire_seconds, nx=True))
+    except Exception as e:
+        print(f"[Redis Lock] Failed to acquire lock for {repo_name}: {e}")
+        return True
+
+
+def release_repo_lock(repo_name: str):
+    """Releases the distributed Redis lock for a repository."""
+    client = get_redis()
+    if client is None:
+        return
+    try:
+        lock_key = f"lock:repo:{repo_name}"
+        client.delete(lock_key)
+    except Exception as e:
+        print(f"[Redis Lock] Failed to release lock for {repo_name}: {e}")

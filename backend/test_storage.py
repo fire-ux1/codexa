@@ -1,4 +1,5 @@
 import os
+from settings import get_settings
 from services.storage_service import (
     ensure_bucket_exists,
     upload_file,
@@ -7,6 +8,8 @@ from services.storage_service import (
     list_files,
     get_s3_client,
 )
+
+settings = get_settings()
 
 
 def test_storage_service_offline_or_online():
@@ -72,7 +75,6 @@ def test_storage_service_offline_or_online():
         prune_old_archives("test-repo", limit=10)
 
         # Check that we only have 10 keys remaining
-        from services.storage_service import list_files
         remaining_files = list_files(prefix="repositories/test-repo/")
         assert len(remaining_files) == 10
 
