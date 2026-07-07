@@ -12,9 +12,6 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # ── CPU-only PyTorch ──────────────────────────────────────────────────────────
-# sentence-transformers 5.x requires torch >= 2.4.
-# Install from PyTorch's CPU-only index FIRST so pip never fetches the CUDA
-# variant (~2 GB of nvidia_* wheels).
 RUN pip install --no-cache-dir \
     "torch>=2.4,<2.6" \
     --index-url https://download.pytorch.org/whl/cpu
@@ -24,20 +21,23 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # ── Remove packages that are provably unused at runtime ───────────────────────
-# kubernetes  — chromadb optional telemetry client, never imported by the app
-# networkx    — torch optional graph utility, never imported by the app
-# pip/setuptools/wheel — build tools not needed at runtime
 RUN pip uninstall -y kubernetes networkx pip setuptools wheel 2>/dev/null || true
 
 # ════════════════════════════════════════════════════════════════════════════
 # Stage 2 — final runtime image
-# Only the clean venv + git binary reach the shipped image.
 # ════════════════════════════════════════════════════════════════════════════
 FROM python:3.11-slim AS final
 
+# ── OCI image metadata ────────────────────────────────────────────────────────
+LABEL org.opencontainers.image.title="CodePilot AI"
+LABEL org.opencontainers.image.description="AI-powered repository understanding platform"
+LABEL org.opencontainers.image.source="https://github.com/abhishek-s12/codepilot-ai"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.vendor="CodePilot AI"
+
 WORKDIR /app
 
-# git binary is required by GitPython at runtime
+# git + curl required at runtime (GitPython + healthcheck)
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git curl \
     && git --version \
@@ -47,18 +47,17 @@ RUN apt-get update \
 RUN groupadd --gid 1001 appgroup \
     && useradd --uid 1001 --gid appgroup --shell /bin/bash --create-home appuser
 
-# Copy only the venv from the builder — no pip cache, no removed packages
+# Copy only the venv from the builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy application source
 COPY . .
 
-# Pre-create the repos clone directory so GitPython has a writable target
+# Pre-create writable directories
 RUN mkdir -p /app/repos /app/embeddings /app/vector_store \
     && chown -R appuser:appgroup /app
 
-# Prevent GitPython from crashing on import if git is not immediately on PATH
 ENV GIT_PYTHON_REFRESH=quiet
 
 # Switch to non-root user
@@ -66,8 +65,10 @@ USER appuser
 
 EXPOSE 8000
 
-# Health check — hits the /health endpoint every 30s
+# ENTRYPOINT allows CMD to be overridden at runtime.
+# API server: docker run ... (uses CMD below)
+# Worker:     docker run ... python worker.py
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8000/health/live || exit 1
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

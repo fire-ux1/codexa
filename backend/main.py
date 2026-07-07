@@ -148,11 +148,60 @@ def root():
 
 
 @app.get("/health")
-def health():
+@app.get("/health/live")
+def health_live():
+    """Liveness probe — confirms the process is running."""
     return {
         "status": "healthy",
         "service": "CodePilot AI",
         "version": settings.api_version,
+    }
+
+
+@app.get("/health/ready")
+def health_ready():
+    """Readiness probe — confirms the app is ready to serve traffic.
+    Checks Redis and DB connectivity before returning healthy."""
+    checks = {}
+
+    # Check Redis
+    try:
+        from services.redis_service import get_redis
+
+        r = get_redis()
+        if r is None:
+            raise ConnectionError("Redis client unavailable")
+        r.ping()
+        checks["redis"] = "ok"
+    except Exception as e:
+        checks["redis"] = f"error: {e}"
+
+    # Check DB
+    try:
+        from services.db_service import get_pool
+
+        pool = get_pool()
+        if pool:
+            conn = pool.getconn()
+            conn.cursor().execute("SELECT 1")
+            pool.putconn(conn)
+        else:
+            # SQLite fallback
+            import sqlite3
+
+            conn = sqlite3.connect("codepilot.db")
+            conn.execute("SELECT 1")
+            conn.close()
+        checks["database"] = "ok"
+    except Exception as e:
+        checks["database"] = f"error: {e}"
+
+    all_ok = all(v == "ok" for v in checks.values())
+    return {
+        "status": "ready" if all_ok else "degraded",
+        "service": "CodePilot AI",
+        "version": settings.api_version,
+        "checks": checks,
     }
 
 
