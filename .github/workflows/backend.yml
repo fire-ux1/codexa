@@ -63,10 +63,10 @@ jobs:
 
       - name: Wait for services to be ready
         run: |
-          echo "Waiting for Redis..."
-          timeout 30 bash -c 'until redis-cli -h 127.0.0.1 ping 2>/dev/null | grep -q PONG; do sleep 1; done'
+          echo "Waiting for Redis (TCP port 6379)..."
+          timeout 30 bash -c 'until nc -z 127.0.0.1 6379; do sleep 1; done'
           echo "Redis ready."
-          echo "Waiting for Qdrant..."
+          echo "Waiting for Qdrant (HTTP /healthz)..."
           timeout 60 bash -c 'until curl -sf http://localhost:6333/healthz > /dev/null; do sleep 2; done'
           echo "Qdrant ready."
 
