@@ -51,7 +51,7 @@ class SqliteCursorWrapper:
     def __getattr__(self, name):
         return getattr(self._cursor, name)
 
-    def execute(self, sql, parameters=None):
+    def _translate_sql(self, sql):
         sql_translated = sql.replace("%s", "?")
         sql_translated = sql_translated.replace("%%", "%")
 
@@ -59,10 +59,19 @@ class SqliteCursorWrapper:
             sql_translated = sql_translated.replace(
                 "SERIAL PRIMARY KEY", "INTEGER PRIMARY KEY AUTOINCREMENT"
             )
+        return sql_translated
 
+    def execute(self, sql, parameters=None):
+        sql_translated = self._translate_sql(sql)
         if parameters is not None:
             return self._cursor.execute(sql_translated, parameters)
         return self._cursor.execute(sql_translated)
+
+    def executemany(self, sql, seq_of_parameters=None):
+        sql_translated = self._translate_sql(sql)
+        if seq_of_parameters is not None:
+            return self._cursor.executemany(sql_translated, seq_of_parameters)
+        return self._cursor.executemany(sql_translated)
 
 
 class SqliteConnectionWrapper:
