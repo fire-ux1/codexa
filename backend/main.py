@@ -82,6 +82,17 @@ app = FastAPI(title=settings.api_title, version=settings.api_version)
 # Initialize the SQLite database on app load
 init_db()
 
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    try:
+        from services.websocket_manager import manager
+
+        await manager.shutdown()
+    except Exception as err:
+        print(f"[App Shutdown] Error shutting down WS manager: {err}")
+
+
 # Apply rate limiting and security headers
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
