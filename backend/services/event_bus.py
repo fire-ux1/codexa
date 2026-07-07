@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+import uuid
 from services.redis_service import get_redis
 
 
@@ -10,6 +11,8 @@ def publish_event(project_id: str, event_type: str, payload: dict) -> bool:
         return False
     try:
         envelope = {
+            "id": f"evt_{uuid.uuid4().hex[:8]}",
+            "version": 1,
             "type": event_type,
             "project_id": project_id,
             "timestamp": datetime.utcnow().isoformat() + "Z",

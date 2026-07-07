@@ -102,6 +102,14 @@ class Settings(BaseSettings):
         default="codepilot-storage",
         validation_alias=AliasChoices("S3_BUCKET_NAME"),
     )
+    ws_heartbeat_interval: int = Field(
+        default=30,
+        validation_alias=AliasChoices("WS_HEARTBEAT_INTERVAL"),
+    )
+    ws_timeout: int = Field(
+        default=45,
+        validation_alias=AliasChoices("WS_TIMEOUT"),
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",

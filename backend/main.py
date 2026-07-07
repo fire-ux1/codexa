@@ -90,6 +90,16 @@ try:
 except Exception as s3_err:
     print(f"[App Startup] Warning: Could not initialize S3 bucket: {s3_err}")
 
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    try:
+        from services.websocket_manager import manager
+
+        await manager.shutdown()
+    except Exception as err:
+        print(f"[App Shutdown] Error shutting down WS manager: {err}")
+
 # Apply rate limiting and security headers
 app.add_middleware(RateLimitMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
