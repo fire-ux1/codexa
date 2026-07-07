@@ -56,11 +56,19 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         category = "ai" if is_ai_path else "std"
         max_requests = 20 if is_ai_path else 100
 
+        use_redis = False
+        r = None
         try:
             from services.redis_service import get_redis
 
             r = get_redis()
             if r is not None:
+                use_redis = True
+        except Exception:
+            pass
+
+        if use_redis and r is not None:
+            try:
                 redis_key = f"rate_limit:{client_ip}:{category}"
                 pipe = r.pipeline()
                 pipe.incr(redis_key)
@@ -77,9 +85,16 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                             "detail": "Too many requests. Please try again later."
                         },
                     )
+                # Successful Redis rate check. Proceed to call next without wrapping in this try block.
+                redis_check_ok = True
+            except Exception as e:
+                print(
+                    f"[Rate Limit] Redis operation failed, falling back to local memory: {e}"
+                )
+                redis_check_ok = False
+
+            if redis_check_ok:
                 return await call_next(request)
-        except Exception as e:
-            print(f"[Rate Limit] Redis error, falling back to local memory: {e}")
 
         current_time = time.time()
         self.local_history[f"{client_ip}:{category}"] = [
