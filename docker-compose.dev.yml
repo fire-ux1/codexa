@@ -1,0 +1,49 @@
+version: "3.9"
+
+# ═══════════════════════════════════════════════════════════════════
+# CodePilot AI — Development Override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+#
+# Differences from production:
+#   - No Nginx (access backend directly on :8000)
+#   - Hot reload via uvicorn --reload
+#   - Source code bind-mounted (no rebuild needed on code change)
+#   - Worker also bind-mounts source for instant restarts
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: final
+    command:
+      [
+        "uvicorn",
+        "main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+      ]
+    volumes:
+      - ./backend:/app
+      - /app/venv # Preserve container venv, not host venv
+    ports:
+      - "8000:8000"
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.worker
+      target: final
+    command: ["python", "-u", "worker.py"]
+    volumes:
+      - ./backend:/app
+      - /app/venv
+
+  nginx:
+    # Disabled in dev — access backend on :8000 directly
+    profiles:
+      - disabled

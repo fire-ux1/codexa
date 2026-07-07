@@ -1,13 +1,32 @@
-venv
-__pycache__
-.pytest_cache
-.git
-.github
-chroma_db
-repos
-*.pyc
+venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.git/
+.github/
+
+# Local data — never bake into the image
+chroma_db/
+repos/
+embeddings/
+vector_store/
+archives/
+*.db
+codepilot.db
+
+# Secrets — never bake into the image
 .env
 
+# IDE / OS noise
 .idea/
 .vscode/
 *.log
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+test_s3_dummy.txt
+test_s3_downloaded.txt

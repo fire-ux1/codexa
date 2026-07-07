@@ -1,0 +1,74 @@
+name: Docker Publish (Release)
+
+# Triggered when a version tag is pushed: git tag v1.2.3 && git push --tags
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  publish:
+    name: Build & Publish Release Images
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract version tag
+        id: meta
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Backend ────────────────────────────────────────────────────
+      - name: Build & push backend release image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/codepilot-backend:latest
+            ghcr.io/${{ github.repository_owner }}/codepilot-backend:${{ steps.meta.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Worker ─────────────────────────────────────────────────────
+      - name: Build & push worker release image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile.worker
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/codepilot-worker:latest
+            ghcr.io/${{ github.repository_owner }}/codepilot-worker:${{ steps.meta.outputs.VERSION }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── GitHub Release notes ───────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          body: |
+            ## Docker Images
+
+            Pull the release images:
+            ```bash
+            docker pull ghcr.io/${{ github.repository_owner }}/codepilot-backend:${{ steps.meta.outputs.VERSION }}
+            docker pull ghcr.io/${{ github.repository_owner }}/codepilot-worker:${{ steps.meta.outputs.VERSION }}
+            ```

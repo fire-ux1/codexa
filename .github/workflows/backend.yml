@@ -7,19 +7,69 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  # ──────────────────────────────────────────────────────────────────
+  # Job 1: Lint, format, and test
+  # ──────────────────────────────────────────────────────────────────
+  lint-and-test:
+    name: Lint & Test
     runs-on: ubuntu-latest
+
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+          - 6333:6333
+        options: >-
+          --health-cmd "curl -f http://localhost:6333/healthz"
+          --health-interval 15s
+          --health-timeout 5s
+          --health-retries 5
 
     defaults:
       run:
         working-directory: backend
 
-    steps:
-      - uses: actions/checkout@v4
+    env:
+      LLM_BASE_URL: https://openrouter.ai/api/v1
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+      LLM_MODEL: openai/gpt-4o-mini
+      LLM_APP_NAME: CodePilot AI
+      LLM_SITE_URL: http://localhost:5173
+      DATABASE_URL: sqlite:///./codepilot_test.db
+      REDIS_URL: redis://localhost:6379/0
+      QDRANT_HOST: localhost
+      QDRANT_PORT: 6333
+      S3_ENDPOINT_URL: http://localhost:9000
+      S3_ACCESS_KEY: test-access-key
+      S3_SECRET_KEY: test-secret-key
+      S3_BUCKET_NAME: codepilot-test
+      JWT_SECRET_KEY: ci-test-jwt-secret-key
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRE_MINUTES: 60
+      API_TITLE: CodePilot AI
+      API_VERSION: 1.0.0
+      CORS_ORIGINS: '["http://localhost:5173"]'
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
 
       - name: Install dependencies
         run: |
@@ -27,14 +77,65 @@ jobs:
           pip install -r requirements.txt
           pip install ruff
 
-      - name: Check formatting
+      - name: Check formatting (ruff format)
         run: ruff format --check .
 
-      - name: Lint
+      - name: Lint (ruff check)
         run: ruff check .
 
-      - name: Verify FastAPI imports
-        run: python -c "import main"
+      - name: Smoke test — FastAPI imports
+        run: python -c "import main; print('Import OK')"
 
-      - name: Run Unit Tests
-        run: python -m pytest --ignore=repos
+      - name: Run unit tests
+        run: python -m pytest --ignore=repos -v --tb=short
+
+  # ──────────────────────────────────────────────────────────────────
+  # Job 2: Build Docker images (only on push to main)
+  # ──────────────────────────────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/codepilot-backend:latest
+            ghcr.io/${{ github.repository_owner }}/codepilot-backend:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push worker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile.worker
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/codepilot-worker:latest
+            ghcr.io/${{ github.repository_owner }}/codepilot-worker:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
