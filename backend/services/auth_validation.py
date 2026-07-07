@@ -199,3 +199,80 @@ def verify_file_access(file_path: str, user_id: str, write: bool = False) -> str
     return None
 
 
+from fastapi import Request, Depends
+from api.auth import get_current_user_id
+
+async def require_repo_read(request: Request, user_id: str = Depends(get_current_user_id)) -> dict:
+    """FastAPI dependency to enforce repository read permissions on the request."""
+    repo_id_or_path = (
+        request.query_params.get("repo_id")
+        or request.query_params.get("repo_path")
+        or request.query_params.get("repo")
+    )
+
+    if not repo_id_or_path:
+        repo_id_or_path = (
+            request.path_params.get("repo_id")
+            or request.path_params.get("repo_path")
+            or request.path_params.get("repo")
+        )
+
+    if not repo_id_or_path:
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                repo_id_or_path = (
+                    body.get("repo_id")
+                    or body.get("repo_path")
+                    or body.get("repo")
+                    or body.get("repository_id")
+                )
+        except Exception:
+            pass
+
+    if not repo_id_or_path:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing repository path or identifier (repo_id, repo_path, or repo)."
+        )
+
+    return verify_repo_access(repo_id_or_path, user_id)
+
+
+async def require_repo_write(request: Request, user_id: str = Depends(get_current_user_id)) -> dict:
+    """FastAPI dependency to enforce repository write permissions on the request."""
+    repo_id_or_path = (
+        request.query_params.get("repo_id")
+        or request.query_params.get("repo_path")
+        or request.query_params.get("repo")
+    )
+
+    if not repo_id_or_path:
+        repo_id_or_path = (
+            request.path_params.get("repo_id")
+            or request.path_params.get("repo_path")
+            or request.path_params.get("repo")
+        )
+
+    if not repo_id_or_path:
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                repo_id_or_path = (
+                    body.get("repo_id")
+                    or body.get("repo_path")
+                    or body.get("repo")
+                    or body.get("repository_id")
+                )
+        except Exception:
+            pass
+
+    if not repo_id_or_path:
+        raise HTTPException(
+            status_code=400,
+            detail="Missing repository path or identifier (repo_id, repo_path, or repo)."
+        )
+
+    return verify_repo_write_access(repo_id_or_path, user_id)
+
+

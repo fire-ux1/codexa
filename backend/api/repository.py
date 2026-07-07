@@ -49,6 +49,14 @@ def clone_repo(
             },
         )
 
+    from services.audit_service import log_audit_event
+    log_audit_event(
+        user_id=user_id,
+        action="clone_repository",
+        project_id=project_id,
+        details={"url": str(payload.repo_url), "path": path}
+    )
+
     return {"status": "success", "path": path}
 
 

@@ -51,4 +51,11 @@ def delete_repository_index(repo_id: str, user_id: str = Depends(get_current_use
     # 3. Delete database record
     delete_repository(repo_id)
 
+    from services.audit_service import log_audit_event
+    log_audit_event(
+        user_id=user_id,
+        action="delete_repository",
+        details={"repo_id": repo_id, "path": repo["repository_path"]}
+    )
+
     return {"status": "success", "message": "Repository index deleted successfully."}

@@ -1,0 +1,150 @@
+1. Refresh Tokens
+
+Currently:
+
+Access Token (1 hour)
+
+When it expires:
+
+User logs in again.
+
+Enterprise apps instead use:
+
+Access Token
+15–60 min
+
++
+
+Refresh Token
+30 days
+
+Flow:
+
+Login
+
+↓
+
+Access token expires
+
+↓
+
+Frontend silently refreshes
+
+↓
+
+User continues working
+
+This is probably the biggest missing authentication feature.
+
+2. Token Revocation
+
+Suppose someone changes their password.
+
+Old JWTs should stop working.
+
+That requires storing something like
+
+token_version
+
+or
+
+revoked_at
+
+inside the user table.
+
+During authentication:
+
+JWT version
+
+==
+
+User version?
+
+If not:
+
+401
+3. Audit Logs
+
+For enterprise users, record events like:
+
+User added member
+
+User removed member
+
+Repository indexed
+
+Patch generated
+
+AI used
+
+Repository deleted
+
+Later you'll build an Admin Dashboard.
+
+Audit logs become invaluable.
+
+4. Rate Limiting
+
+Current flow:
+
+POST /chat
+
+can probably be spammed.
+
+You should eventually add:
+
+100 requests/min
+
+or
+
+20 AI calls/min
+
+using Redis.
+
+Since you've already integrated Redis, this should be straightforward.
+
+5. Permission Decorators
+
+Instead of writing:
+
+validate_repository_access(...)
+
+inside every route,
+
+you could create reusable dependencies:
+
+Depends(require_repo_read)
+
+or
+
+Depends(require_repo_write)
+
+This keeps routes cleaner and centralizes authorization.
+
+6. Security Headers
+
+Ensure the backend also returns:
+
+X-Frame-Options
+
+Content-Security-Policy
+
+Strict-Transport-Security
+
+X-Content-Type-Options
+
+This is often handled via middleware.
+
+7. API Key Authentication
+
+Future integrations (CLI, IDE extensions, MCP servers) will need personal API keys.
+
+Eventually support:
+
+Bearer JWT
+
+OR
+
+Bearer sk_xxxxxxxxx
+
+This enables automation without browser sessions.

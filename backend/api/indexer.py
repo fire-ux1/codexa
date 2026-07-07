@@ -44,8 +44,22 @@ def index_repo(payload: RepositoryPathRequest, user_id: str = Depends(get_curren
             status="indexing",
         )
 
-    enqueue_indexing_task(payload.repo_path, repo_id, user_id)
-    return {"status": "queued", "repo_id": repo_id}
+    success = enqueue_indexing_task(
+        repo_path=payload.repo_path, repo_id=repo_id, user_id=user_id
+    )
+    if not success:
+        raise HTTPException(
+            status_code=500, detail="Failed to queue indexing task. Ensure Redis is running."
+        )
+
+    from services.audit_service import log_audit_event
+    log_audit_event(
+        user_id=user_id,
+        action="index_repository",
+        details={"path": payload.repo_path}
+    )
+
+    return {"status": "success", "message": "Indexing queued successfully."}
 
 
 @router.websocket("/progress")

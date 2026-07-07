@@ -5,13 +5,28 @@ from settings import get_settings
 settings = get_settings()
 
 
-def encode_token(user_id: str, email: str) -> str:
-    """Generate a JWT token for the user."""
+def encode_token(user_id: str, email: str, token_version: int = 1) -> str:
+    """Generate a short-lived access token (15 mins) for the user."""
     payload = {
-        "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=15),
         "iat": datetime.datetime.utcnow(),
         "user_id": user_id,
         "email": email,
+        "token_version": token_version,
+        "type": "access",
+    }
+    return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
+
+
+def encode_refresh_token(user_id: str, email: str, token_version: int = 1) -> str:
+    """Generate a long-lived refresh token (30 days) for the user."""
+    payload = {
+        "exp": datetime.datetime.utcnow() + datetime.timedelta(days=30),
+        "iat": datetime.datetime.utcnow(),
+        "user_id": user_id,
+        "email": email,
+        "token_version": token_version,
+        "type": "refresh",
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm="HS256")
 

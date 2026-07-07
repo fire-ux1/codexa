@@ -34,31 +34,64 @@ from services.db_service import init_db
 
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, limit_seconds: int = 60, max_requests: int = 200):
+    def __init__(self, app, limit_seconds: int = 60):
         super().__init__(app)
         self.limit_seconds = limit_seconds
-        self.max_requests = max_requests
-        self.request_history = defaultdict(list)
+        self.local_history = defaultdict(list)
 
     async def dispatch(self, request: Request, call_next):
-        if request.url.path in {"/health", "/"}:
+        path = request.url.path
+        if path in {"/health", "/health/live", "/health/ready", "/", "/auth/refresh"}:
             return await call_next(request)
-        client_ip = request.client.host if request.client else "unknown"
-        current_time = time.time()
 
-        self.request_history[client_ip] = [
+        client_ip = request.client.host if request.client else "unknown"
+        
+        is_ai_path = (
+            path.startswith("/ai")
+            or path.startswith("/workspace")
+            or path.startswith("/planner")
+            or path.startswith("/repository/architecture")
+            or path.startswith("/repository/flow")
+        )
+        category = "ai" if is_ai_path else "std"
+        max_requests = 20 if is_ai_path else 100
+
+        try:
+            from services.redis_service import get_redis
+            r = get_redis()
+            if r is not None:
+                redis_key = f"rate_limit:{client_ip}:{category}"
+                pipe = r.pipeline()
+                pipe.incr(redis_key)
+                pipe.ttl(redis_key)
+                current_count, ttl = pipe.execute()
+
+                if current_count == 1 or ttl == -1:
+                    r.expire(redis_key, self.limit_seconds)
+
+                if current_count > max_requests:
+                    return JSONResponse(
+                        status_code=429,
+                        content={"detail": "Too many requests. Please try again later."},
+                    )
+                return await call_next(request)
+        except Exception as e:
+            print(f"[Rate Limit] Redis error, falling back to local memory: {e}")
+
+        current_time = time.time()
+        self.local_history[f"{client_ip}:{category}"] = [
             t
-            for t in self.request_history[client_ip]
+            for t in self.local_history[f"{client_ip}:{category}"]
             if current_time - t < self.limit_seconds
         ]
 
-        if len(self.request_history[client_ip]) >= self.max_requests:
+        if len(self.local_history[f"{client_ip}:{category}"]) >= max_requests:
             return JSONResponse(
                 status_code=429,
                 content={"detail": "Too many requests. Please try again later."},
             )
 
-        self.request_history[client_ip].append(current_time)
+        self.local_history[f"{client_ip}:{category}"].append(current_time)
         return await call_next(request)
 
 
@@ -73,6 +106,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
         return response
 
 

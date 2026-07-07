@@ -3,10 +3,15 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 import requests
 import jwt
+import secrets
+import hashlib
+import uuid
+import datetime
+from typing import Optional, List
 
 from settings import get_settings
-from services.auth_service import encode_token, decode_token
-from services.db_service import create_user, get_user
+from services.auth_service import encode_token, encode_refresh_token, decode_token
+from services.db_service import create_user, get_user, get_db
 
 router = APIRouter()
 settings = get_settings()
@@ -17,26 +22,93 @@ class DeveloperLoginPayload(BaseModel):
     email: str = "sandbox@codepilot.ai"
 
 
+class RefreshTokenPayload(BaseModel):
+    refresh_token: str
+
+
+class ApiKeyCreatePayload(BaseModel):
+    name: str
+    expires_in_days: Optional[int] = 30
+
+
 def get_current_user_id(authorization: str = Header(None)) -> str:
-    """Dependency to retrieve and validate user ID from Bearer token."""
+    """Dependency to retrieve and validate user ID from Bearer token or personal API key."""
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(
             status_code=401,
             detail="Unauthorized: Missing or invalid Authorization header.",
         )
     token = authorization.split(" ")[1]
+
+    # 1. Personal API Key check
+    if token.startswith("sk_live_"):
+        key_hash = hashlib.sha256(token.encode()).hexdigest()
+        conn = get_db()
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT user_id, expires_at FROM api_keys WHERE key_hash = %s",
+                (key_hash,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(
+                    status_code=401, detail="Unauthorized: Invalid API Key."
+                )
+
+            if row["expires_at"]:
+                expires_at = row["expires_at"]
+                if isinstance(expires_at, str):
+                    try:
+                        clean_ts = expires_at.split(".")[0].replace("Z", "")
+                        expires_dt = datetime.datetime.strptime(clean_ts, "%Y-%m-%d %H:%M:%S")
+                    except Exception:
+                        expires_dt = None
+                else:
+                    expires_dt = expires_at
+
+                if expires_dt and expires_dt < datetime.datetime.utcnow():
+                    raise HTTPException(
+                        status_code=401, detail="Unauthorized: API Key has expired."
+                    )
+
+            return row["user_id"]
+        finally:
+            conn.close()
+
+    # 2. JWT Access Token verification
     try:
         payload = decode_token(token)
         if not payload or "user_id" not in payload:
             raise HTTPException(
                 status_code=401, detail="Unauthorized: Invalid session token."
             )
-        return payload["user_id"]
+
+        if payload.get("type") != "access":
+            raise HTTPException(
+                status_code=401, detail="Unauthorized: Access token required."
+            )
+
+        user_id = payload["user_id"]
+        token_version_in_jwt = payload.get("token_version")
+
+        user = get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=401, detail="Unauthorized: User not found.")
+
+        token_version_in_db = user.get("token_version")
+        if token_version_in_db is not None and token_version_in_jwt is not None:
+            if token_version_in_jwt != token_version_in_db:
+                raise HTTPException(
+                    status_code=401, detail="Unauthorized: Session has been revoked."
+                )
+
+        return user_id
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=401, detail="Unauthorized: Session token has expired."
         )
-    except (jwt.InvalidTokenError, Exception):
+    except (jwt.InvalidTokenError, Exception) as err:
         raise HTTPException(
             status_code=401, detail="Unauthorized: Invalid session token."
         )
@@ -58,9 +130,13 @@ def developer_login(payload: DeveloperLoginPayload):
         name=payload.name,
         avatar_url=avatar_url,
     )
-    token = encode_token(user_id=user_id, email=payload.email)
+    user = get_user(user_id)
+    token_version = user["token_version"] if user and "token_version" in user else 1
+    token = encode_token(user_id=user_id, email=payload.email, token_version=token_version)
+    refresh_token = encode_refresh_token(user_id=user_id, email=payload.email, token_version=token_version)
     return {
         "token": token,
+        "refresh_token": refresh_token,
         "user": {
             "id": user_id,
             "name": payload.name,
@@ -70,7 +146,6 @@ def developer_login(payload: DeveloperLoginPayload):
     }
 
 
-
 @router.get("/me")
 def get_me(user_id: str = Depends(get_current_user_id)):
     """Retrieve logged in user information."""
@@ -78,6 +153,130 @@ def get_me(user_id: str = Depends(get_current_user_id)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found.")
     return user
+
+
+@router.post("/refresh")
+def refresh_session_token(payload: RefreshTokenPayload):
+    """Generates a new access token using a valid refresh token (token rotation)."""
+    try:
+        decoded = decode_token(payload.refresh_token)
+        if decoded.get("type") != "refresh":
+            raise HTTPException(status_code=400, detail="Invalid token type.")
+
+        user_id = decoded["user_id"]
+        email = decoded["email"]
+        token_version_in_jwt = decoded.get("token_version")
+
+        user = get_user(user_id)
+        if not user:
+            raise HTTPException(status_code=401, detail="User not found.")
+
+        token_version_in_db = user.get("token_version")
+        if token_version_in_db is not None and token_version_in_jwt is not None:
+            if token_version_in_jwt != token_version_in_db:
+                raise HTTPException(status_code=401, detail="Refresh token is revoked.")
+
+        new_access = encode_token(user_id, email, token_version_in_db)
+        new_refresh = encode_refresh_token(user_id, email, token_version_in_db)
+
+        return {
+            "token": new_access,
+            "refresh_token": new_refresh
+        }
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token has expired.")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Invalid refresh token: {str(e)}")
+
+
+@router.post("/logout")
+def logout_user(user_id: str = Depends(get_current_user_id)):
+    """Logs out the user globally by incrementing token_version, invalidating all JWT sessions."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE users SET token_version = COALESCE(token_version, 1) + 1 WHERE id = %s",
+            (user_id,),
+        )
+        conn.commit()
+        return {"status": "success", "message": "Successfully logged out of all devices."}
+    finally:
+        conn.close()
+
+
+@router.post("/api-keys")
+def create_personal_api_key(
+    payload: ApiKeyCreatePayload,
+    user_id: str = Depends(get_current_user_id)
+):
+    """Generates a personal API Key starting with sk_live_, returning the plaintext token once."""
+    raw_key = "sk_live_" + secrets.token_hex(24)
+    key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+    key_id = str(uuid.uuid4())
+    prefix = raw_key[:12]
+
+    expires_at = None
+    if payload.expires_in_days:
+        expires_at = datetime.datetime.utcnow() + datetime.timedelta(days=payload.expires_in_days)
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO api_keys (id, user_id, name, key_hash, prefix, expires_at)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (key_id, user_id, payload.name, key_hash, prefix, expires_at),
+        )
+        conn.commit()
+        return {
+            "key_id": key_id,
+            "name": payload.name,
+            "prefix": prefix,
+            "api_key": raw_key,
+            "expires_at": expires_at.isoformat() + "Z" if expires_at else None,
+        }
+    finally:
+        conn.close()
+
+
+@router.get("/api-keys")
+def list_personal_api_keys(user_id: str = Depends(get_current_user_id)):
+    """Lists metadata for all API keys created by the user."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT id, name, prefix, created_at, expires_at FROM api_keys WHERE user_id = %s",
+            (user_id,),
+        )
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+@router.delete("/api-keys/{key_id}")
+def revoke_personal_api_key(key_id: str, user_id: str = Depends(get_current_user_id)):
+    """Revokes (deletes) a personal API key."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT user_id FROM api_keys WHERE id = %s", (key_id,))
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="API Key not found.")
+
+        if row["user_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Access Denied: You do not own this API key.")
+
+        cursor.execute("DELETE FROM api_keys WHERE id = %s", (key_id,))
+        conn.commit()
+        return {"status": "success", "message": "API key successfully revoked."}
+    finally:
+        conn.close()
 
 
 @router.get("/login/github")
@@ -101,7 +300,6 @@ def callback_github(code: str):
             status_code=400, detail="GitHub Client credentials missing."
         )
 
-    # 1. Exchange code for access token
     token_res = requests.post(
         "https://github.com/login/oauth/access_token",
         headers={"Accept": "application/json"},
@@ -120,7 +318,6 @@ def callback_github(code: str):
             status_code=400, detail="Failed to retrieve access token from GitHub."
         )
 
-    # 2. Retrieve user profile
     user_res = requests.get(
         "https://api.github.com/user",
         headers={"Authorization": f"Bearer {access_token}"},
@@ -128,7 +325,6 @@ def callback_github(code: str):
     user_res.raise_for_status()
     user_profile = user_res.json()
 
-    # 3. Retrieve user email
     email_res = requests.get(
         "https://api.github.com/user/emails",
         headers={"Authorization": f"Bearer {access_token}"},
@@ -148,15 +344,15 @@ def callback_github(code: str):
         or f"https://api.dicebear.com/7.x/bottts/svg?seed={name}"
     )
 
-    # 4. Save to DB
     create_user(user_id=user_id, email=primary_email, name=name, avatar_url=avatar_url)
 
-    # 5. Generate JWT token
-    token = encode_token(user_id=user_id, email=primary_email)
+    user = get_user(user_id)
+    token_version = user["token_version"] if user and "token_version" in user else 1
+    token = encode_token(user_id=user_id, email=primary_email, token_version=token_version)
+    refresh_token = encode_refresh_token(user_id=user_id, email=primary_email, token_version=token_version)
 
-    # Redirect user back to frontend callback
     frontend_redirect = (
-        f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}"
+        f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}&refresh_token={refresh_token}"
     )
     return RedirectResponse(url=frontend_redirect)
 
@@ -170,7 +366,7 @@ def login_google():
             detail="Google OAuth client credentials are not configured in backend/.env. Please use the Sandbox Login fallback.",
         )
 
-    backend_redirect_uri = "http://localhost:8000/auth/callback/google"  # standard redirect back to backend callback
+    backend_redirect_uri = "http://localhost:8000/auth/callback/google"
     auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={settings.google_client_id}&redirect_uri={backend_redirect_uri}&response_type=code&scope=openid%20email%20profile"
     return RedirectResponse(url=auth_url)
 
@@ -183,7 +379,6 @@ def callback_google(code: str):
             status_code=400, detail="Google Client credentials missing."
         )
 
-    # 1. Exchange code for access token
     backend_redirect_uri = "http://localhost:8000/auth/callback/google"
     token_res = requests.post(
         "https://oauth2.googleapis.com/token",
@@ -204,7 +399,6 @@ def callback_google(code: str):
             status_code=400, detail="Failed to retrieve access token from Google."
         )
 
-    # 2. Retrieve user profile
     user_res = requests.get(
         "https://www.googleapis.com/oauth2/v3/userinfo",
         headers={"Authorization": f"Bearer {access_token}"},
@@ -220,14 +414,14 @@ def callback_google(code: str):
         or f"https://api.dicebear.com/7.x/bottts/svg?seed={name}"
     )
 
-    # 3. Save to DB
     create_user(user_id=user_id, email=email, name=name, avatar_url=avatar_url)
 
-    # 4. Generate JWT token
-    token = encode_token(user_id=user_id, email=email)
+    user = get_user(user_id)
+    token_version = user["token_version"] if user and "token_version" in user else 1
+    token = encode_token(user_id=user_id, email=email, token_version=token_version)
+    refresh_token = encode_refresh_token(user_id=user_id, email=email, token_version=token_version)
 
-    # Redirect user back to frontend callback
     frontend_redirect = (
-        f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}"
+        f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}&refresh_token={refresh_token}"
     )
     return RedirectResponse(url=frontend_redirect)

@@ -42,6 +42,13 @@ def generate_patch(payload: PatchRequestPayload, user_id: str = Depends(get_curr
     # If content was sent directly by the frontend, use it as the selection
     selection = payload.content if payload.selection_range else None
 
+    from services.audit_service import log_audit_event
+    log_audit_event(
+        user_id=user_id,
+        action="generate_patch",
+        details={"file": payload.file_path}
+    )
+
     return StreamingResponse(
         handle_patch_generation_stream(
             repo_path=payload.repo,
@@ -76,6 +83,14 @@ def apply_patch(payload: PatchApplyPayload, user_id: str = Depends(get_current_u
         os.makedirs(os.path.dirname(abs_path), exist_ok=True)
         with open(abs_path, "w", encoding="utf-8") as f:
             f.write(payload.content)
+
+        from services.audit_service import log_audit_event
+        log_audit_event(
+            user_id=user_id,
+            action="apply_patch",
+            details={"file": payload.file_path}
+        )
+
         return {"status": "success", "message": "Patch applied successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to write file: {str(e)}")

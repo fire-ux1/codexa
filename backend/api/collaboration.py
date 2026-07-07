@@ -12,6 +12,7 @@ import uuid
 from services.db_service import get_db, get_user
 from api.auth import get_current_user_id
 from services.auth_validation import verify_repo_write_access
+from services.audit_service import log_audit_event
 
 router = APIRouter()
 
@@ -184,6 +185,13 @@ def add_comment(
         except Exception as err:
             print(f"[API Collaboration] Event bus publish fail: {err}")
 
+        log_audit_event(
+            user_id=user_id,
+            action="add_comment",
+            project_id=payload.project_id,
+            details={"file": payload.file, "line": payload.line}
+        )
+
         return {"status": "success", "id": comment_id, "author": author_name}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -271,6 +279,13 @@ def delete_comment(comment_id: str, user_id: str = Depends(get_current_user_id))
         except Exception as err:
             print(f"[API Collaboration] Event bus publish fail: {err}")
 
+        log_audit_event(
+            user_id=user_id,
+            action="delete_comment",
+            project_id=project_id,
+            details={"comment_id": comment_id}
+        )
+
         return {"status": "success", "message": "Comment deleted."}
     finally:
         conn.close()
@@ -345,6 +360,14 @@ def add_project_member(
             (project_id, payload.user_id, payload.role),
         )
         conn.commit()
+
+        log_audit_event(
+            user_id=current_user_id,
+            action="add_member",
+            project_id=project_id,
+            details={"target_user": payload.user_id, "role": payload.role}
+        )
+
         return {"status": "success", "message": f"User {payload.user_id} added as {payload.role}."}
     finally:
         conn.close()
@@ -397,6 +420,14 @@ def remove_project_member(
             (project_id, user_id),
         )
         conn.commit()
+
+        log_audit_event(
+            user_id=current_user_id,
+            action="remove_member",
+            project_id=project_id,
+            details={"target_user": user_id}
+        )
+
         return {"status": "success", "message": "Member removed successfully."}
     finally:
         conn.close()
@@ -442,6 +473,14 @@ def update_project_member_role(
             (payload.role, project_id, user_id),
         )
         conn.commit()
+
+        log_audit_event(
+            user_id=current_user_id,
+            action="update_role",
+            project_id=project_id,
+            details={"target_user": user_id, "role": payload.role}
+        )
+
         return {"status": "success", "message": f"Role updated to {payload.role}."}
     finally:
         conn.close()

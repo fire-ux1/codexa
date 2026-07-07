@@ -124,6 +124,55 @@ def init_db():
         )
         """)
 
+        # Add token_version column to users if it doesn't exist
+        try:
+            if use_sqlite:
+                cursor.execute("PRAGMA table_info(users)")
+                cols = [col[1] for col in cursor.fetchall()]
+                if "token_version" not in cols:
+                    cursor.execute("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1")
+            else:
+                cursor.execute(
+                    "SELECT column_name FROM information_schema.columns WHERE table_name='users' AND column_name='token_version'"
+                )
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1")
+            conn.commit()
+        except Exception as e:
+            print(f"[DB Warning] Could not check or add token_version column: {e}")
+            if not use_sqlite:
+                conn.rollback()
+
+        # Create audit_logs table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            action TEXT,
+            project_id TEXT,
+            details TEXT,
+            ip_address TEXT,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+        )
+        """)
+
+        # Create api_keys table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS api_keys (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            name TEXT,
+            key_hash TEXT UNIQUE,
+            prefix TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """)
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)")
+        conn.commit()
+
         # Create repositories table
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS repositories (
