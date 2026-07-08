@@ -3,7 +3,7 @@ import { API_BASE_URL } from "./api";
 /**
  * Streams the coordinated multi-agent chat response.
  */
-export function runAgentChatStream(payload) {
+export function runAgentChatStream(payload: any): Promise<Response> {
   return fetch(`${API_BASE_URL}/ai/agents/chat`, {
     method: "POST",
     headers: {

@@ -1,13 +1,36 @@
 import { useState, useCallback } from "react";
 import { cloneRepository, deleteRepository, fetchRepositories, getErrorMessage, API_BASE_URL } from "../services/api";
 
-export default function useRepository(token, showToast, history, setHistory) {
-  const [repoUrl, setRepoUrl] = useState("");
-  const [repoPath, setRepoPath] = useState("");
-  const [isCloning, setIsCloning] = useState(false);
-  const [indexingProgress, setIndexingProgress] = useState(null);
-  const [metrics, setMetrics] = useState({ filesIndexed: 0, chunksIndexed: 0 });
-  const [status, setStatus] = useState({
+export interface IndexingProgressData {
+  progress: number;
+  stage: string;
+  message: string;
+  data?: any;
+}
+
+export interface WorkspaceStatus {
+  tone: string;
+  label: string;
+  message: string;
+}
+
+export interface RepositoryMetrics {
+  filesIndexed: number;
+  chunksIndexed: number;
+}
+
+export default function useRepository(
+  _token: string | null | undefined,
+  showToast: (message: string, type: "success" | "error") => void,
+  history: any[],
+  setHistory: (list: any[]) => void
+) {
+  const [repoUrl, setRepoUrl] = useState<string>("");
+  const [repoPath, setRepoPath] = useState<string>("");
+  const [isCloning, setIsCloning] = useState<boolean>(false);
+  const [indexingProgress, setIndexingProgress] = useState<IndexingProgressData | null>(null);
+  const [metrics, setMetrics] = useState<RepositoryMetrics>({ filesIndexed: 0, chunksIndexed: 0 });
+  const [status, setStatus] = useState<WorkspaceStatus>({
     tone: "idle",
     label: "Workspace Status",
     message: "Welcome to CodePilot. Choose a repository or index a new one.",
@@ -24,7 +47,7 @@ export default function useRepository(token, showToast, history, setHistory) {
     });
   }, []);
 
-  const selectRepositoryFromHistory = useCallback((repo) => {
+  const selectRepositoryFromHistory = useCallback((repo: any) => {
     setRepoPath(repo.repository_path);
     setMetrics({
       filesIndexed: repo.files_indexed,
@@ -38,7 +61,7 @@ export default function useRepository(token, showToast, history, setHistory) {
     });
   }, []);
 
-  const handleDeleteRepository = useCallback(async (e, repoId) => {
+  const handleDeleteRepository = useCallback(async (e: React.MouseEvent, repoId: string | number) => {
     e.stopPropagation();
     if (!confirm("Are you sure you want to delete this repository index? This deletes the SQLite record, ChromaDB collection, and cloned folder.")) {
       return;

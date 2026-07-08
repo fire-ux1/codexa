@@ -1,8 +1,15 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { fetchFileContent, fetchFileSymbols, saveFileContent } from "../services/api";
 
+export interface SymbolItem {
+  name: string;
+  line: number;
+  column?: number;
+  [key: string]: any;
+}
+
 export default function useWorkspace() {
-  const [openFiles, setOpenFiles] = useState(() => {
+  const [openFiles, setOpenFiles] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("codepilot_open_files");
       return saved ? JSON.parse(saved) : [];
@@ -10,27 +17,27 @@ export default function useWorkspace() {
       return [];
     }
   });
-  const [activeFile, setActiveFile] = useState(null);
-  const [fileContents, setFileContents] = useState({});
-  const [dirtyFiles, setDirtyFiles] = useState(new Set());
-  const [isFileLoading, setIsFileLoading] = useState(false);
-  const [activeSymbol, setActiveSymbol] = useState("");
-  const [symbols, setSymbols] = useState([]);
-  const [activePanelBottom, setActivePanelBottom] = useState(null); // "architecture" | "graph" | "flow" | "analytics" | "review" | null
-  const editorRef = useRef(null);
+  const [activeFile, setActiveFile] = useState<string | null>(null);
+  const [fileContents, setFileContents] = useState<Record<string, string>>({});
+  const [dirtyFiles, setDirtyFiles] = useState<Set<string>>(new Set());
+  const [isFileLoading, setIsFileLoading] = useState<boolean>(false);
+  const [activeSymbol, setActiveSymbol] = useState<string>("");
+  const [symbols, setSymbols] = useState<SymbolItem[]>([]);
+  const [activePanelBottom, setActivePanelBottom] = useState<string | null>(null);
+  const editorRef = useRef<any>(null);
 
   // Sync refs to avoid stale closures in callbacks with empty dependencies
-  const fileContentsRef = useRef({});
+  const fileContentsRef = useRef<Record<string, string>>({});
   useEffect(() => {
     fileContentsRef.current = fileContents;
   }, [fileContents]);
 
-  const dirtyFilesRef = useRef(new Set());
+  const dirtyFilesRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     dirtyFilesRef.current = dirtyFiles;
   }, [dirtyFiles]);
 
-  const activeFileRef = useRef(null);
+  const activeFileRef = useRef<string | null>(null);
   useEffect(() => {
     activeFileRef.current = activeFile;
   }, [activeFile]);
@@ -46,7 +53,7 @@ export default function useWorkspace() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const openFile = useCallback(async (filePath, jumpToLine = null) => {
+  const openFile = useCallback(async (filePath: string, jumpToLine: number | null = null) => {
     if (!filePath) return;
 
     // Add to open files list if not already there
@@ -109,8 +116,8 @@ export default function useWorkspace() {
               }
             }, 300);
           }
-        } catch (err) {
-          setFileContents(prev => ({ ...prev, [filePath]: `// Error loading file: ${err.message}` }));
+        } catch (err: any) {
+          setFileContents(prev => ({ ...prev, [filePath]: `// Error loading file: ${err?.message || err}` }));
           setSymbols([]);
         } finally {
           setIsFileLoading(false);
@@ -121,7 +128,7 @@ export default function useWorkspace() {
     });
   }, []);
 
-  const closeFile = useCallback((filePath) => {
+  const closeFile = useCallback((filePath: string) => {
     if (dirtyFilesRef.current.has(filePath)) {
       const confirmClose = window.confirm(
         `${filePath.split(/[\\/]/).pop()} has unsaved changes. Close anyway?`
@@ -165,7 +172,7 @@ export default function useWorkspace() {
     });
   }, []);
 
-  const updateFileContent = useCallback((filePath, newContent) => {
+  const updateFileContent = useCallback((filePath: string, newContent: string) => {
     if (!filePath) return;
     setFileContents(prev => ({ ...prev, [filePath]: newContent }));
     setDirtyFiles(prev => {
@@ -176,7 +183,7 @@ export default function useWorkspace() {
     });
   }, []);
 
-  const saveFile = useCallback(async (filePath) => {
+  const saveFile = useCallback(async (filePath?: string) => {
     const targetPath = filePath || activeFileRef.current;
     if (!targetPath) return false;
 
@@ -191,14 +198,14 @@ export default function useWorkspace() {
         return next;
       });
       return true;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Save file failed:", err);
-      alert(`Failed to save file: ${err.message}`);
+      alert(`Failed to save file: ${err?.message || err}`);
       return false;
     }
   }, []);
 
-  const jumpToSymbol = useCallback((symbol) => {
+  const jumpToSymbol = useCallback((symbol: SymbolItem) => {
     if (!symbol?.line || !editorRef.current) return;
     setActiveSymbol(symbol.name);
     const editor = editorRef.current;

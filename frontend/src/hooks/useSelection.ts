@@ -1,11 +1,16 @@
 import { useState, useCallback } from "react";
 import { getEditorLanguage } from "../utils/editorLanguage";
 
-export default function useSelection(filePath) {
-  const [selectionText, setSelectionText] = useState("");
-  const [selectionRange, setSelectionRange] = useState(null); // null | { startLine, endLine }
+export interface SelectionRange {
+  startLine: number;
+  endLine: number;
+}
 
-  const handleSelectionChange = useCallback((editor) => {
+export default function useSelection(filePath: string | null) {
+  const [selectionText, setSelectionText] = useState<string>("");
+  const [selectionRange, setSelectionRange] = useState<SelectionRange | null>(null);
+
+  const handleSelectionChange = useCallback((editor: any) => {
     const selection = editor.getSelection();
     if (!selection) {
       setSelectionText("");

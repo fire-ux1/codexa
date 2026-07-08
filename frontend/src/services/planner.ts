@@ -1,6 +1,6 @@
 import api from "./api";
 
-export async function createImplementationPlan(repoPath, requestMessage) {
+export async function createImplementationPlan(repoPath: string, requestMessage: string): Promise<any> {
   const response = await api.post("/planner/plan", {
     repo_path: repoPath,
     message: requestMessage,
@@ -8,7 +8,7 @@ export async function createImplementationPlan(repoPath, requestMessage) {
   return response.data;
 }
 
-export async function executePlanStep(repoPath, file, action, instruction) {
+export async function executePlanStep(repoPath: string, file: string, action: string, instruction: string): Promise<any> {
   const response = await api.post("/planner/execute-step", {
     repo_path: repoPath,
     file_path: file,
