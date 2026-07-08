@@ -1,10 +1,10 @@
 import { useEffect, useRef } from "react";
 import { collaborationStore } from "../stores/collaborationStore";
 
-export function useCollaborationSocket(projectId, token = "") {
-  const wsRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
-  const backoffRef = useRef(1000); // Start with 1 second delay
+export function useCollaborationSocket(projectId: string, token: string = "") {
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<any>(null);
+  const backoffRef = useRef<number>(1000); // Start with 1 second delay
 
   useEffect(() => {
     if (!projectId) return;

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { ShieldCheck, Bug, Lightbulb, Shield, BookOpen, Cpu } from "lucide-react";
 import CodeReviewPanel from "./CodeReviewPanel";
 import BugAnalysis from "./BugAnalysis";
@@ -6,8 +6,14 @@ import RefactorAssistant from "./RefactorAssistant";
 import TestGenerator from "./TestGenerator";
 import DocumentationGenerator from "./DocumentationGenerator";
 
-export default function IntelligenceDashboard({ activeFile, onSendMessage, onClose }) {
-  const [intelTab, setIntelTab] = useState("review"); // review | bugs | refactor | tests | docs
+interface IntelligenceDashboardProps {
+  activeFile: string | null | undefined;
+  onSendMessage: (payload: any) => void;
+  onClose?: () => void;
+}
+
+export default function IntelligenceDashboard({ activeFile, onSendMessage, onClose }: IntelligenceDashboardProps) {
+  const [intelTab, setIntelTab] = useState<string>("review");
 
   const tabs = [
     { id: "review", label: "Review", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
@@ -17,7 +23,7 @@ export default function IntelligenceDashboard({ activeFile, onSendMessage, onClo
     { id: "docs", label: "Docs", icon: <BookOpen className="w-3.5 h-3.5" /> },
   ];
 
-  const handleTriggerAction = (prompt) => {
+  const handleTriggerAction = (prompt: string) => {
     if (onSendMessage) {
       onSendMessage({
         repo: "",
@@ -30,18 +36,18 @@ export default function IntelligenceDashboard({ activeFile, onSendMessage, onClo
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0f1219] text-gray-200 border-l border-[#1c2230] overflow-hidden font-sans">
+    <div className="flex flex-col h-full bg-bg text-text border-l border-border overflow-hidden font-sans select-none">
       
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-[#1c2230] px-4 py-2.5 bg-[#0c0f16] shrink-0 select-none">
+      <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-panel shrink-0 select-none">
         <div className="flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-indigo-400" />
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider">AI Code Intelligence</span>
+          <Cpu className="w-4 h-4 text-accent" />
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-text-strong">AI Code Intelligence</span>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="p-1 rounded hover:bg-rose-500/10 text-gray-500 hover:text-rose-400 cursor-pointer"
+            className="p-1 rounded hover:bg-danger-bg text-muted hover:text-danger cursor-pointer transition-colors"
           >
             ✕
           </button>
@@ -49,15 +55,15 @@ export default function IntelligenceDashboard({ activeFile, onSendMessage, onClo
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-[#1c2230]/40 bg-[#0c0f16]/40 shrink-0 select-none">
+      <div className="flex border-b border-border bg-panel-alt-2/20 shrink-0 select-none">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setIntelTab(tab.id)}
             className={`flex-1 py-2 px-1 text-[9px] font-mono font-bold uppercase tracking-wider flex flex-col items-center gap-1 border-b-2 transition-all cursor-pointer ${
               intelTab === tab.id
-                ? "border-indigo-500 text-indigo-400 bg-indigo-500/5"
-                : "border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/3"
+                ? "border-accent text-accent bg-accent-dim/10"
+                : "border-transparent text-muted hover:text-text-strong hover:bg-panel-alt"
             }`}
           >
             {tab.icon}
@@ -67,21 +73,21 @@ export default function IntelligenceDashboard({ activeFile, onSendMessage, onClo
       </div>
 
       {/* Viewport */}
-      <div className="flex-1 overflow-y-auto p-4 scrollbar-thin min-h-0">
+      <div className="flex-1 overflow-y-auto p-4 scrollbar-thin min-h-0 select-text bg-bg">
         {intelTab === "review" && (
-          <CodeReviewPanel activeFile={activeFile} onTriggerAction={handleTriggerAction} />
+          React.createElement(CodeReviewPanel as any, { activeFile, onTriggerAction: handleTriggerAction })
         )}
         {intelTab === "bugs" && (
-          <BugAnalysis activeFile={activeFile} onTriggerAction={handleTriggerAction} />
+          React.createElement(BugAnalysis as any, { activeFile, onTriggerAction: handleTriggerAction })
         )}
         {intelTab === "refactor" && (
-          <RefactorAssistant activeFile={activeFile} onTriggerAction={handleTriggerAction} />
+          React.createElement(RefactorAssistant as any, { activeFile, onTriggerAction: handleTriggerAction })
         )}
         {intelTab === "tests" && (
-          <TestGenerator activeFile={activeFile} onTriggerAction={handleTriggerAction} />
+          React.createElement(TestGenerator as any, { activeFile, onTriggerAction: handleTriggerAction })
         )}
         {intelTab === "docs" && (
-          <DocumentationGenerator activeFile={activeFile} onTriggerAction={handleTriggerAction} />
+          React.createElement(DocumentationGenerator as any, { activeFile, onTriggerAction: handleTriggerAction })
         )}
       </div>
 

@@ -1,4 +1,31 @@
+export interface CommentItem {
+  id: string | number;
+  author: string;
+  file?: string;
+  target?: string;
+  comment_text?: string;
+  text?: string;
+  [key: string]: any;
+}
+
+export interface NotificationItem {
+  id?: number | string;
+  text: string;
+  time?: string;
+  read?: boolean;
+}
+
+export interface CollaborationState {
+  comments: CommentItem[];
+  notifications: NotificationItem[];
+  connected: boolean;
+  projectId: string;
+}
+
 class CollaborationStore {
+  private state: CollaborationState;
+  private listeners: Set<(state: CollaborationState) => void>;
+
   constructor() {
     this.state = {
       comments: [],
@@ -12,51 +39,51 @@ class CollaborationStore {
     this.listeners = new Set();
   }
 
-  getState() {
+  getState(): CollaborationState {
     return this.state;
   }
 
-  subscribe(listener) {
+  subscribe(listener: (state: CollaborationState) => void): () => boolean {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
   }
 
-  emit() {
+  emit(): void {
     this.listeners.forEach((listener) => listener(this.state));
   }
 
-  setProjectId(projectId) {
+  setProjectId(projectId: string): void {
     this.state.projectId = projectId;
     this.emit();
   }
 
-  setConnected(connected) {
+  setConnected(connected: boolean): void {
     this.state.connected = connected;
     this.emit();
   }
 
-  setComments(comments) {
+  setComments(comments: CommentItem[]): void {
     this.state.comments = comments;
     this.emit();
   }
 
-  addComment(comment) {
+  addComment(comment: CommentItem): void {
     if (this.state.comments.some((c) => c.id === comment.id)) return;
     this.state.comments = [comment, ...this.state.comments];
     this.emit();
   }
 
-  deleteComment(commentId) {
+  deleteComment(commentId: string | number): void {
     this.state.comments = this.state.comments.filter((c) => c.id !== commentId);
     this.emit();
   }
 
-  setNotifications(notifications) {
+  setNotifications(notifications: NotificationItem[]): void {
     this.state.notifications = notifications;
     this.emit();
   }
 
-  addNotification(notification) {
+  addNotification(notification: NotificationItem): void {
     this.state.notifications = [
       {
         id: Date.now() + Math.random(),
@@ -69,7 +96,7 @@ class CollaborationStore {
     this.emit();
   }
 
-  clearNotifications() {
+  clearNotifications(): void {
     this.state.notifications = [];
     this.emit();
   }
