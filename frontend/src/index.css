@@ -210,3 +210,229 @@ p, span, li, td, th, label {
 .react-flow__node {
   font-size: 11px !important;
 }
+
+/* Monaco Editor Inline AI Suggestions & Diff Styles */
+.diff-del-line {
+  background: var(--danger-bg) !important;
+}
+.diff-del-gutter {
+  border-left: 2px solid var(--danger) !important;
+}
+.ai-processing-line {
+  background: var(--warning-bg) !important;
+}
+.ai-processing-gutter {
+  border-left: 2px dashed var(--accent) !important;
+}
+
+.monaco-inline-patch-widget {
+  width: 440px;
+  background: var(--panel-alt) !important;
+  border: 1px solid var(--accent) !important;
+  border-radius: 8px !important;
+  padding: 12px 14px !important;
+  font-family: 'IBM Plex Sans', sans-serif !important;
+  color: var(--text-strong) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55) !important;
+  z-index: 100 !important;
+}
+.ip-header {
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-size: 11px !important;
+  color: var(--accent) !important;
+  margin-bottom: 6px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+.ip-body {
+  font-size: 12px !important;
+  color: var(--text) !important;
+  line-height: 1.5 !important;
+  margin-bottom: 10px !important;
+  max-height: 250px !important;
+  overflow-y: auto !important;
+}
+.ip-actions {
+  display: flex !important;
+  gap: 8px !important;
+  justify-content: flex-end !important;
+}
+.ip-actions button {
+  font-family: 'IBM Plex Mono', monospace !important;
+  font-size: 11px !important;
+  padding: 5px 10px !important;
+  border-radius: 5px !important;
+  cursor: pointer !important;
+  border: none !important;
+  font-weight: 500 !important;
+}
+.ip-accept {
+  background: var(--success) !important;
+  color: #0A2313 !important;
+}
+.ip-reject {
+  background: transparent !important;
+  border: 1px solid var(--border) !important;
+  color: var(--soft) !important;
+}
+.ip-reject:hover {
+  border-color: var(--accent) !important;
+  color: var(--text-strong) !important;
+}
+
+/* Custom Floating Orbs and Premium Backdrop Patterns */
+@keyframes float1 {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-30px) scale(1.15); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translateY(0px) scale(1.1); }
+  50% { transform: translateY(25px) scale(0.9); }
+}
+
+.glow-orb-float-1 {
+  animation: float1 14s infinite ease-in-out;
+}
+
+.glow-orb-float-2 {
+  animation: float2 10s infinite ease-in-out;
+}
+
+.accent-glow-text {
+  text-shadow: 0 0 16px rgba(255, 157, 77, 0.4);
+}
+
+.glow-logo-dot {
+  box-shadow: 0 0 14px 4px rgba(255, 157, 77, 0.6), 0 0 28px 8px rgba(255, 157, 77, 0.3);
+}
+
+.console-warning-box {
+  background: rgba(16, 20, 27, 0.75) !important;
+  border: 1px solid rgba(255, 157, 77, 0.2) !important;
+  box-shadow: inset 0 0 12px rgba(255, 157, 77, 0.05), 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.console-warning-box:hover {
+  border-color: rgba(255, 157, 77, 0.4) !important;
+}
+
+.input-focus-glow:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 12px rgba(255, 157, 77, 0.15) !important;
+}
+
+/* Sliding Tab segments and Mesh Gradients */
+.mesh-gradient-bg {
+  background: radial-gradient(circle at 50% 50%, rgba(255, 157, 77, 0.04) 0%, transparent 50%),
+              radial-gradient(circle at 10% 20%, rgba(127, 227, 232, 0.03) 0%, transparent 40%),
+              radial-gradient(circle at 90% 80%, rgba(182, 156, 255, 0.03) 0%, transparent 40%),
+              #040608;
+}
+
+.sliding-tabs-container {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 9999px;
+  padding: 3px;
+  display: flex;
+  position: relative;
+  width: 100%;
+  user-select: none;
+}
+
+.sliding-tab-btn {
+  flex: 1;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--soft);
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sliding-tab-btn.active {
+  color: #0A0D12 !important;
+}
+
+.sliding-tab-slider {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  background: var(--accent);
+  border-radius: 9999px;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s ease;
+  z-index: 1;
+}
+
+.sliding-tab-slider.right {
+  transform: translateX(100%);
+  background: var(--secondary);
+}
+
+.glass-card-glow {
+  box-shadow: 0 0 100px -20px rgba(255, 157, 77, 0.12),
+              0 32px 64px -16px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Floating Monospace Code Tokens Backdrop Animation */
+@keyframes floatUp {
+  0% {
+    transform: translateY(105vh) rotate(0deg) scale(0.9);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.15;
+  }
+  90% {
+    opacity: 0.15;
+  }
+  100% {
+    transform: translateY(-15vh) rotate(8deg) scale(1.05);
+    opacity: 0;
+  }
+}
+
+.floating-token {
+  position: absolute;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  animation: floatUp 24s infinite linear;
+  z-index: 1;
+  opacity: 0;
+  transition: color 0.3s ease;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.8;
+    box-shadow: 0 0 10px rgba(255, 157, 77, 0.5);
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(255, 157, 77, 0.8);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 3s infinite ease-in-out;
+}
+
+
+
+
