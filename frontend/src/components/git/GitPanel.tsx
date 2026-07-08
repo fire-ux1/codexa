@@ -1,4 +1,3 @@
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
 import {
   fetchGitStatus,
@@ -9,7 +8,7 @@ import {
   reviewPullRequest,
 } from "../../services/git";
 import BranchSelector from "./BranchSelector";
-import CommitHistory from "./CommitHistory";
+import CommitHistory, { GitCommitItem } from "./CommitHistory";
 import DiffViewer from "./DiffViewer";
 import PRReview from "./PRReview";
 
@@ -19,34 +18,47 @@ const GIT_SUB_TABS = [
   { key: "pr", label: "Pull Request Review" },
 ];
 
-export default function GitPanel({ repoPath }) {
+interface GitPanelProps {
+  repoPath: string;
+}
+
+interface GitStatusData {
+  active_branch: string;
+  branches: string[];
+  staged: string[];
+  unstaged: string[];
+  untracked: string[];
+  [key: string]: any;
+}
+
+export default function GitPanel({ repoPath }: GitPanelProps) {
   // Tabs
-  const [activeSubTab, setActiveSubTab] = useState("status");
+  const [activeSubTab, setActiveSubTab] = useState<string>("status");
 
   // Loaders
-  const [loading, setLoading] = useState(false);
-  const [isPRLoading, setIsPRLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [isPRLoading, setIsPRLoading] = useState<boolean>(false);
 
   // Status & Branch Data
-  const [gitStatus, setGitStatus] = useState(null);
-  const [commits, setCommits] = useState([]);
-  const [diffText, setDiffText] = useState("");
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [isStagedSelected, setIsStagedSelected] = useState(false);
+  const [gitStatus, setGitStatus] = useState<GitStatusData | null>(null);
+  const [commits, setCommits] = useState<GitCommitItem[]>([]);
+  const [diffText, setDiffText] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [isStagedSelected, setIsStagedSelected] = useState<boolean>(false);
 
   // Suggested commit message
-  const [commitMessage, setCommitMessage] = useState("");
-  const [isMsgGenerating, setIsMsgGenerating] = useState(false);
+  const [commitMessage, setCommitMessage] = useState<string>("");
+  const [isMsgGenerating, setIsMsgGenerating] = useState<boolean>(false);
 
   // Commit history selected
-  const [selectedCommitSha, setSelectedCommitSha] = useState(null);
-  const [commitExplanation, setCommitExplanation] = useState("");
-  const [isCommitExplaining, setIsCommitExplaining] = useState(false);
+  const [selectedCommitSha, setSelectedCommitSha] = useState<string | null>(null);
+  const [commitExplanation, setCommitExplanation] = useState<string>("");
+  const [isCommitExplaining, setIsCommitExplaining] = useState<boolean>(false);
 
   // PR Review selection
-  const [sourceBranch, setSourceBranch] = useState("");
-  const [targetBranch, setTargetBranch] = useState("main");
-  const [prReviewData, setPrReviewData] = useState(null);
+  const [sourceBranch, setSourceBranch] = useState<string>("");
+  const [targetBranch, setTargetBranch] = useState<string>("main");
+  const [prReviewData, setPrReviewData] = useState<any>(null);
 
   // Fetch all initial data
   const loadGitStatusAndHistory = useCallback(async () => {
@@ -61,7 +73,7 @@ export default function GitPanel({ repoPath }) {
         setSourceBranch(statusData.active_branch);
         // Fallback target branch if current is main
         if (statusData.active_branch === "main" || statusData.active_branch === "master") {
-          const others = (statusData.branches || []).filter(b => b !== statusData.active_branch);
+          const others = (statusData.branches || []).filter((b: string) => b !== statusData.active_branch);
           if (others.length > 0) setTargetBranch(others[0]);
         }
       }
@@ -91,21 +103,15 @@ export default function GitPanel({ repoPath }) {
   }, [loadGitStatusAndHistory]);
 
   // Load a file diff
-  const handleSelectFileDiff = async (file, staged) => {
+  const handleSelectFileDiff = async (file: string, staged: boolean) => {
     setSelectedFile(file);
     setIsStagedSelected(staged);
     setDiffText("");
     try {
-      // If staged, target="HEAD", source is None.
-      // If unstaged, target=None, source is None. But we want diff of that specific file!
-      // GitPython diff accepts file paths via custom git commands, but for simplicity, we can fetch
-      // full diff or let the backend filter. Since we have a full diff, let's just get target diff.
       const res = await fetchGitDiff(repoPath, staged ? "HEAD" : null);
-      if (res.status === "success") {
-        // filter diff lines for this file path if needed, or show the target diff.
-        // The backend returns the overall git diff. Let's filter the diff text for the target file
+      if (res.status === "success" && res.diff) {
         const diffLines = res.diff.split("\n");
-        const fileDiffLines = [];
+        const fileDiffLines: string[] = [];
         let capture = false;
         
         for (const line of diffLines) {
@@ -114,7 +120,7 @@ export default function GitPanel({ repoPath }) {
             capture = line.includes(file);
           }
           if (capture) {
-            fileDiffLines.append ? fileDiffLines.push(line) : fileDiffLines.push(line);
+            fileDiffLines.push(line);
           }
         }
         
@@ -139,13 +145,13 @@ export default function GitPanel({ repoPath }) {
   };
 
   // Select commit to see show/diff output
-  const handleSelectCommit = async (sha) => {
+  const handleSelectCommit = async (sha: string) => {
     setSelectedCommitSha(sha);
     setCommitExplanation("");
     setDiffText("");
     try {
       const res = await fetchGitDiff(repoPath, sha + "~1", sha);
-      if (res.status === "success") {
+      if (res.status === "success" && res.diff) {
         setDiffText(res.diff);
       }
     } catch (err) {
@@ -154,7 +160,7 @@ export default function GitPanel({ repoPath }) {
   };
 
   // Explain commit with AI
-  const handleExplainCommit = async (sha) => {
+  const handleExplainCommit = async (sha: string) => {
     setIsCommitExplaining(true);
     try {
       const res = await fetchExplainCommit(repoPath, sha);
@@ -187,7 +193,7 @@ export default function GitPanel({ repoPath }) {
 
   if (!repoPath) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-600 text-xs font-mono select-none">
+      <div className="flex items-center justify-center h-full text-muted text-xs font-mono select-none">
         Open a repository in explorer to view Git details.
       </div>
     );
@@ -196,9 +202,9 @@ export default function GitPanel({ repoPath }) {
   const branches = gitStatus?.branches || [];
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-[#07090f] text-gray-300">
+    <div className="flex flex-col h-full overflow-hidden bg-bg text-text">
       {/* Sub-tab header */}
-      <div className="flex items-center justify-between border-b border-white/5 bg-[#090c14] px-4 shrink-0 h-9">
+      <div className="flex items-center justify-between border-b border-border bg-panel-alt-2/40 px-4 shrink-0 h-10 select-none">
         <div className="flex items-center gap-0">
           {GIT_SUB_TABS.map((tab) => (
             <button
@@ -210,10 +216,10 @@ export default function GitPanel({ repoPath }) {
                 setSelectedCommitSha(null);
                 setCommitExplanation("");
               }}
-              className={`flex items-center gap-1.5 px-4 py-2 text-[10px] font-mono font-bold uppercase tracking-wider transition-all border-b-2 ${
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-[10px] font-mono font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer ${
                 activeSubTab === tab.key
-                  ? "border-violet-500 text-violet-400 bg-violet-500/5"
-                  : "border-transparent text-gray-500 hover:text-gray-300 hover:bg-white/3"
+                  ? "border-accent text-accent bg-accent-dim/10"
+                  : "border-transparent text-muted hover:text-text-strong hover:bg-panel-alt"
               }`}
             >
               {tab.label}
@@ -223,35 +229,35 @@ export default function GitPanel({ repoPath }) {
         <button
           onClick={loadGitStatusAndHistory}
           disabled={loading}
-          className="text-gray-500 hover:text-gray-300 text-[10px] font-mono font-bold px-2 py-1 rounded bg-white/5 border border-white/8 hover:bg-white/8 transition-all disabled:opacity-50 select-none shrink-0"
+          className="text-muted hover:text-text-strong text-[10px] font-mono font-bold px-2.5 py-1 rounded bg-panel border border-border hover:bg-panel-alt transition-all disabled:opacity-50 select-none shrink-0 cursor-pointer"
         >
           {loading ? "Refreshing..." : "↻ Refresh"}
         </button>
       </div>
 
       {/* Primary body */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      <div className="flex-grow flex-1 flex min-h-0 overflow-hidden">
         {/* Left column context options */}
-        <div className="w-[300px] border-r border-white/5 flex flex-col shrink-0 min-h-0 overflow-hidden">
+        <div className="w-[300px] border-r border-border flex flex-col shrink-0 min-h-0 overflow-hidden bg-bg">
           
           {/* TAB 1: STATUS & DIFFS */}
           {activeSubTab === "status" && (
             <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-4">
               
               {/* Branch metadata */}
-              <div className="bg-white/3 border border-white/5 rounded-xl p-3 space-y-1.5 select-none">
-                <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider">
+              <div className="bg-panel border border-border rounded-xl p-3 space-y-1.5 select-none shadow-sm">
+                <span className="text-[9px] font-mono font-bold uppercase text-muted tracking-wider">
                   Active Branch
                 </span>
-                <p className="text-[11px] font-mono text-gray-200 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <p className="text-[11px] font-mono text-text-strong flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-success glowing-dot" />
                   {gitStatus?.active_branch || "Loading..."}
                 </p>
               </div>
 
               {/* Staged files */}
               <div className="space-y-1.5 select-none">
-                <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider">
+                <span className="text-[9px] font-mono font-bold uppercase text-muted tracking-wider">
                   Staged Changes ({gitStatus?.staged?.length || 0})
                 </span>
                 <div className="space-y-1">
@@ -259,24 +265,24 @@ export default function GitPanel({ repoPath }) {
                     <button
                       key={file}
                       onClick={() => handleSelectFileDiff(file, true)}
-                      className={`w-full text-left px-2 py-1 text-[10px] font-mono rounded truncate block transition-all ${
+                      className={`w-full text-left px-2 py-1 text-[10px] font-mono rounded truncate block transition-all cursor-pointer ${
                         selectedFile === file && isStagedSelected
-                          ? "bg-emerald-600/10 text-emerald-400 border border-emerald-500/20"
-                          : "text-gray-400 hover:text-gray-200 bg-white/3 border border-transparent"
+                          ? "bg-success-bg/25 text-success border border-success/30"
+                          : "text-muted hover:text-text-strong bg-panel border border-transparent"
                       }`}
                     >
                       ✓ {file}
                     </button>
                   ))}
                   {gitStatus?.staged?.length === 0 && (
-                    <p className="text-[10px] text-gray-600 italic font-mono pl-2">No staged files.</p>
+                    <p className="text-[10px] text-muted italic font-mono pl-2">No staged files.</p>
                   )}
                 </div>
               </div>
 
               {/* Unstaged changes */}
               <div className="space-y-1.5 select-none">
-                <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider">
+                <span className="text-[9px] font-mono font-bold uppercase text-muted tracking-wider">
                   Unstaged Changes ({gitStatus?.unstaged?.length || 0})
                 </span>
                 <div className="space-y-1">
@@ -284,52 +290,52 @@ export default function GitPanel({ repoPath }) {
                     <button
                       key={file}
                       onClick={() => handleSelectFileDiff(file, false)}
-                      className={`w-full text-left px-2 py-1 text-[10px] font-mono rounded truncate block transition-all ${
+                      className={`w-full text-left px-2 py-1 text-[10px] font-mono rounded truncate block transition-all cursor-pointer ${
                         selectedFile === file && !isStagedSelected
-                          ? "bg-amber-600/10 text-amber-400 border border-amber-500/20"
-                          : "text-gray-400 hover:text-gray-200 bg-white/3 border border-transparent"
+                          ? "bg-accent-dim/15 text-accent border border-accent/30"
+                          : "text-muted hover:text-text-strong bg-panel border border-transparent"
                       }`}
                     >
                       ✎ {file}
                     </button>
                   ))}
                   {gitStatus?.unstaged?.length === 0 && (
-                    <p className="text-[10px] text-gray-600 italic font-mono pl-2">No modified files.</p>
+                    <p className="text-[10px] text-muted italic font-mono pl-2">No modified files.</p>
                   )}
                 </div>
               </div>
 
               {/* Untracked files */}
               <div className="space-y-1.5 select-none">
-                <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider">
+                <span className="text-[9px] font-mono font-bold uppercase text-muted tracking-wider">
                   Untracked Files ({gitStatus?.untracked?.length || 0})
                 </span>
                 <div className="max-h-[140px] overflow-y-auto scrollbar-thin space-y-1">
                   {(gitStatus?.untracked || []).map((file) => (
                     <div
                       key={file}
-                      className="px-2 py-1 text-[10px] font-mono rounded truncate bg-white/3 text-gray-500 border border-transparent"
+                      className="px-2 py-1 text-[10px] font-mono rounded truncate bg-panel text-muted border border-border/20"
                     >
                       ? {file}
                     </div>
                   ))}
                   {gitStatus?.untracked?.length === 0 && (
-                    <p className="text-[10px] text-gray-600 italic font-mono pl-2">No untracked files.</p>
+                    <p className="text-[10px] text-muted italic font-mono pl-2">No untracked files.</p>
                   )}
                 </div>
               </div>
 
               {/* AI Commit message generation tool */}
-              {gitStatus?.staged?.length > 0 && (
-                <div className="bg-white/3 border border-white/5 rounded-xl p-3 flex flex-col gap-2.5">
+              {gitStatus && gitStatus.staged && gitStatus.staged.length > 0 && (
+                <div className="bg-panel border border-border rounded-xl p-3 flex flex-col gap-2.5 shadow-md">
                   <div className="flex items-center justify-between">
-                    <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider">
+                    <span className="text-[9px] font-mono font-bold uppercase text-muted tracking-wider">
                       AI Commit Helper
                     </span>
                     <button
                       onClick={handleGenerateCommitMessage}
                       disabled={isMsgGenerating}
-                      className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-violet-600 text-white hover:bg-violet-500 transition-all"
+                      className="text-[9px] font-mono font-bold px-2 py-0.5 rounded bg-accent text-bg hover:bg-accent-strong transition-all cursor-pointer"
                     >
                       {isMsgGenerating ? "Writing..." : "Write Message"}
                     </button>
@@ -338,7 +344,7 @@ export default function GitPanel({ repoPath }) {
                     <textarea
                       readOnly
                       value={commitMessage}
-                      className="w-full bg-[#06080d] border border-white/5 rounded-lg p-2 text-[10px] text-gray-300 font-mono resize-none focus:outline-none h-[64px]"
+                      className="w-full bg-bg border border-border rounded-lg p-2 text-[10px] text-text font-mono resize-none focus:outline-none h-[64px] shadow-inner"
                     />
                   )}
                 </div>
@@ -361,7 +367,7 @@ export default function GitPanel({ repoPath }) {
           {/* TAB 3: PR REVIEW SELECTOR */}
           {activeSubTab === "pr" && (
             <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-4">
-              <div className="bg-white/3 border border-white/5 rounded-xl p-4 space-y-4">
+              <div className="bg-panel border border-border rounded-xl p-4 space-y-4 shadow-md">
                 <BranchSelector
                   branches={branches}
                   selected={targetBranch}
@@ -378,7 +384,7 @@ export default function GitPanel({ repoPath }) {
                 <button
                   onClick={handleRunPRReview}
                   disabled={isPRLoading || !sourceBranch || !targetBranch}
-                  className="w-full px-3 py-1.5 text-[10px] font-mono font-bold rounded-lg bg-indigo-600 border border-indigo-500 text-white hover:bg-indigo-500 transition-all disabled:opacity-40"
+                  className="w-full px-3 py-1.5 text-[10px] font-mono font-bold rounded-lg bg-accent text-bg hover:bg-accent-strong transition-all disabled:opacity-40 cursor-pointer"
                 >
                   {isPRLoading ? "Analyzing..." : "Review Changes (AI PR Audit)"}
                 </button>
@@ -389,7 +395,7 @@ export default function GitPanel({ repoPath }) {
         </div>
 
         {/* Right column Diff rendering pane */}
-        <div className="flex-1 min-w-0 h-full overflow-hidden">
+        <div className="flex-grow flex-1 min-w-0 h-full overflow-hidden">
           {activeSubTab === "pr" ? (
             <PRReview reviewData={prReviewData} isLoading={isPRLoading} />
           ) : (

@@ -3,7 +3,7 @@ import api from "./api";
 /**
  * Fetch local git status (active branch, dirty flag, staged, unstaged, untracked).
  */
-export async function fetchGitStatus(repoPath) {
+export async function fetchGitStatus(repoPath: string): Promise<any> {
   const response = await api.get(`/git/status?repo=${encodeURIComponent(repoPath)}`);
   return response.data;
 }
@@ -11,7 +11,7 @@ export async function fetchGitStatus(repoPath) {
 /**
  * Fetch git commit history, optionally filtered by file.
  */
-export async function fetchGitHistory(repoPath, filePath = null, maxCount = 20) {
+export async function fetchGitHistory(repoPath: string, filePath: string | null = null, maxCount: number = 20): Promise<any> {
   let url = `/git/history?repo=${encodeURIComponent(repoPath)}&max_count=${maxCount}`;
   if (filePath) {
     url += `&file=${encodeURIComponent(filePath)}`;
@@ -23,7 +23,7 @@ export async function fetchGitHistory(repoPath, filePath = null, maxCount = 20) 
 /**
  * Fetch git blame for a specific file.
  */
-export async function fetchGitBlame(repoPath, filePath) {
+export async function fetchGitBlame(repoPath: string, filePath: string): Promise<any> {
   const response = await api.get(`/git/blame?repo=${encodeURIComponent(repoPath)}&file=${encodeURIComponent(filePath)}`);
   return response.data;
 }
@@ -31,7 +31,7 @@ export async function fetchGitBlame(repoPath, filePath) {
 /**
  * Fetch unified diff between branches, commits or workspaces.
  */
-export async function fetchGitDiff(repoPath, target = null, source = null) {
+export async function fetchGitDiff(repoPath: string, target: string | null = null, source: string | null = null): Promise<any> {
   const response = await api.post("/git/diff", {
     repo: repoPath,
     target,
@@ -43,7 +43,7 @@ export async function fetchGitDiff(repoPath, target = null, source = null) {
 /**
  * Generates conventional commit message based on staged changes.
  */
-export async function suggestCommitMessage(repoPath) {
+export async function suggestCommitMessage(repoPath: string): Promise<any> {
   const response = await api.post("/git/commit-message", {
     repo: repoPath,
   });
@@ -53,7 +53,7 @@ export async function suggestCommitMessage(repoPath) {
 /**
  * Explains a specific commit with AI.
  */
-export async function fetchExplainCommit(repoPath, hexsha) {
+export async function fetchExplainCommit(repoPath: string, hexsha: string): Promise<any> {
   const response = await api.get(`/git/explain-commit?repo=${encodeURIComponent(repoPath)}&hexsha=${hexsha}`);
   return response.data;
 }
@@ -61,7 +61,7 @@ export async function fetchExplainCommit(repoPath, hexsha) {
 /**
  * Run simulated PR review comparing source and target branches.
  */
-export async function reviewPullRequest(repoPath, source, target) {
+export async function reviewPullRequest(repoPath: string, source: string, target: string): Promise<any> {
   const response = await api.post("/git/review", {
     repo: repoPath,
     source,
