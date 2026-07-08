@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const SLASH_COMMANDS = [
   { cmd: "/explain", desc: "Explain selected or active code" },
@@ -11,11 +11,25 @@ const SLASH_COMMANDS = [
   { cmd: "/summary", desc: "High-level module summary" },
 ];
 
-export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection, selectionRange }) {
-  const [value, setValue] = useState("");
-  const [showSlashMenu, setShowSlashMenu] = useState(false);
-  const [slashFilter, setSlashFilter] = useState("");
-  const textareaRef = useRef(null);
+interface PromptBoxProps {
+  onSubmit: (message: string) => void;
+  isStreaming: boolean;
+  onStop: () => void;
+  hasSelection: boolean;
+  selectionRange: any;
+}
+
+export default function PromptBox({
+  onSubmit,
+  isStreaming,
+  onStop,
+  hasSelection,
+  selectionRange,
+}: PromptBoxProps) {
+  const [value, setValue] = useState<string>("");
+  const [showSlashMenu, setShowSlashMenu] = useState<boolean>(false);
+  const [slashFilter, setSlashFilter] = useState<string>("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Auto-grow textarea
   useEffect(() => {
@@ -36,7 +50,7 @@ export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection,
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const val = e.target.value;
     setValue(val);
     const slashMatch = val.match(/^(\/)(\w*)$/);
@@ -49,7 +63,7 @@ export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection,
     }
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (!isStreaming && value.trim()) {
@@ -61,7 +75,7 @@ export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection,
     }
   };
 
-  const insertSlashCmd = (cmd) => {
+  const insertSlashCmd = (cmd: string) => {
     setValue(cmd + " ");
     setShowSlashMenu(false);
     textareaRef.current?.focus();
@@ -72,12 +86,12 @@ export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection,
   );
 
   return (
-    <div className="px-3 pb-3 pt-2 border-t border-white/5 shrink-0 relative">
+    <div className="px-3 pb-3 pt-2 border-t border-border shrink-0 relative bg-panel">
       {/* Selection indicator */}
       {hasSelection && selectionRange && (
-        <div className="flex items-center gap-1.5 mb-2 px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0" />
-          <span className="text-[10px] font-mono text-amber-400">
+        <div className="flex items-center gap-1.5 mb-2 px-2.5 py-1 rounded-md bg-accent/15 border border-accent/25 select-none">
+          <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0 glowing-dot" />
+          <span className="text-[10px] font-mono text-accent font-semibold">
             Selection active — Lines {selectionRange.startLine}–{selectionRange.endLine}
           </span>
         </div>
@@ -85,18 +99,18 @@ export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection,
 
       {/* Slash command menu */}
       {showSlashMenu && filteredCmds.length > 0 && (
-        <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl bg-[#0f1420] border border-white/10 overflow-hidden shadow-2xl z-50">
-          <div className="px-3 py-1.5 border-b border-white/5">
-            <span className="text-[9px] uppercase tracking-widest text-gray-500 font-mono font-bold">Slash Commands</span>
+        <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl bg-panel border border-border overflow-hidden shadow-2xl z-50 select-none">
+          <div className="px-3 py-1.5 border-b border-border bg-panel-alt">
+            <span className="text-[9px] uppercase tracking-widest text-muted font-mono font-bold">Slash Commands</span>
           </div>
           {filteredCmds.map((c) => (
             <button
               key={c.cmd}
               onMouseDown={(e) => { e.preventDefault(); insertSlashCmd(c.cmd); }}
-              className="flex items-center gap-2 w-full px-3 py-1.5 text-left hover:bg-indigo-600/15 transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-1.5 text-left hover:bg-accent-dim/15 transition-colors cursor-pointer"
             >
-              <span className="text-[11px] font-mono text-indigo-400 font-semibold w-24 shrink-0">{c.cmd}</span>
-              <span className="text-[10px] text-gray-500">{c.desc}</span>
+              <span className="text-[11px] font-mono text-accent font-semibold w-24 shrink-0">{c.cmd}</span>
+              <span className="text-[10px] text-muted">{c.desc}</span>
             </button>
           ))}
         </div>
@@ -104,7 +118,7 @@ export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection,
 
       {/* Input area */}
       <div className="flex gap-2 items-end">
-        <div className="flex-1 relative rounded-xl bg-white/4 border border-white/8 focus-within:border-indigo-500/40 focus-within:bg-indigo-500/4 transition-all">
+        <div className="flex-1 relative rounded-xl bg-bg border border-border focus-within:border-accent/40 focus-within:bg-accent-dim/5 transition-all shadow-inner">
           <textarea
             ref={textareaRef}
             value={value}
@@ -112,20 +126,19 @@ export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection,
             onKeyDown={handleKeyDown}
             placeholder="Ask anything… or type / for commands"
             rows={1}
-            disabled={false}
-            className="w-full bg-transparent resize-none px-3 py-2.5 text-[12px] text-gray-200 placeholder-gray-600 font-mono outline-none leading-relaxed scrollbar-thin"
+            className="w-full bg-transparent resize-none px-3 py-2.5 text-[12px] text-text-strong placeholder-muted font-mono outline-none leading-relaxed scrollbar-thin"
             style={{ maxHeight: "160px" }}
           />
         </div>
         <button
           onClick={isStreaming ? onStop : handleSubmit}
           disabled={!isStreaming && !value.trim()}
-          className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+          className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
             isStreaming
-              ? "bg-rose-600/30 border border-rose-500/30 text-rose-400 hover:bg-rose-600/40"
+              ? "bg-danger-bg/25 border border-danger/35 text-danger hover:bg-danger/35"
               : value.trim()
-              ? "bg-indigo-600 border border-indigo-500 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-900/30"
-              : "bg-white/5 border border-white/8 text-gray-600 cursor-not-allowed"
+              ? "bg-accent border border-accent-strong text-bg hover:bg-accent-strong shadow-lg shadow-accent/25"
+              : "bg-panel-alt border border-border text-muted cursor-not-allowed"
           }`}
         >
           {isStreaming ? (
@@ -141,7 +154,7 @@ export default function PromptBox({ onSubmit, isStreaming, onStop, hasSelection,
       </div>
 
       {/* Hint footer */}
-      <p className="text-[9px] text-gray-700 font-mono mt-1.5 px-0.5">
+      <p className="text-[9px] text-muted font-mono mt-1.5 px-0.5 select-none">
         ↵ Send · Shift+↵ New line · / for commands
       </p>
     </div>
