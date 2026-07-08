@@ -1,8 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { getEditorLanguage } from "../../utils/editorLanguage";
 import { runAIActionStream } from "../../services/api";
-import FormatText from "../common/FormatText";
 
 interface MonacoFileViewerProps {
   filePath: string;
@@ -18,14 +17,6 @@ interface MonacoFileViewerProps {
   repoPath: string;
 }
 
-interface InlinePanelState {
-  label: string;
-  actionId: string;
-  selectionText: string;
-  resultText: string;
-  isLoading: boolean;
-  previewEdit: any;
-}
 
 export default function MonacoFileViewer({
   filePath,
@@ -43,15 +34,39 @@ export default function MonacoFileViewer({
   const language = getEditorLanguage(filePath);
 
   // Inline AI panel state
-  const [inlinePanel, setInlinePanel] = useState<InlinePanelState | null>(null);
-  const inlinePanelRef = useRef<any>(null);
+  // Refs for tracking Monaco instances, active decorations, and widgets
+  const monacoRef = useRef<any>(null);
+  const decorationsRef = useRef<any>(null);
+  const widgetRef = useRef<any>(null);
+
+  const cleanupWidgetAndDecorations = () => {
+    const editor = editorRef?.current;
+    if (editor) {
+      if (widgetRef.current) {
+        editor.removeContentWidget(widgetRef.current);
+        widgetRef.current = null;
+      }
+      if (decorationsRef.current) {
+        decorationsRef.current.clear();
+        decorationsRef.current = null;
+      }
+    }
+  };
+
+  // Clean up when switching files
+  React.useEffect(() => {
+    return () => {
+      cleanupWidgetAndDecorations();
+    };
+  }, [filePath]);
 
   const runInlineAction = async (ed: any, actionId: string, label: string) => {
     const model = ed.getModel();
     const selection = ed.getSelection();
     const selectionText = model?.getValueInRange(selection);
+    const monaco = monacoRef.current;
 
-    if (!selectionText || !selectionText.trim()) {
+    if (!selectionText || !selectionText.trim() || !monaco) {
       // No selection — fall back to whole-file action in the right sidebar
       if (onRunSelectionAction) {
         onRunSelectionAction(actionId, label, null);
@@ -59,8 +74,58 @@ export default function MonacoFileViewer({
       return;
     }
 
-    setInlinePanel({ label, actionId, selectionText, resultText: "", isLoading: true, previewEdit: null });
-    inlinePanelRef.current = { selection, model };
+    // Clean up any existing active widget/decorations first
+    cleanupWidgetAndDecorations();
+
+    const startLine = selection.startLineNumber;
+    const endLine = selection.endLineNumber;
+
+    // Apply amber scanning/processing decorations
+    const processingDecorations = [
+      {
+        range: new monaco.Range(startLine, 1, endLine, 1),
+        options: {
+          isWholeLine: true,
+          className: "ai-processing-line",
+          linesDecorationsClassName: "ai-processing-gutter",
+        },
+      },
+    ];
+    decorationsRef.current = ed.createDecorationsCollection(processingDecorations);
+
+    // Create the Content Widget DOM Node
+    const domNode = document.createElement("div");
+    domNode.className = "monaco-inline-patch-widget";
+    domNode.innerHTML = `
+      <div class="ip-header">◆ ${label}</div>
+      <div class="ip-body font-mono text-[11px] text-soft whitespace-pre-wrap">AI is analyzing selection...</div>
+      <div class="ip-actions" style="display: none;">
+        <button class="ip-reject">Dismiss</button>
+        ${actionId !== "explain" ? '<button class="ip-accept">Accept patch</button>' : ''}
+      </div>
+    `;
+
+    const widgetId = `patch-widget-${actionId}-${Date.now()}`;
+    const widget: any = {
+      getId: () => widgetId,
+      getDomNode: () => domNode,
+      getPosition: () => {
+        // Query dynamic range of decoration to handle edits above
+        const ranges = decorationsRef.current?.getRanges();
+        const currentEndLine = (ranges && ranges.length > 0) ? ranges[0].endLineNumber : endLine;
+        return {
+          position: { lineNumber: currentEndLine + 1, column: 1 },
+          preference: [
+            monaco.editor.ContentWidgetPositionPreference.BELOW,
+            monaco.editor.ContentWidgetPositionPreference.ABOVE,
+          ],
+        };
+      },
+    };
+
+    widgetRef.current = widget;
+    ed.addContentWidget(widget);
+    ed.layoutContentWidget(widget);
 
     try {
       const response = await runAIActionStream({
@@ -81,6 +146,22 @@ export default function MonacoFileViewer({
       let buffer = "";
       let accumulated = "";
 
+      const updateWidgetText = (text: string) => {
+        const bodyEl = domNode.querySelector(".ip-body");
+        if (bodyEl) {
+          let displayCode = text;
+          // Strip markdown fences
+          const fenceMatch = displayCode.match(/```[\w]*\n?([\s\S]*?)```/);
+          if (fenceMatch) {
+            displayCode = fenceMatch[1].trim();
+          } else {
+            displayCode = displayCode.replace(/^```\w*\n/, "").replace(/```$/, "");
+          }
+          bodyEl.textContent = displayCode;
+          bodyEl.scrollTop = bodyEl.scrollHeight;
+        }
+      };
+
       const processLines = (text: string) => {
         buffer += text;
         const lines = buffer.split("\n");
@@ -92,7 +173,8 @@ export default function MonacoFileViewer({
             const parsed = JSON.parse(trimmed);
             if (parsed.type === "token") {
               accumulated += parsed.token;
-              setInlinePanel((prev) => prev ? { ...prev, resultText: accumulated } : null);
+              updateWidgetText(accumulated);
+              ed.layoutContentWidget(widget);
             }
           } catch { /* ignore */ }
         }
@@ -107,29 +189,74 @@ export default function MonacoFileViewer({
         processLines(decoder.decode(value));
       }
 
-      setInlinePanel((prev) => prev ? { ...prev, isLoading: false } : null);
+      // Transition to final state: switch to diff red decorations (for replacement suggestions)
+      if (decorationsRef.current) {
+        decorationsRef.current.clear();
+      }
+
+      const endDecorations = [
+        {
+          range: new monaco.Range(startLine, 1, endLine, 1),
+          options: {
+            isWholeLine: true,
+            className: actionId !== "explain" ? "diff-del-line" : "ai-processing-line",
+            linesDecorationsClassName: actionId !== "explain" ? "diff-del-gutter" : "ai-processing-gutter",
+          },
+        },
+      ];
+      decorationsRef.current = ed.createDecorationsCollection(endDecorations);
+
+      // Display the interactive Accept/Reject buttons
+      const actionsEl = domNode.querySelector(".ip-actions") as HTMLElement;
+      if (actionsEl) {
+        actionsEl.style.display = "flex";
+      }
+
+      // Wire event listeners
+      domNode.querySelector(".ip-reject")?.addEventListener("click", () => {
+        cleanupWidgetAndDecorations();
+      });
+
+      if (actionId !== "explain") {
+        domNode.querySelector(".ip-accept")?.addEventListener("click", () => {
+          const ranges = decorationsRef.current?.getRanges();
+          const activeRange = (ranges && ranges.length > 0) ? ranges[0] : new monaco.Range(startLine, 1, endLine, model.getLineMaxColumn(endLine));
+
+          let finalCode = accumulated;
+          const fenceMatch = finalCode.match(/```[\w]*\n?([\s\S]*?)```/);
+          if (fenceMatch) finalCode = fenceMatch[1].trim();
+
+          ed.executeEdits("ai-patch-accept", [
+            {
+              range: activeRange,
+              text: finalCode,
+              forceMoveMarkers: true,
+            },
+          ]);
+          cleanupWidgetAndDecorations();
+        });
+      }
+
+      ed.layoutContentWidget(widget);
+
     } catch (err: any) {
-      setInlinePanel((prev) => prev ? { ...prev, resultText: `Error: ${err.message}`, isLoading: false } : null);
+      const bodyEl = domNode.querySelector(".ip-body");
+      if (bodyEl) {
+        bodyEl.textContent = `Error: ${err.message}`;
+      }
+      const actionsEl = domNode.querySelector(".ip-actions") as HTMLElement;
+      if (actionsEl) {
+        actionsEl.style.display = "flex";
+      }
+      domNode.querySelector(".ip-reject")?.addEventListener("click", () => {
+        cleanupWidgetAndDecorations();
+      });
+      ed.layoutContentWidget(widget);
     }
   };
 
-  const handleReplaceSelection = (ed: any) => {
-    if (!inlinePanel || !inlinePanelRef.current) return;
-    const { selection } = inlinePanelRef.current;
-
-    // Extract code block from markdown fences if present
-    let codeToInsert = inlinePanel.resultText;
-    const fenceMatch = codeToInsert.match(/```[\w]*\n?([\s\S]*?)```/);
-    if (fenceMatch) codeToInsert = fenceMatch[1].trim();
-
-    ed.executeEdits("inline-ai", [
-      { range: selection, text: codeToInsert, forceMoveMarkers: true },
-    ]);
-    setInlinePanel(null);
-    inlinePanelRef.current = null;
-  };
-
-  const handleEditorDidMount = (editor: any) => {
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    monacoRef.current = monaco;
     if (editorRef) {
       editorRef.current = editor;
     }
@@ -254,7 +381,7 @@ export default function MonacoFileViewer({
       {/* Monaco Editor */}
       <div className="flex-grow min-h-0">
         <Editor
-          height={inlinePanel ? "55%" : "100%"}
+          height="100%"
           language={language}
           value={content || ""}
           theme="vs-dark"
@@ -267,63 +394,6 @@ export default function MonacoFileViewer({
           }
         />
       </div>
-
-      {/* Inline AI Panel */}
-      {inlinePanel && (
-        <div className="border-t border-accent-dim/30 bg-slate-950/95 flex flex-col" style={{ height: "45%", minHeight: 160 }}>
-          {/* Panel Header */}
-          <div className="flex items-center justify-between px-3.5 py-2 border-b border-border bg-panel shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded bg-violet/10 text-violet border border-violet/25 font-mono">
-                {inlinePanel.label}
-              </span>
-              {inlinePanel.isLoading && (
-                <span className="w-3 h-3 border border-accent/20 border-t-accent rounded-full animate-spin"></span>
-              )}
-              <span className="text-[9px] text-muted font-mono truncate max-w-[200px]">
-                Selection: {inlinePanel.selectionText.slice(0, 40)}{inlinePanel.selectionText.length > 40 ? "…" : ""}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              {!inlinePanel.isLoading && inlinePanel.resultText && (
-                <>
-                  <button
-                    onClick={() => navigator.clipboard.writeText(inlinePanel.resultText)}
-                    className="px-2.5 py-0.5 text-[9px] font-bold rounded bg-panel-alt border border-border text-soft hover:text-text-strong hover:bg-panel-alt-2 transition-all font-mono cursor-pointer"
-                  >
-                    Copy
-                  </button>
-                  {editorRef?.current && (
-                    <button
-                      onClick={() => handleReplaceSelection(editorRef.current)}
-                      className="px-2.5 py-0.5 text-[9px] font-bold rounded bg-accent/20 border border-accent-dim text-accent hover:bg-accent/40 transition-all font-mono cursor-pointer"
-                    >
-                      Replace Selection
-                    </button>
-                  )}
-                </>
-              )}
-              <button
-                onClick={() => { setInlinePanel(null); inlinePanelRef.current = null; }}
-                className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-panel-alt border border-border text-muted hover:text-text-strong transition-all font-mono cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-          </div>
-
-          {/* Panel Body — streamed result */}
-          <div className="flex-grow overflow-y-auto p-4 text-xs font-mono text-text leading-relaxed scrollbar-thin">
-            {inlinePanel.resultText ? (
-              <FormatText text={inlinePanel.resultText} />
-            ) : (
-              inlinePanel.isLoading && (
-                <span className="text-muted italic animate-pulse">AI is analyzing your selection...</span>
-              )
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

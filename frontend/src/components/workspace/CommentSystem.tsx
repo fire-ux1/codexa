@@ -50,7 +50,7 @@ export default function CommentSystem({ activeFile }: CommentSystemProps) {
   };
 
   const handleDelete = (id: string | number) => {
-    deleteComment(id).catch((err) =>
+    deleteComment(String(id)).catch((err) =>
       console.error("[CommentSystem] Delete failed:", err)
     );
   };
