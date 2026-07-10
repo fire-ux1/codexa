@@ -1,9 +1,13 @@
 import React, { useState } from "react";
-import { Settings, Sparkles, Layout, Keyboard, ShieldAlert } from "lucide-react";
+import { Settings, Sparkles, Layout, Keyboard, ShieldAlert, Key, Lock, Sliders, ShieldCheck } from "lucide-react";
 import ThemeManager from "./ThemeManager";
 import LayoutManager from "./LayoutManager";
 import KeyboardShortcutPanel from "./KeyboardShortcutPanel";
 import WorkspaceProfiles from "./WorkspaceProfiles";
+import ApiKeysManager from "./ApiKeysManager";
+import MfaSetup from "./MfaSetup";
+import ComplianceManager from "./ComplianceManager";
+import IntegrationsManager from "./IntegrationsManager";
 
 interface WorkspacePreferencesProps {
   onApplyProfile: (profile: any) => void;
@@ -24,6 +28,10 @@ export default function WorkspacePreferences({ onApplyProfile, onClose }: Worksp
     { id: "layout", label: "Layouts", icon: <Layout className="w-3.5 h-3.5" /> },
     { id: "shortcuts", label: "Shortcuts", icon: <Keyboard className="w-3.5 h-3.5" /> },
     { id: "profiles", label: "Profiles", icon: <ShieldAlert className="w-3.5 h-3.5" /> },
+    { id: "apikeys", label: "API Keys", icon: <Key className="w-3.5 h-3.5" /> },
+    { id: "security", label: "Security & 2FA", icon: <Lock className="w-3.5 h-3.5" /> },
+    { id: "compliance", label: "Compliance & Policies", icon: <ShieldCheck className="w-3.5 h-3.5" /> },
+    { id: "integrations", label: "Integrations", icon: <Sliders className="w-3.5 h-3.5" /> },
   ];
 
   return (
@@ -71,6 +79,10 @@ export default function WorkspacePreferences({ onApplyProfile, onClose }: Worksp
         {prefTab === "profiles" && (
           React.createElement(WorkspaceProfiles as any, { onApplyProfile })
         )}
+        {prefTab === "apikeys" && React.createElement(ApiKeysManager as any)}
+        {prefTab === "security" && React.createElement(MfaSetup as any)}
+        {prefTab === "compliance" && React.createElement(ComplianceManager as any)}
+        {prefTab === "integrations" && React.createElement(IntegrationsManager as any)}
       </div>
 
     </div>

@@ -202,5 +202,119 @@ export async function fetchObservabilityMetrics(): Promise<any> {
   return response.data;
 }
 
+export async function createApiKey(name: string, expiresInDays: number = 30): Promise<any> {
+  const response = await api.post("/auth/api-keys", { name, expires_in_days: expiresInDays });
+  return response.data;
+}
+
+export async function fetchApiKeys(): Promise<any> {
+  const response = await api.get("/auth/api-keys");
+  return response.data;
+}
+
+export async function revokeApiKey(keyId: string): Promise<any> {
+  const response = await api.delete(`/auth/api-keys/${keyId}`);
+  return response.data;
+}
+
+export async function fetchProjectMembers(repositoryId: string): Promise<any> {
+  const response = await api.get("/admin/members", {
+    params: { repository_id: repositoryId },
+  });
+  return response.data;
+}
+
+export async function updateMemberRole(
+  repositoryId: string,
+  projectId: string,
+  userId: string,
+  role: string
+): Promise<any> {
+  const response = await api.put("/admin/members/role", {
+    repository_id: repositoryId,
+    project_id: projectId,
+    user_id: userId,
+    role: role,
+  });
+  return response.data;
+}
+
+export async function fetchAuditLogs(
+  repositoryId: string,
+  limit: number = 50,
+  offset: number = 0,
+  search?: string
+): Promise<any> {
+  const response = await api.get("/admin/audit-logs", {
+    params: {
+      repository_id: repositoryId,
+      limit: limit,
+      offset: offset,
+      ...(search ? { search: search } : {}),
+    },
+  });
+  return response.data;
+}
+
+export async function mfaSetup(): Promise<any> {
+  const response = await api.post("/auth/mfa/setup");
+  return response.data;
+}
+
+export async function mfaConfirm(code: string): Promise<any> {
+  const response = await api.post("/auth/mfa/confirm", { code });
+  return response.data;
+}
+
+export async function mfaDisable(code: string): Promise<any> {
+  const response = await api.post("/auth/mfa/disable", { code });
+  return response.data;
+}
+
+export async function loginMfaVerify(tempToken: string, code: string): Promise<any> {
+  const response = await api.post("/auth/login/mfa-verify", {
+    temp_token: tempToken,
+    code: code,
+  });
+  return response.data;
+}
+
+export async function fetchNotifications(): Promise<any> {
+  const response = await api.get("/notifications");
+  return response.data;
+}
+
+export async function markNotificationRead(notificationId: string): Promise<any> {
+  const response = await api.put(`/notifications/${notificationId}/read`);
+  return response.data;
+}
+
+export async function markAllNotificationsRead(): Promise<any> {
+  const response = await api.post("/notifications/read-all");
+  return response.data;
+}
+
+export async function fetchComplianceSettings(): Promise<any> {
+  const response = await api.get("/compliance/settings");
+  return response.data;
+}
+
+export async function updateComplianceSettings(payload: {
+  hipaa_mode: boolean;
+  sox_mode: boolean;
+  retention_days: number;
+  session_timeout: boolean;
+  slack_enabled: boolean;
+  jira_enabled: boolean;
+  github_ent_enabled: boolean;
+}): Promise<any> {
+  const response = await api.put("/compliance/settings", payload);
+  return response.data;
+}
+
 export { API_BASE_URL };
 export default api;
+
+
+
+

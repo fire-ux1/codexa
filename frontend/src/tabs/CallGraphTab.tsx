@@ -21,6 +21,7 @@ interface CallGraphTabProps {
   functionCallers: string[];
   isGraphLoading: boolean;
   onGetCallGraph: () => void;
+  error?: string | null;
 }
 
 export default function CallGraphTab({
@@ -33,6 +34,7 @@ export default function CallGraphTab({
   functionCallers,
   isGraphLoading,
   onGetCallGraph,
+  error,
 }: CallGraphTabProps) {
   return (
     <div className="space-y-6 animate-fade-in w-full">
@@ -46,7 +48,24 @@ export default function CallGraphTab({
         </p>
       </div>
 
-      {!callGraph ? (
+      {error ? (
+        <div className="py-16 text-center text-rose-400 space-y-4 max-w-md mx-auto bg-rose-500/5 border border-rose-500/10 rounded-2xl p-6 glass">
+          <IconNetwork className="w-12 h-12 mx-auto text-rose-400 opacity-60 animate-pulse" />
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold uppercase tracking-wider font-mono">Analysis Failed</p>
+            <p className="text-xs text-gray-400 font-mono bg-[#0A0D12]/60 px-3 py-2 rounded-lg border border-[#222834] max-h-[80px] overflow-y-auto text-left break-all select-all scrollbar-thin">
+              {error}
+            </p>
+          </div>
+          <button
+            onClick={onGetCallGraph}
+            disabled={isGraphLoading}
+            className="px-5 py-2.5 text-xs font-semibold bg-[#FF9D4D] text-[#0A0D12] hover:bg-[#FFB073] rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer font-mono shadow-md"
+          >
+            {isGraphLoading ? "Retrying Mappings..." : "Retry Mapping Code"}
+          </button>
+        </div>
+      ) : !callGraph ? (
         <div className="py-24 text-center text-muted space-y-4">
           <IconNetwork className="w-12 h-12 mx-auto text-muted opacity-40 animate-pulse" />
           <p className="text-sm font-body">Call graph mappings not calculated yet.</p>

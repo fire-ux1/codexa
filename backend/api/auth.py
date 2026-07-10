@@ -134,6 +134,25 @@ def developer_login(payload: DeveloperLoginPayload):
     )
     user = get_user(user_id)
     token_version = user["token_version"] if user and "token_version" in user else 1
+
+    # MFA Login interception
+    if user and user.get("mfa_enabled"):
+        mfa_temp_token = jwt.encode(
+            {
+                "type": "mfa_temp",
+                "user_id": user_id,
+                "email": payload.email,
+                "token_version": token_version,
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
+            },
+            settings.jwt_secret,
+            algorithm="HS256",
+        )
+        return {
+            "mfa_required": True,
+            "mfa_temp_token": mfa_temp_token,
+        }
+
     token = encode_token(
         user_id=user_id, email=payload.email, token_version=token_version
     )
@@ -209,6 +228,175 @@ def logout_user(user_id: str = Depends(get_current_user_id)):
         }
     finally:
         conn.close()
+
+
+class MfaConfirmPayload(BaseModel):
+    code: str
+
+
+class MfaVerifyPayload(BaseModel):
+    temp_token: str
+    code: str
+
+
+@router.post("/mfa/setup")
+def mfa_setup(current_user_id: str = Depends(get_current_user_id)):
+    """Starts MFA setup: generates secret & returns QR data URL."""
+    user = get_user(current_user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    from services.mfa_service import generate_mfa_setup
+
+    secret, qr_url = generate_mfa_setup(user["email"])
+
+    # Save the secret temporarily, leave mfa_enabled = FALSE
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE users SET mfa_secret = %s, mfa_enabled = FALSE WHERE id = %s",
+            (secret, current_user_id),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "mfa_secret": secret,
+        "qr_code_url": qr_url,
+    }
+
+
+@router.post("/mfa/confirm")
+def mfa_confirm(
+    payload: MfaConfirmPayload,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Confirm TOTP code scan to enable MFA."""
+    user = get_user(current_user_id)
+    if not user or not user.get("mfa_secret"):
+        raise HTTPException(status_code=400, detail="MFA setup was not initiated.")
+
+    from services.mfa_service import verify_totp_code
+
+    is_valid = verify_totp_code(user["mfa_secret"], payload.code)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail="Invalid verification code.")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE users SET mfa_enabled = TRUE WHERE id = %s",
+            (current_user_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    # Log to audit service
+    from services.audit_service import log_audit_event
+
+    log_audit_event(current_user_id, "enable_mfa", details={"email": user["email"]})
+
+    return {"status": "success", "message": "Multi-Factor Authentication enabled."}
+
+
+@router.post("/mfa/disable")
+def mfa_disable(
+    payload: MfaConfirmPayload,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """Disable MFA (requires current TOTP code)."""
+    user = get_user(current_user_id)
+    if not user or not user.get("mfa_enabled"):
+        raise HTTPException(status_code=400, detail="MFA is not enabled.")
+
+    from services.mfa_service import verify_totp_code
+
+    is_valid = verify_totp_code(user["mfa_secret"], payload.code)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail="Invalid verification code.")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "UPDATE users SET mfa_secret = NULL, mfa_enabled = FALSE WHERE id = %s",
+            (current_user_id,),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    # Log to audit service
+    from services.audit_service import log_audit_event
+
+    log_audit_event(current_user_id, "disable_mfa", details={"email": user["email"]})
+
+    return {"status": "success", "message": "Multi-Factor Authentication disabled."}
+
+
+@router.post("/login/mfa-verify")
+def login_mfa_verify(payload: MfaVerifyPayload):
+    """Validates temporary token + TOTP code to complete login."""
+    try:
+        decoded = jwt.decode(
+            payload.temp_token, settings.jwt_secret, algorithms=["HS256"]
+        )
+        if decoded.get("type") != "mfa_temp":
+            raise HTTPException(status_code=400, detail="Invalid session token type.")
+
+        user_id = decoded["user_id"]
+        email = decoded["email"]
+        token_version_in_jwt = decoded.get("token_version")
+
+        user = get_user(user_id)
+        if not user or not user.get("mfa_secret") or not user.get("mfa_enabled"):
+            raise HTTPException(
+                status_code=401, detail="Authentication state mismatch."
+            )
+
+        token_version_in_db = user.get("token_version", 1)
+        if token_version_in_jwt != token_version_in_db:
+            raise HTTPException(status_code=401, detail="Session expired.")
+
+        from services.mfa_service import verify_totp_code
+
+        is_valid = verify_totp_code(user["mfa_secret"], payload.code)
+        if not is_valid:
+            raise HTTPException(status_code=400, detail="Invalid verification code.")
+
+        token = encode_token(user_id, email, token_version_in_db)
+        refresh_token = encode_refresh_token(user_id, email, token_version_in_db)
+
+        from services.audit_service import log_audit_event
+
+        log_audit_event(user_id, "mfa_login_success", details={"email": email})
+
+        avatar_url = (
+            user.get("avatar_url")
+            or f"https://api.dicebear.com/7.x/bottts/svg?seed={user.get('name')}"
+        )
+
+        return {
+            "token": token,
+            "refresh_token": refresh_token,
+            "user": {
+                "id": user_id,
+                "name": user.get("name"),
+                "email": email,
+                "avatar_url": avatar_url,
+            },
+        }
+
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401, detail="Verification session expired. Please log in again."
+        )
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid verification token.")
 
 
 @router.post("/api-keys")
@@ -357,6 +545,23 @@ def callback_github(code: str):
 
     user = get_user(user_id)
     token_version = user["token_version"] if user and "token_version" in user else 1
+
+    # MFA Redirect check
+    if user and user.get("mfa_enabled"):
+        mfa_temp_token = jwt.encode(
+            {
+                "type": "mfa_temp",
+                "user_id": user_id,
+                "email": primary_email,
+                "token_version": token_version,
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
+            },
+            settings.jwt_secret,
+            algorithm="HS256",
+        )
+        frontend_redirect = f"{settings.llm_site_url.rstrip('/')}/auth-callback?mfa_required=true&mfa_temp_token={mfa_temp_token}"
+        return RedirectResponse(url=frontend_redirect)
+
     token = encode_token(
         user_id=user_id, email=primary_email, token_version=token_version
     )
@@ -429,6 +634,23 @@ def callback_google(code: str):
 
     user = get_user(user_id)
     token_version = user["token_version"] if user and "token_version" in user else 1
+
+    # MFA Redirect check
+    if user and user.get("mfa_enabled"):
+        mfa_temp_token = jwt.encode(
+            {
+                "type": "mfa_temp",
+                "user_id": user_id,
+                "email": email,
+                "token_version": token_version,
+                "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=5),
+            },
+            settings.jwt_secret,
+            algorithm="HS256",
+        )
+        frontend_redirect = f"{settings.llm_site_url.rstrip('/')}/auth-callback?mfa_required=true&mfa_temp_token={mfa_temp_token}"
+        return RedirectResponse(url=frontend_redirect)
+
     token = encode_token(user_id=user_id, email=email, token_version=token_version)
     refresh_token = encode_refresh_token(
         user_id=user_id, email=email, token_version=token_version

@@ -25,7 +25,8 @@ if __name__ == "__main__":
         argv=[
             "worker",
             "--loglevel=info",
-            "-Q", "indexing,default",
+            "-Q",
+            "indexing,default",
             "--concurrency=4",
             "--hostname=codepilot-worker@%h",
         ]

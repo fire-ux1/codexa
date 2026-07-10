@@ -10,7 +10,10 @@ from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_VERSION
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
 from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader, ConsoleMetricExporter
+from opentelemetry.sdk.metrics.export import (
+    PeriodicExportingMetricReader,
+    ConsoleMetricExporter,
+)
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 
@@ -52,7 +55,9 @@ def setup_otel(app=None):
     trace.set_tracer_provider(tracer_provider)
 
     # ── Metrics ───────────────────────────────────────────────────────────────
-    metric_reader = PeriodicExportingMetricReader(ConsoleMetricExporter(), export_interval_millis=60_000)
+    metric_reader = PeriodicExportingMetricReader(
+        ConsoleMetricExporter(), export_interval_millis=60_000
+    )
     meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
     metrics.set_meter_provider(meter_provider)
 

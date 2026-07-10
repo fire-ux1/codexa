@@ -1,4 +1,5 @@
 import { Search, ChevronDown, CheckCircle } from "lucide-react";
+import NotificationCenter from "./NotificationCenter";
 
 interface WorkspaceHeaderProps {
   repoPath: string | null | undefined;
@@ -62,7 +63,7 @@ export default function WorkspaceHeader({
             <span className="text-[10.5px] truncate">Search files, symbols, commands...</span>
           </div>
           <kbd className="hidden sm:inline-block px-1.5 py-0.5 rounded bg-panel border border-border font-mono text-[9px] text-muted select-none">
-            Ctrl K
+             K
           </kbd>
         </button>
       </div>
@@ -85,6 +86,11 @@ export default function WorkspaceHeader({
 
         <span className="w-px h-4 bg-border" />
 
+        {/* Notifications center */}
+        <NotificationCenter />
+
+        <span className="w-px h-4 bg-border" />
+
         {/* Profile Avatar */}
         <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-accent to-blue-400 flex items-center justify-center text-bg font-bold text-[9px] border border-border">
           A
@@ -94,3 +100,4 @@ export default function WorkspaceHeader({
     </div>
   );
 }
+

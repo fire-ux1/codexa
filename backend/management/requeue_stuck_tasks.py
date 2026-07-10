@@ -8,22 +8,25 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from services.db_service import get_db
 from services.redis_service import enqueue_indexing_task
 
+
 def requeue_stuck_tasks(timeout_minutes: int = 30):
-    print(f"[Management] Checking for stuck repository indexing tasks (older than {timeout_minutes} minutes)...")
-    
+    print(
+        f"[Management] Checking for stuck repository indexing tasks (older than {timeout_minutes} minutes)..."
+    )
+
     conn = get_db()
     cursor = conn.cursor()
-    
+
     try:
         # Fetch repositories with status 'indexing'
         cursor.execute(
             "SELECT id, user_id, repository_name, repository_path, indexed_at FROM repositories WHERE status = 'indexing'"
         )
         rows = cursor.fetchall()
-        
+
         now = datetime.now(timezone.utc)
         requeued_count = 0
-        
+
         for row in rows:
             if isinstance(row, dict):
                 repo_id = row["id"]
@@ -37,7 +40,7 @@ def requeue_stuck_tasks(timeout_minutes: int = 30):
                 repo_name = row[2]
                 repo_path = row[3]
                 indexed_at = row[4]
-            
+
             # Parse indexed_at timestamp
             if indexed_at is None:
                 continue
@@ -52,14 +55,16 @@ def requeue_stuck_tasks(timeout_minutes: int = 30):
                         continue
             else:
                 dt = indexed_at
-                
+
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-                
+
             age = now - dt
             if age > timedelta(minutes=timeout_minutes):
-                print(f"[Management] Found stuck repository: {repo_name} (ID: {repo_id}, Path: {repo_path}, Age: {age})")
-                
+                print(
+                    f"[Management] Found stuck repository: {repo_name} (ID: {repo_id}, Path: {repo_path}, Age: {age})"
+                )
+
                 # Re-queue task
                 success = enqueue_indexing_task(repo_path, repo_id, user_id)
                 if success:
@@ -67,11 +72,12 @@ def requeue_stuck_tasks(timeout_minutes: int = 30):
                     requeued_count += 1
                 else:
                     print(f"[Management] Failed to re-queue task for {repo_name}.")
-                    
+
         print(f"[Management] Check complete. Re-queued {requeued_count} stuck task(s).")
-        
+
     finally:
         conn.close()
+
 
 if __name__ == "__main__":
     requeue_stuck_tasks()

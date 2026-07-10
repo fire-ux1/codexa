@@ -116,10 +116,10 @@ def run_alembic_migrations():
 
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     ini_path = os.path.join(base_dir, "alembic.ini")
-    
+
     alembic_cfg = Config(ini_path)
     alembic_cfg.set_main_option("sqlalchemy.url", settings.postgres_url)
-    
+
     print("[DB] Running Alembic migrations...")
     command.upgrade(alembic_cfg, "head")
     print("[DB] Alembic migrations completed successfully.")
@@ -136,13 +136,18 @@ def init_db():
         use_sqlite = True
 
     if use_sqlite:
-        print("[DB] Using local SQLite database. Initializing table structure directly.")
+        print(
+            "[DB] Using local SQLite database. Initializing table structure directly."
+        )
         init_sqlite_db()
     else:
         try:
             run_alembic_migrations()
+            init_sqlite_db()
         except Exception as e:
-            print(f"[DB Warning] Alembic migrations failed: {e}. Falling back to SQLite.")
+            print(
+                f"[DB Warning] Alembic migrations failed: {e}. Falling back to SQLite."
+            )
             use_sqlite = True
             init_sqlite_db()
 
@@ -158,11 +163,13 @@ def init_sqlite_db():
             email TEXT UNIQUE,
             name TEXT,
             avatar_url TEXT,
+            mfa_secret TEXT DEFAULT NULL,
+            mfa_enabled BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
         """)
 
-        # Add token_version column to users if it doesn't exist
+        # Add token_version and MFA columns to users if they don't exist
         try:
             if use_sqlite:
                 cursor.execute("PRAGMA table_info(users)")
@@ -171,17 +178,36 @@ def init_sqlite_db():
                     cursor.execute(
                         "ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1"
                     )
+                if "mfa_secret" not in cols:
+                    cursor.execute(
+                        "ALTER TABLE users ADD COLUMN mfa_secret TEXT DEFAULT NULL"
+                    )
+                if "mfa_enabled" not in cols:
+                    cursor.execute(
+                        "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN DEFAULT FALSE"
+                    )
             else:
                 cursor.execute(
-                    "SELECT column_name FROM information_schema.columns WHERE table_name='users' AND column_name='token_version'"
+                    "SELECT column_name FROM information_schema.columns WHERE table_name='users'"
                 )
-                if not cursor.fetchone():
+                cols = [row["column_name"] for row in cursor.fetchall()]
+                if "token_version" not in cols:
                     cursor.execute(
                         "ALTER TABLE users ADD COLUMN token_version INTEGER DEFAULT 1"
                     )
+                if "mfa_secret" not in cols:
+                    cursor.execute(
+                        "ALTER TABLE users ADD COLUMN mfa_secret TEXT DEFAULT NULL"
+                    )
+                if "mfa_enabled" not in cols:
+                    cursor.execute(
+                        "ALTER TABLE users ADD COLUMN mfa_enabled BOOLEAN DEFAULT FALSE"
+                    )
             conn.commit()
         except Exception as e:
-            print(f"[DB Warning] Could not check or add token_version column: {e}")
+            print(
+                f"[DB Warning] Could not check or add token_version or MFA columns: {e}"
+            )
             if not use_sqlite:
                 conn.rollback()
 
@@ -215,6 +241,42 @@ def init_sqlite_db():
         cursor.execute(
             "CREATE INDEX IF NOT EXISTS idx_api_keys_hash ON api_keys(key_hash)"
         )
+
+        # Create notifications table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS notifications (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            title TEXT,
+            message TEXT,
+            read BOOLEAN DEFAULT FALSE,
+            type TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+        """)
+
+        # Create compliance_settings table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS compliance_settings (
+            id TEXT PRIMARY KEY,
+            hipaa_mode BOOLEAN DEFAULT FALSE,
+            sox_mode BOOLEAN DEFAULT FALSE,
+            retention_days INTEGER DEFAULT 90,
+            session_timeout BOOLEAN DEFAULT TRUE,
+            slack_enabled BOOLEAN DEFAULT FALSE,
+            jira_enabled BOOLEAN DEFAULT FALSE,
+            github_ent_enabled BOOLEAN DEFAULT FALSE
+        )
+        """)
+
+        # Seed default compliance settings
+        cursor.execute("SELECT 1 FROM compliance_settings WHERE id = 'default'")
+        if not cursor.fetchone():
+            cursor.execute(
+                "INSERT INTO compliance_settings (id, hipaa_mode, sox_mode, retention_days, session_timeout) VALUES ('default', FALSE, FALSE, 90, TRUE)"
+            )
+
         conn.commit()
 
         # Create repositories table

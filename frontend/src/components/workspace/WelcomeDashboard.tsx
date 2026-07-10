@@ -78,6 +78,15 @@ export default function WelcomeDashboard({
       bg: "bg-danger-bg/15",
       border: "border-danger/20",
     },
+    {
+      id: "admin",
+      title: "Admin Panel",
+      desc: "Manage project roles and view compliance audit logs.",
+      icon: Shield,
+      color: "text-[#FF9D4D]",
+      bg: "bg-[#FF9D4D]/10",
+      border: "border-[#FF9D4D]/20",
+    },
   ];
 
   return (

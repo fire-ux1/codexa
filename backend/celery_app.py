@@ -21,6 +21,7 @@ app = Celery(
 # ── OpenTelemetry Instrumentation ─────────────────────────────────────────────
 try:
     from observability.instrumentation import instrument_celery
+
     instrument_celery()
 except Exception as e:
     print(f"[Celery Startup] OTEL instrumentation failed: {e}")
@@ -33,15 +34,12 @@ app.conf.update(
     result_serializer="json",
     timezone="UTC",
     enable_utc=True,
-
     # Reliability
-    task_acks_late=True,           # ACK after execution — safe for crashes
+    task_acks_late=True,  # ACK after execution — safe for crashes
     task_reject_on_worker_lost=True,
-    task_track_started=True,       # Expose STARTED state via result backend
-
+    task_track_started=True,  # Expose STARTED state via result backend
     # Result TTL — keep task results for 24 h
     result_expires=86400,
-
     # Named queues
     task_default_queue="default",
     task_queues={
@@ -54,16 +52,14 @@ app.conf.update(
             "routing_key": "default",
         },
     },
-
     # Route tasks to specific queues
     task_routes={
         "tasks.indexing_tasks.index_repository_task": {"queue": "indexing"},
         "tasks.indexing_tasks.archive_and_upload_task": {"queue": "default"},
     },
-
     # Worker tuning
     worker_prefetch_multiplier=1,  # Fetch one task at a time (fair dispatch)
-    worker_max_tasks_per_child=50, # Recycle worker after 50 tasks (prevent memory leaks)
+    worker_max_tasks_per_child=50,  # Recycle worker after 50 tasks (prevent memory leaks)
 )
 
 

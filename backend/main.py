@@ -31,6 +31,9 @@ from api.collaboration import router as collaboration_router
 from api.devops import router as devops_router
 from api.observability import router as observability_router
 from api.system import router as system_router
+from api.admin import router as admin_router
+from api.notifications import router as notifications_router
+from api.compliance import router as compliance_router
 from settings import get_settings
 from services.db_service import init_db
 
@@ -147,9 +150,11 @@ Instrumentator(
 # ── OpenTelemetry Setup ───────────────────────────────────────────────────────
 try:
     from observability.otel_setup import setup_otel
+
     setup_otel(app=app)
-    
+
     from observability.instrumentation import instrument_psycopg2, instrument_redis
+
     instrument_psycopg2()
     instrument_redis()
 except Exception as otel_err:
@@ -177,26 +182,36 @@ def validate_config():
 
 def check_services_connectivity():
     if settings.enforce_strict_auth:
-        print("[App Startup] Strict checks enabled. Verifying Redis and Database connectivity...")
+        print(
+            "[App Startup] Strict checks enabled. Verifying Redis and Database connectivity..."
+        )
         # Check Redis
         try:
             from services.redis_service import get_redis
+
             r = get_redis()
             if r is None:
                 raise ConnectionError("Redis is not available")
             r.ping()
         except Exception as e:
-            raise RuntimeError(f"Strict Startup Check Failed: Redis is unreachable: {e}")
+            raise RuntimeError(
+                f"Strict Startup Check Failed: Redis is unreachable: {e}"
+            )
 
         # Check DB
         try:
             from services.db_service import get_db, use_sqlite
+
             conn = get_db()
             conn.close()
             if use_sqlite:
-                raise ConnectionError("PostgreSQL pool could not be initialized. Check your DATABASE_URL.")
+                raise ConnectionError(
+                    "PostgreSQL pool could not be initialized. Check your DATABASE_URL."
+                )
         except Exception as e:
-            raise RuntimeError(f"Strict Startup Check Failed: Database is unreachable: {e}")
+            raise RuntimeError(
+                f"Strict Startup Check Failed: Database is unreachable: {e}"
+            )
         print("[App Startup] All required services are reachable.")
 
 
@@ -340,3 +355,8 @@ app.include_router(
     tags=["Observability Telemetry & Metrics"],
 )
 app.include_router(system_router, prefix="/api/v1", tags=["System Diagnostics"])
+app.include_router(admin_router, prefix="/admin", tags=["Administration"])
+app.include_router(
+    notifications_router, prefix="/notifications", tags=["Notifications"]
+)
+app.include_router(compliance_router, prefix="/compliance", tags=["Compliance"])

@@ -9,9 +9,11 @@ export default function useCallGraph(
   const [isGraphLoading, setIsGraphLoading] = useState<boolean>(false);
   const [graphSearch, setGraphSearch] = useState<string>("");
   const [selectedFunc, setSelectedFunc] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGetCallGraph = useCallback(async () => {
     try {
+      setError(null);
       setIsGraphLoading(true);
       setStatus({
         tone: "loading",
@@ -35,6 +37,7 @@ export default function useCallGraph(
     } catch (error) {
       console.error(error);
       const errMsg = getErrorMessage(error, "Failed to compile call graph mappings.");
+      setError(errMsg);
       setStatus({
         tone: "error",
         label: "System Error",
@@ -54,5 +57,6 @@ export default function useCallGraph(
     selectedFunc,
     setSelectedFunc,
     handleGetCallGraph,
+    error,
   };
 }

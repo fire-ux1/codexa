@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useMemo, useEffect } from "react";
 import { ReactFlow, MiniMap, Controls, Background } from "@xyflow/react";
@@ -17,6 +17,7 @@ export default function RepositoryGraph({
   onOpenFile = () => {},
   onGetArchitecture = () => {},
   getFileColor = () => "#6366F1",
+  error = null,
 }) {
   const [graphMode, setGraphMode] = useState("dependency"); // dependency | call | folder
   const [layoutMode, setLayoutMode] = useState("hierarchical"); // hierarchical | force
@@ -194,7 +195,24 @@ export default function RepositoryGraph({
         </div>
       </div>
 
-      {architecture ? (
+      {error ? (
+        <div className="py-20 text-center text-rose-400 space-y-4 max-w-md mx-auto bg-rose-500/5 border border-rose-500/10 rounded-2xl p-6 glass w-full">
+          <Network className="w-12 h-12 mx-auto text-rose-400 opacity-60 animate-pulse" />
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold uppercase tracking-wider font-mono">Graph Loading Failed</p>
+            <p className="text-xs text-gray-400 font-mono bg-[#0A0D12]/60 px-3 py-2 rounded-lg border border-[#222834] max-h-[80px] overflow-y-auto text-left break-all select-all scrollbar-thin">
+              {error}
+            </p>
+          </div>
+          <button
+            onClick={onGetArchitecture}
+            disabled={isArchitectureLoading}
+            className="px-5 py-2.5 text-xs font-semibold bg-[#FF9D4D] text-[#0A0D12] hover:bg-[#FFB073] rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer font-mono shadow-md"
+          >
+            {isArchitectureLoading ? "Retrying..." : "Retry Loading Graph"}
+          </button>
+        </div>
+      ) : architecture ? (
         <div className="flex-grow grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 min-h-0">
           
           {/* React Flow Canvas */}

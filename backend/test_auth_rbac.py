@@ -20,10 +20,12 @@ from services.auth_validation import (
 from services.websocket_auth import verify_project_role, verify_project_membership
 
 settings = get_settings()
+settings.enforce_strict_auth = True
 
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_db():
+    settings.enforce_strict_auth = True
     init_db()
     conn = get_db()
     cursor = conn.cursor()

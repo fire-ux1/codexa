@@ -19,6 +19,7 @@ from services.observability_service import log_event
 
 # ── Repository Indexing Task ───────────────────────────────────────────────────
 
+
 @app.task(
     bind=True,
     name="tasks.indexing_tasks.index_repository_task",
@@ -80,11 +81,11 @@ def index_repository_task(self, repo_path: str, repo_id: str, user_id: str):
                 )
                 try:
                     build_knowledge_graph(repo_path, repo_id)
-                    print(
-                        f"[Celery:indexing] Knowledge graph built for {repo_path}."
-                    )
+                    print(f"[Celery:indexing] Knowledge graph built for {repo_path}.")
                 except Exception as graph_err:
-                    print(f"[Celery:indexing] Failed to build knowledge graph: {graph_err}")
+                    print(
+                        f"[Celery:indexing] Failed to build knowledge graph: {graph_err}"
+                    )
 
             elif stage == "Failed":
                 update_repository_status(repo_id=repo_id, status="failed")
@@ -115,6 +116,7 @@ def index_repository_task(self, repo_path: str, repo_id: str, user_id: str):
 
 # ── S3 Archive & Upload Task ───────────────────────────────────────────────────
 
+
 @app.task(
     bind=True,
     name="tasks.indexing_tasks.archive_and_upload_task",
@@ -134,7 +136,9 @@ def archive_and_upload_task(
     Celery task: archive a repository directory and upload it to S3/MinIO.
     Replaces process_background_job('archive_and_upload') from the old worker.py.
     """
-    print(f"[Celery:default] Archiving and uploading {repo_name} to S3 (task_id={self.request.id})")
+    print(
+        f"[Celery:default] Archiving and uploading {repo_name} to S3 (task_id={self.request.id})"
+    )
 
     try:
         from services.repo_service import archive_and_upload_repo
@@ -143,9 +147,13 @@ def archive_and_upload_task(
             path, repo_name, repo_url=repo_url, repo_id=repo_id
         )
         if success:
-            print(f"[Celery:default] Repository {repo_name} uploaded to S3 successfully.")
+            print(
+                f"[Celery:default] Repository {repo_name} uploaded to S3 successfully."
+            )
         else:
-            raise RuntimeError(f"archive_and_upload_repo returned False for {repo_name}")
+            raise RuntimeError(
+                f"archive_and_upload_repo returned False for {repo_name}"
+            )
 
     except Exception as exc:
         print(f"[Celery:default] Upload task failed for {repo_name}: {exc}")

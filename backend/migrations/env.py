@@ -28,6 +28,7 @@ config.set_main_option("sqlalchemy.url", settings.postgres_url)
 # target_metadata can be defined for autogenerate support if using ORM/declarative models
 target_metadata = None
 
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
@@ -46,7 +47,9 @@ def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     db_url = config.get_main_option("sqlalchemy.url")
     if not db_url or db_url.startswith("sqlite") or "codepilot.db" in db_url:
-        print("[Alembic] PostgreSQL database URL not set or SQLite configured. Skipping migrations online.")
+        print(
+            "[Alembic] PostgreSQL database URL not set or SQLite configured. Skipping migrations online."
+        )
         return
 
     connectable = engine_from_config(
@@ -56,9 +59,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()

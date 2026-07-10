@@ -1,0 +1,9 @@
+# Ruff Configuration for CodePilot AI Backend
+
+[lint]
+# Ignore E402 (Module level import not at top of file) to allow pre-import configuration overrides (e.g. disabling strict auth for tests before main.py imports).
+ignore = ["E402"]
+
+[format]
+line-ending = "lf"
+

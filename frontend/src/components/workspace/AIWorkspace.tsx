@@ -2,6 +2,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useCallback, useRef, useEffect, Suspense, lazy } from "react";
 import useWorkspace from "../../hooks/useWorkspace";
+import { ErrorBoundary } from "../common/ErrorBoundary";
 import useSelection from "../../hooks/useSelection";
 import useConversation from "../../hooks/useConversation";
 
@@ -27,6 +28,7 @@ import RepositoryAnalytics from "./RepositoryAnalytics";
 import ActivityTimeline from "./ActivityTimeline";
 import BottomPanel from "./BottomPanel";
 import RepositoryGraph from "./RepositoryGraph";
+import AdminDashboard from "./AdminDashboard";
 
 // Lazy-loaded components
 const MonacoFileViewer = lazy(() => import("../editor/MonacoFileViewer"));
@@ -47,6 +49,7 @@ const INITIAL_PATCH = {
 
 export default function AIWorkspace({
   repoPath,
+  repoId: activeRepoId,
   architecture,
   graphNodes,
   graphEdges,
@@ -54,6 +57,7 @@ export default function AIWorkspace({
   isArchitectureLoading,
   isGraphLoadingReactFlow,
   onNodeClick,
+  onExplainFile,
   onGetArchitecture,
   getFileColor,
   callGraph,
@@ -65,6 +69,8 @@ export default function AIWorkspace({
   functionCallers,
   isGraphLoading,
   onGetCallGraph,
+  architectureError,
+  callGraphError,
 }) {
   const workspace = useWorkspace();
   const conversation = useConversation();
@@ -657,6 +663,16 @@ export default function AIWorkspace({
             />
           )}
 
+          {mode === "admin" && (
+            <ErrorBoundary>
+              <AdminDashboard
+                repoPath={repoPath}
+                repoId={activeRepoId}
+                onBack={() => setMode("editor")}
+              />
+            </ErrorBoundary>
+          )}
+
           {mode === "editor" && (
             <div className="flex-grow flex flex-col min-h-0 overflow-hidden relative">
               {/* Tab Header */}
@@ -730,84 +746,90 @@ export default function AIWorkspace({
               {/* Monaco Viewer */}
               <div className="flex-grow flex-1 min-h-0 relative flex flex-col">
                 {workspace.activeFile ? (
-                  <Suspense fallback={<div>Loading editor...</div>}>
-                    <MonacoFileViewer
-                      filePath={workspace.activeFile}
-                      content={workspace.activeFileContent}
-                      loading={workspace.isFileLoading}
-                      editorRef={workspace.editorRef}
-                      repoPath={repoPath}
-                      onSelectionChange={handleSelectionChange}
-                      onChange={(val) => workspace.updateFileContent(workspace.activeFile, val)}
-                      onExplainSymbol={(sym) => {
-                        workspace.setActiveSymbol(sym);
-                        conversation.sendMessage({
-                          repo: repoPath,
-                          file: workspace.activeFile,
-                          symbol: sym,
-                          selection: "",
-                          message: `/explain ${sym}`,
-                        });
-                      }}
-                    />
-                  </Suspense>
+                  <ErrorBoundary>
+                    <Suspense fallback={<div>Loading editor...</div>}>
+                      <MonacoFileViewer
+                        filePath={workspace.activeFile}
+                        content={workspace.activeFileContent}
+                        loading={workspace.isFileLoading}
+                        editorRef={workspace.editorRef}
+                        repoPath={repoPath}
+                        onSelectionChange={handleSelectionChange}
+                        onChange={(val) => workspace.updateFileContent(workspace.activeFile, val)}
+                        onExplainSymbol={(sym) => {
+                          workspace.setActiveSymbol(sym);
+                          conversation.sendMessage({
+                            repo: repoPath,
+                            file: workspace.activeFile,
+                            symbol: sym,
+                            selection: "",
+                            message: `/explain ${sym}`,
+                          });
+                        }}
+                      />
+                    </Suspense>
+                  </ErrorBoundary>
                 ) : (
-                  <WelcomeDashboard
-                    repoPath={repoPath}
-                    filesCount={filesList.length}
-                    symbolsCount={filesList.length * 8 || 0}
-                    onExecuteAction={(actionId) => {
-                      if (actionId === "explain_repo") {
-                        conversation.sendMessage({
-                          repo: repoPath,
-                          file: "",
-                          symbol: "",
-                          selection: "",
-                          message: `Explain this repository`,
-                        });
-                        setRightTab("chat");
-                        setSidebarCollapsed(false);
-                      } else if (actionId === "architecture") {
-                        setMode("understand");
-                      } else if (actionId === "search_repo") {
-                        setActiveActivity("search");
-                        setMode("editor");
-                      } else if (actionId === "find_bugs") {
-                        conversation.sendMessage({
-                          repo: repoPath,
-                          file: workspace.activeFile || "",
-                          symbol: "",
-                          selection: "",
-                          message: `Find potential bugs`,
-                        });
-                        setRightTab("chat");
-                        setSidebarCollapsed(false);
-                      } else if (actionId === "generate_tests") {
-                        conversation.sendMessage({
-                          repo: repoPath,
-                          file: workspace.activeFile || "",
-                          symbol: "",
-                          selection: "",
-                          message: `Generate unit tests`,
-                        });
-                        setRightTab("chat");
-                        setSidebarCollapsed(false);
-                      } else if (actionId === "review") {
-                        setMode("review");
-                      } else if (actionId === "ask_ai") {
-                        setRightTab("chat");
-                        setSidebarCollapsed(false);
-                      } else if (actionId === "health") {
-                        setMode("health");
-                      } else if (actionId === "analytics") {
-                        setMode("analytics");
-                      }
-                    }}
-                    recentFiles={workspace.openFiles}
-                    onOpenFile={handleExplorerFileOpen}
-                    recentChats={conversation.sessions}
-                    onLoadChat={conversation.loadSession}
-                  />
+                  <ErrorBoundary>
+                    <WelcomeDashboard
+                      repoPath={repoPath}
+                      filesCount={filesList.length}
+                      symbolsCount={filesList.length * 8 || 0}
+                      onExecuteAction={(actionId) => {
+                        if (actionId === "explain_repo") {
+                          conversation.sendMessage({
+                            repo: repoPath,
+                            file: "",
+                            symbol: "",
+                            selection: "",
+                            message: `Explain this repository`,
+                          });
+                          setRightTab("chat");
+                          setSidebarCollapsed(false);
+                        } else if (actionId === "architecture") {
+                          setMode("understand");
+                        } else if (actionId === "search_repo") {
+                          setActiveActivity("search");
+                          setMode("editor");
+                        } else if (actionId === "find_bugs") {
+                          conversation.sendMessage({
+                            repo: repoPath,
+                            file: workspace.activeFile || "",
+                            symbol: "",
+                            selection: "",
+                            message: `Find potential bugs`,
+                          });
+                          setRightTab("chat");
+                          setSidebarCollapsed(false);
+                        } else if (actionId === "generate_tests") {
+                          conversation.sendMessage({
+                            repo: repoPath,
+                            file: workspace.activeFile || "",
+                            symbol: "",
+                            selection: "",
+                            message: `Generate unit tests`,
+                          });
+                          setRightTab("chat");
+                          setSidebarCollapsed(false);
+                        } else if (actionId === "review") {
+                          setMode("review");
+                        } else if (actionId === "ask_ai") {
+                          setRightTab("chat");
+                          setSidebarCollapsed(false);
+                        } else if (actionId === "health") {
+                          setMode("health");
+                        } else if (actionId === "analytics") {
+                          setMode("analytics");
+                        } else if (actionId === "admin") {
+                          setMode("admin");
+                        }
+                      }}
+                      recentFiles={workspace.openFiles}
+                      onOpenFile={handleExplorerFileOpen}
+                      recentChats={conversation.sessions}
+                      onLoadChat={conversation.loadSession}
+                    />
+                  </ErrorBoundary>
                 )}
               </div>
 
@@ -835,29 +857,32 @@ export default function AIWorkspace({
             <div className="flex flex-col h-full bg-[#0f1219]">
               {renderGoalHeader("Goal: Understand Repository Graph")}
               <div className="flex-grow flex-1 overflow-y-auto p-4 select-text">
-                <RepositoryGraph
-                  architecture={architecture}
-                  graphNodes={graphNodes}
-                  graphEdges={graphEdges}
-                  selectedNode={selectedNode}
-                  isArchitectureLoading={isArchitectureLoading}
-                  isGraphLoadingReactFlow={isGraphLoadingReactFlow}
-                  onNodeClick={onNodeClick}
-                  onExplainFile={(nodeId) => {
-                    conversation.sendMessage({
-                      repo: repoPath,
-                      file: nodeId,
-                      symbol: "",
-                      selection: "",
-                      message: `Explain this module node`,
-                    });
-                    setRightTab("chat");
-                    setSidebarCollapsed(false);
-                  }}
-                  onOpenFile={handleExplorerFileOpen}
-                  onGetArchitecture={onGetArchitecture}
-                  getFileColor={getFileColor}
-                />
+                <ErrorBoundary>
+                  <RepositoryGraph
+                    architecture={architecture}
+                    graphNodes={graphNodes}
+                    graphEdges={graphEdges}
+                    selectedNode={selectedNode}
+                    isArchitectureLoading={isArchitectureLoading}
+                    isGraphLoadingReactFlow={isGraphLoadingReactFlow}
+                    onNodeClick={onNodeClick}
+                    onExplainFile={(nodeId) => {
+                      conversation.sendMessage({
+                        repo: repoPath,
+                        file: nodeId,
+                        symbol: "",
+                        selection: "",
+                        message: `Explain this module node`,
+                      });
+                      setRightTab("chat");
+                      setSidebarCollapsed(false);
+                    }}
+                    onOpenFile={handleExplorerFileOpen}
+                    onGetArchitecture={onGetArchitecture}
+                    getFileColor={getFileColor}
+                    error={architectureError}
+                  />
+                </ErrorBoundary>
               </div>
             </div>
           )}
@@ -870,19 +895,22 @@ export default function AIWorkspace({
                 defaultSplit={40}
                 left={
                   <div className="h-full p-4 bg-[#090b10]">
-                    <Suspense fallback={<div>Loading call graph...</div>}>
-                      <CallGraphTab
-                        callGraph={callGraph}
-                        graphSearch={graphSearch}
-                        setGraphSearch={setGraphSearch}
-                        selectedFunc={selectedFunc}
-                        setSelectedFunc={setSelectedFunc}
-                        filteredFunctions={filteredFunctions}
-                        functionCallers={functionCallers}
-                        isGraphLoading={isGraphLoading}
-                        onGetCallGraph={onGetCallGraph}
-                      />
-                    </Suspense>
+                    <ErrorBoundary>
+                      <Suspense fallback={<div>Loading call graph...</div>}>
+                        <CallGraphTab
+                          callGraph={callGraph}
+                          graphSearch={graphSearch}
+                          setGraphSearch={setGraphSearch}
+                          selectedFunc={selectedFunc}
+                          setSelectedFunc={setSelectedFunc}
+                          filteredFunctions={filteredFunctions}
+                          functionCallers={functionCallers}
+                          isGraphLoading={isGraphLoading}
+                          onGetCallGraph={onGetCallGraph}
+                          error={callGraphError}
+                        />
+                      </Suspense>
+                    </ErrorBoundary>
                   </div>
                 }
                 right={
@@ -894,14 +922,16 @@ export default function AIWorkspace({
                     </div>
                     <div className="flex-grow flex-1 min-h-0 relative">
                       {workspace.activeFile ? (
-                        <Suspense fallback={<div>Loading preview...</div>}>
-                          <MonacoFileViewer
-                            filePath={workspace.activeFile}
-                            content={workspace.activeFileContent}
-                            loading={workspace.isFileLoading}
-                            readOnly={true}
-                          />
-                        </Suspense>
+                        <ErrorBoundary>
+                          <Suspense fallback={<div>Loading preview...</div>}>
+                            <MonacoFileViewer
+                              filePath={workspace.activeFile}
+                              content={workspace.activeFileContent}
+                              loading={workspace.isFileLoading}
+                              readOnly={true}
+                            />
+                          </Suspense>
+                        </ErrorBoundary>
                       ) : (
                         <div className="p-8 text-center text-xs text-gray-500 font-mono italic">
                           No file active. Select a call site reference inside the graph caller list to preview it here.
@@ -929,17 +959,19 @@ export default function AIWorkspace({
                     </div>
                     <div className="flex-1 min-h-0 relative">
                       {workspace.activeFile ? (
-                        <Suspense fallback={<div>Loading editor...</div>}>
-                          <MonacoFileViewer
-                            filePath={workspace.activeFile}
-                            content={workspace.activeFileContent}
-                            loading={workspace.isFileLoading}
-                            editorRef={workspace.editorRef}
-                            repoPath={repoPath}
-                            onSelectionChange={handleSelectionChange}
-                            onChange={(val) => workspace.updateFileContent(workspace.activeFile, val)}
-                          />
-                        </Suspense>
+                        <ErrorBoundary>
+                          <Suspense fallback={<div>Loading editor...</div>}>
+                            <MonacoFileViewer
+                              filePath={workspace.activeFile}
+                              content={workspace.activeFileContent}
+                              loading={workspace.isFileLoading}
+                              editorRef={workspace.editorRef}
+                              repoPath={repoPath}
+                              onSelectionChange={handleSelectionChange}
+                              onChange={(val) => workspace.updateFileContent(workspace.activeFile, val)}
+                            />
+                          </Suspense>
+                        </ErrorBoundary>
                       ) : (
                         <div className="p-8 text-center text-xs text-gray-500 font-mono italic">
                           Open a file to start AI code reviews.
@@ -950,9 +982,11 @@ export default function AIWorkspace({
                 }
                 right={
                   <div className="h-full bg-[#0f1219] p-4 overflow-y-auto">
-                    <Suspense fallback={<div>Loading reviews...</div>}>
-                      <RepositoryReviewTab repoPath={repoPath} />
-                    </Suspense>
+                    <ErrorBoundary>
+                      <Suspense fallback={<div>Loading reviews...</div>}>
+                        <RepositoryReviewTab repoPath={repoPath} />
+                      </Suspense>
+                    </ErrorBoundary>
                   </div>
                 }
               />
@@ -973,13 +1007,15 @@ export default function AIWorkspace({
                       </span>
                     </div>
                     <div className="flex-grow flex-1 min-h-0 relative">
-                      <Suspense fallback={<div>Loading Diff Viewer...</div>}>
-                        <DiffViewer
-                          original={patch.originalContent || ""}
-                          modified={patch.modifiedContent || ""}
-                          filePath={patch.file || workspace.activeFile}
-                        />
-                      </Suspense>
+                      <ErrorBoundary>
+                        <Suspense fallback={<div>Loading Diff Viewer...</div>}>
+                          <DiffViewer
+                            original={patch.originalContent || ""}
+                            modified={patch.modifiedContent || ""}
+                            filePath={patch.file || workspace.activeFile}
+                          />
+                        </Suspense>
+                      </ErrorBoundary>
                     </div>
                   </div>
                 }
@@ -1068,36 +1104,38 @@ export default function AIWorkspace({
         )}
 
         {/* Permanently Visible Assistant Sidebar */}
-        <Suspense fallback={<div>Loading Assistant...</div>}>
-          <AISidebar
-            collapsed={sidebarCollapsed}
-            onToggleCollapse={setSidebarCollapsed}
-            activeTab={rightTab}
-            setActiveTab={setRightTab}
-            width={rightSidebarWidth}
-            repoPath={repoPath}
-            activeFile={workspace.activeFile}
-            activeSymbol={workspace.activeSymbol}
-            selectionText={selectionText}
-            selectionRange={selectionRange}
-            language={language}
-            conversationId={conversation.conversationId}
-            messages={conversation.messages}
-            isStreaming={conversation.isStreaming}
-            onSendMessage={conversation.sendMessage}
-            onStop={conversation.stopStreaming}
-            onNewConversation={conversation.startNewConversation}
-            sessions={conversation.sessions}
-            onLoadSession={conversation.loadSession}
-            patch={patch}
-            patchHistory={patchHistory}
-            handleRequestPatch={handleRequestPatch}
-            handleSelectHistory={handleSelectHistory}
-            isPatchStreaming={isPatchStreaming}
-            onOpenFile={handleExplorerFileOpen}
-            onApplyProfile={handleApplyProfile}
-          />
-        </Suspense>
+        <ErrorBoundary>
+          <Suspense fallback={<div>Loading Assistant...</div>}>
+            <AISidebar
+              collapsed={sidebarCollapsed}
+              onToggleCollapse={setSidebarCollapsed}
+              activeTab={rightTab}
+              setActiveTab={setRightTab}
+              width={rightSidebarWidth}
+              repoPath={repoPath}
+              activeFile={workspace.activeFile}
+              activeSymbol={workspace.activeSymbol}
+              selectionText={selectionText}
+              selectionRange={selectionRange}
+              language={language}
+              conversationId={conversation.conversationId}
+              messages={conversation.messages}
+              isStreaming={conversation.isStreaming}
+              onSendMessage={conversation.sendMessage}
+              onStop={conversation.stopStreaming}
+              onNewConversation={conversation.startNewConversation}
+              sessions={conversation.sessions}
+              onLoadSession={conversation.loadSession}
+              patch={patch}
+              patchHistory={patchHistory}
+              handleRequestPatch={handleRequestPatch}
+              handleSelectHistory={handleSelectHistory}
+              isPatchStreaming={isPatchStreaming}
+              onOpenFile={handleExplorerFileOpen}
+              onApplyProfile={handleApplyProfile}
+            />
+          </Suspense>
+        </ErrorBoundary>
       </div>
 
       {/* Persistent Status Bar */}

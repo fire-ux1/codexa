@@ -10,6 +10,8 @@ import LoginScreen from "./components/auth/LoginScreen";
 import Sidebar from "./components/sidebar/Sidebar";
 import OnboardingPanel from "./components/workspace/OnboardingPanel";
 import AIWorkspace from "./components/workspace/AIWorkspace";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import MfaVerificationModal from "./components/common/MfaVerificationModal";
 
 // Hooks
 import useToast from "./hooks/useToast";
@@ -41,6 +43,8 @@ export default function App() {
   const [showSandboxForm, setShowSandboxForm] = useState<boolean>(false);
   const [sandboxName, setSandboxName] = useState<string>("Sandbox Developer");
   const [sandboxEmail, setSandboxEmail] = useState<string>("sandbox@codepilot.ai");
+  const [mfaTempToken, setMfaTempToken] = useState<string>("");
+  const [showMfaModal, setShowMfaModal] = useState<boolean>(false);
   
   // Hooks Integration
   const { toasts, showToast } = useToast() as any;
@@ -90,6 +94,7 @@ export default function App() {
     isGraphLoadingReactFlow,
     handleGetArchitecture,
     handleNodeClick,
+    error: architectureError,
   } = useArchitecture(repoPath, setStatus, getFileColor) as any;
 
   const {
@@ -101,16 +106,27 @@ export default function App() {
     selectedFunc,
     setSelectedFunc,
     handleGetCallGraph,
+    error: callGraphError,
   } = useCallGraph(repoPath, setStatus) as any;
 
   const {
     setFlowData,
   } = useExecutionFlow(repoPath, setStatus) as any;
 
-  // 1. Authenticate user on load and check URL query params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get("token");
+    const mfaRequired = params.get("mfa_required") === "true";
+    const mfaTemp = params.get("mfa_temp_token");
+
+    if (mfaRequired && mfaTemp) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setMfaTempToken(mfaTemp);
+      setShowMfaModal(true);
+      setIsAuthLoading(false);
+      return;
+    }
+
     if (urlToken) {
       window.history.replaceState({}, document.title, window.location.pathname);
       showToast("Authentication successful!", "success");
@@ -155,6 +171,11 @@ export default function App() {
     try {
       setIsAuthLoading(true);
       const res = await loginDeveloper(sandboxName, sandboxEmail);
+      if (res.mfa_required) {
+        setMfaTempToken(res.mfa_temp_token);
+        setShowMfaModal(true);
+        return;
+      }
       setToken(res.token);
       setUser(res.user);
       setShowSandboxForm(false);
@@ -251,63 +272,88 @@ export default function App() {
         </div>
       )}
 
-      {!repositoryReady ? (
-        /* ONBOARDING STATE */
-        <div className="flex flex-col md:flex-row flex-1 min-h-screen">
-          <Sidebar
-            user={user}
-            history={history}
-            repoPath={repoPath}
-            onSignOut={handleSignOut}
-            onClearWorkspace={clearWorkspace}
-            onSelectRepo={handleSelectRepository}
-            onDeleteRepo={handleDeleteRepository}
-          />
-          <div className="flex-grow p-4 md:p-6 lg:p-8">
-            {/* Status Bar */}
-            <div className={`mb-6 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border ${(statusTones as Record<string, string>)[status.tone]} transition-all duration-300 glass overflow-hidden`}>
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <span className="flex h-2.5 w-2.5 relative shrink-0">
-                  <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status.tone === 'loading' ? 'bg-indigo-400' : status.tone === 'success' ? 'bg-emerald-400' : status.tone === 'error' ? 'bg-rose-400' : 'bg-gray-400'}`}></span>
-                  <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${status.tone === 'loading' ? 'bg-indigo-500' : status.tone === 'success' ? 'bg-emerald-500' : status.tone === 'error' ? 'bg-rose-500' : 'bg-gray-500'}`}></span>
-                </span>
-                <span className="text-sm font-medium text-white">{status.message}</span>
-              </div>
-            </div>
-            <OnboardingPanel
-              indexingProgress={indexingProgress}
-              repoUrl={repoUrl}
-              setRepoUrl={setRepoUrl}
-              isCloning={isCloning}
-              onIndexRepository={handleIndexRepository}
+      <ErrorBoundary>
+        {!repositoryReady ? (
+          /* ONBOARDING STATE */
+          <div className="flex flex-col md:flex-row flex-1 min-h-screen">
+            <Sidebar
+              user={user}
+              history={history}
+              repoPath={repoPath}
+              onSignOut={handleSignOut}
+              onClearWorkspace={clearWorkspace}
+              onSelectRepo={handleSelectRepository}
+              onDeleteRepo={handleDeleteRepository}
             />
+            <div className="flex-grow p-4 md:p-6 lg:p-8">
+              {/* Status Bar */}
+              <div className={`mb-6 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border ${(statusTones as Record<string, string>)[status.tone]} transition-all duration-300 glass overflow-hidden`}>
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <span className="flex h-2.5 w-2.5 relative shrink-0">
+                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status.tone === 'loading' ? 'bg-indigo-400' : status.tone === 'success' ? 'bg-emerald-400' : status.tone === 'error' ? 'bg-rose-400' : 'bg-gray-400'}`}></span>
+                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${status.tone === 'loading' ? 'bg-indigo-500' : status.tone === 'success' ? 'bg-emerald-500' : status.tone === 'error' ? 'bg-rose-500' : 'bg-gray-500'}`}></span>
+                  </span>
+                  <span className="text-sm font-medium text-white">{status.message}</span>
+                </div>
+              </div>
+              <OnboardingPanel
+                indexingProgress={indexingProgress}
+                repoUrl={repoUrl}
+                setRepoUrl={setRepoUrl}
+                isCloning={isCloning}
+                onIndexRepository={handleIndexRepository}
+              />
+            </div>
           </div>
-        </div>
-      ) : (
-        /* FULL IDE WORKSPACE */
-        React.createElement(AIWorkspace as any, {
-          repoPath,
-          repoId: activeRepoId,
-          architecture,
-          graphNodes,
-          graphEdges,
-          selectedNode,
-          isArchitectureLoading,
-          isGraphLoadingReactFlow,
-          onNodeClick: handleNodeClick,
-          onExplainFile: handleExplainFile,
-          onGetArchitecture: handleGetArchitecture,
-          getFileColor,
-          callGraph,
-          graphSearch,
-          setGraphSearch,
-          selectedFunc,
-          setSelectedFunc,
-          filteredFunctions,
-          functionCallers,
-          isGraphLoading,
-          onGetCallGraph: handleGetCallGraph,
-        })
+        ) : (
+          /* FULL IDE WORKSPACE */
+          React.createElement(AIWorkspace as any, {
+            repoPath,
+            repoId: activeRepoId,
+            architecture,
+            graphNodes,
+            graphEdges,
+            selectedNode,
+            isArchitectureLoading,
+            isGraphLoadingReactFlow,
+            onNodeClick: handleNodeClick,
+            onExplainFile: handleExplainFile,
+            onGetArchitecture: handleGetArchitecture,
+            getFileColor,
+            callGraph,
+            graphSearch,
+            setGraphSearch,
+            selectedFunc,
+            setSelectedFunc,
+            filteredFunctions,
+            functionCallers,
+            isGraphLoading,
+            onGetCallGraph: handleGetCallGraph,
+            architectureError,
+            callGraphError,
+          })
+        )}
+      </ErrorBoundary>
+
+      {showMfaModal && mfaTempToken && (
+        <MfaVerificationModal
+          tempToken={mfaTempToken}
+          onSuccess={(verifiedToken, verifiedRefreshToken, verifiedUser) => {
+            localStorage.setItem("codepilot_token", verifiedToken);
+            localStorage.setItem("codepilot_refresh_token", verifiedRefreshToken);
+            setToken(verifiedToken);
+            setUser(verifiedUser);
+            setShowMfaModal(false);
+            setMfaTempToken("");
+            showToast(`MFA Verified. Welcome back, ${verifiedUser.name}!`, "success");
+          }}
+          onCancel={() => {
+            setShowMfaModal(false);
+            setMfaTempToken("");
+            setIsAuthLoading(false);
+            showToast("MFA Verification cancelled.", "info");
+          }}
+        />
       )}
     </div>
   );

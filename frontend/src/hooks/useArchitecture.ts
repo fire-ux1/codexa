@@ -15,9 +15,11 @@ export default function useArchitecture(
   const [isGraphLoadingReactFlow, setIsGraphLoadingReactFlow] = useState<boolean>(false);
   const [previewContent, setPreviewContent] = useState<string>("");
   const [isPreviewLoading, setIsPreviewLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleGetArchitecture = useCallback(async () => {
     try {
+      setError(null);
       setIsArchitectureLoading(true);
       setStatus({
         tone: "loading",
@@ -127,6 +129,7 @@ export default function useArchitecture(
     } catch (error) {
       console.error(error);
       const errMsg = getErrorMessage(error, "Failed to compile architecture insights.");
+      setError(errMsg);
       setStatus({
         tone: "error",
         label: "System Error",
@@ -168,5 +171,6 @@ export default function useArchitecture(
     setIsPreviewLoading,
     handleGetArchitecture,
     handleNodeClick,
+    error,
   };
 }
