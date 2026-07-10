@@ -1,7 +1,7 @@
 # 🚀 Codexa (CodePilot AI)
 
 <p align="center">
-  <b>An AI-powered codebase intelligence and collaboration platform that helps developers understand, document, and collaborate on complex repositories using RAG, semantic search, AST-based symbol parsing, and Large Language Models.</b>
+  <b>An AI-powered codebase intelligence and collaboration platform that helps developers understand, document, and collaborate on complex repositories using RAG, semantic search, AST-based symbol analysis, and real-time collaboration.</b>
 </p>
 
 <p align="center">
@@ -20,174 +20,195 @@
 
 ---
 
-## 🌐 Live Demo
+## ⚡ Quick Links
 
-### Frontend
-
-[https://codepilot-ai-wine.vercel.app/](https://codepilot-ai-wine.vercel.app/)
-
-### Backend API
-
-[https://codepilot-backend-wx7u.onrender.com/](https://codepilot-backend-wx7u.onrender.com/)
-
-### Swagger Documentation
-
-[https://codepilot-backend-wx7u.onrender.com/docs](https://codepilot-backend-wx7u.onrender.com/docs)
+| 🌐 **Live Demo** | 📚 **Docs** | 💬 **Community** | 🚀 **Deploy** |
+|---|---|---|---|
+| [Frontend](https://codepilot-ai-wine.vercel.app/) | [Getting Started](documentation/getting-started.md) | [Discussions](https://github.com/abhishek-s12/codepilot-ai/discussions) | [Railway](#-one-click-deploy) |
+| [API Docs](https://codepilot-backend-wx7u.onrender.com/docs) | [Architecture](documentation/architecture.md) | [Issues](https://github.com/abhishek-s12/codepilot-ai/issues) | [Docker](#-docker-compose-deployment) |
 
 ---
 
-# 📖 Overview
+## 🎯 Why CodePilot AI?
 
-Understanding a large or unfamiliar codebase is a significant challenge when joining a new team, exploring open-source repositories, reviewing legacy projects, or analyzing project architecture.
+Understanding a large or unfamiliar codebase is a **significant challenge**:
+- 🤔 **Joining a new team?** Spend weeks navigating hundreds of files
+- 📚 **Reviewing open-source?** Struggle to understand the architecture
+- 🔍 **Analyzing legacy code?** Manual reading is slow and error-prone
+- 🏢 **Enterprise scale?** Multiple teams need codebase context
 
-**Codexa** solves this by combining **Semantic Search + AST Symbol Analysis + Real-time Collaboration + AI Assistant**. Instead of manually navigating hundreds of files, developers can ask questions in natural language, visualize call graphs, explore code flow, run autonomous tasks, and collaborate with their team in real time.
-
----
-
-# 📚 Project Documentation
-
-For comprehensive guides and architecture diagrams, check out our new **[documentation/](documentation/)** folder:
-* **[Introduction](documentation/introduction.md)** — High-level details of Codexa (CodePilot AI).
-* **[Getting Started Guide](documentation/getting-started.md)** — Step-by-step local development setup.
-* **[System Architecture](documentation/architecture.md)** — Component layouts, data flows, and tracing.
-* **[Developer & Operations Guide](documentation/development-guide.md)** — Alembic migrations, testing, and troubleshooting.
-* **[Production Deployment Guide](documentation/production-deployment.md)** — Kubernetes & Helm chart deployment.
-* **[Design System Guidelines](documentation/design-system.md)** — Visual hierarchy, palettes, and rules.
+**CodePilot AI solves this** by combining:
+- ✨ **Semantic Search** — Ask questions in natural language
+- 🧠 **AI Chat with RAG** — Get instant answers with file citations
+- 🗺️ **Architecture Analysis** — Automatic project structure insights
+- 📊 **Call Graphs** — Interactive dependency visualization
+- 🔄 **Real-time Collaboration** — Analyze together with your team
 
 ---
 
-# ✨ Features
+## ⭐ Key Features
 
-| Feature                         |    Status    | Description                                                                                 |
-| :------------------------------ | :----------: | :------------------------------------------------------------------------------------------ |
-| **Clone GitHub Repository**     | ✅ Completed | Clone public repositories directly into the analysis workspace.                             |
-| **Repository Scanner & Parser** | ✅ Completed | Recursive scanner with intelligent file filtering and AST parsing.                          |
-| **Semantic Code Indexing**      | ✅ Completed | Generate embeddings with Sentence Transformers for semantic search.                         |
-| **Qdrant Vector Database**      | ✅ Completed | Scalable vector store for lightning-fast similarity search on code chunks.                  |
-| **AI Repository Chat (RAG)**    | ✅ Completed | Ask codebase questions in natural language with source file citations.                      |
-| **Architecture Analysis**       | ✅ Completed | Automatic high-level architectural insights and directory summaries.                        |
-| **Repository Call Graph**       | ✅ Completed | Interactive mapping of component and function dependencies using XYFlow.                    |
-| **Execution Flow Explainer**    | ✅ Completed | Explains step-by-step how requests and business logic traverse the app.                     |
-| **Auth & RBAC Hardening**       | ✅ Completed | JWT authentication, OAuth (Google/GitHub), RBAC, and personal API keys (`sk_live_...`).     |
-| **Real-time Collaboration**     | ✅ Completed | Real-time workspace synchronization and messaging using WebSockets.                         |
-| **Redis Cache & Rate Limiting** | ✅ Completed | Redis-backed caching and client-IP based rate limiting for backend APIs.                    |
-| **S3 / MinIO Object Storage**   | ✅ Completed | Secure file storage with server-side encryption (AES256) and SHA-256 metadata verification. |
-| **Autonomous Task Planner**     | ✅ Completed | Automated task sequencing and agentic code modification.                                    |
-| **Observability Telemetry**     | ✅ Completed | Standardized logging, latency tracking, and system health checks.                           |
+| Feature | Status | What It Does |
+|---------|--------|-------------|
+| **Clone GitHub Repository** | ✅ | Import public repos directly into your workspace |
+| **Repository Scanner & Parser** | ✅ | Recursive scanning with intelligent AST parsing |
+| **Semantic Code Indexing** | ✅ | AI embeddings for lightning-fast similarity search |
+| **AI Repository Chat (RAG)** | ✅ | Ask anything about your codebase with source citations |
+| **Architecture Analysis** | ✅ | Auto-generate high-level architectural insights |
+| **Interactive Call Graph** | ✅ | Visual mapping of component dependencies |
+| **Execution Flow Tracer** | ✅ | Understand how requests flow through your app |
+| **Auth & RBAC** | ✅ | JWT, OAuth (GitHub/Google), personal API keys |
+| **Real-time Collaboration** | ✅ | WebSocket-powered team workspaces |
+| **Redis Cache & Rate Limiting** | ✅ | Production-grade performance & safety |
+| **S3 / MinIO Storage** | ✅ | Secure encrypted file storage |
+| **PDF/Markdown Export** | ⏳ | Coming soon: Generate documentation |
 
 ---
 
-# 🏗 System Architecture
+## 🚀 One-Click Deploy
 
-```text
-                                  User / Team
-                                       │
-                            WebSocket ╱ ╲ Axios API
-                                     ↙     ↘
-                          React + Vite Frontend
-                                    │
-                                    ▼
-                             FastAPI Backend
-                                    │
-   ┌───────────┬────────────┬───────┴───────┬────────────┬───────────┐
-   ▼           ▼            ▼               ▼            ▼           ▼
-Repository   Redis      PostgreSQL        Qdrant     OpenRouter   S3/MinIO
- Scanner   (Rate Limit/   (RDBMS/         (Vector       LLM       (Storage/
- (AST/Git)   Caching)    SQLite Fallback)  Store)     (AI Engine) Encryption)
+Deploy CodePilot AI to your favorite cloud platform:
+
+<div align="center">
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/codepilot-ai)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com)
+[![Deploy to Vercel](https://vercel.com/button)](https://vercel.com)
+
+</div>
+
+Or use **Docker Compose** for local development (see below).
+
+---
+
+## ⚡ 5-Minute Quickstart
+
+### Option 1: Docker Compose (Recommended)
+```bash
+# Clone the repository
+git clone https://github.com/abhishek-s12/codepilot-ai.git
+cd codepilot-ai
+
+# Copy environment file
+cp .env.example .env
+
+# Start all services (PostgreSQL, Redis, Qdrant, Backend, Frontend, etc.)
+docker compose up -d
+
+# Frontend: http://localhost:5173
+# API Docs: http://localhost:8000/docs
+```
+
+### Option 2: Local Development
+```bash
+# Backend
+cd backend
+python -m venv venv
+source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn main:app --reload  # http://127.0.0.1:8000/docs
+
+# Frontend (in another terminal)
+cd frontend
+npm install
+npm run dev  # http://localhost:5173
+```
+
+### Option 3: Try the Live Demo
+Visit [https://codepilot-ai-wine.vercel.app/](https://codepilot-ai-wine.vercel.app/) to explore pre-indexed repositories without any setup!
+
+---
+
+## 📖 Complete Documentation
+
+For detailed guides and architecture diagrams, see our **[documentation/](documentation/)** folder:
+
+- **[Introduction](documentation/introduction.md)** — Overview and core capabilities
+- **[Getting Started Guide](documentation/getting-started.md)** — Step-by-step local setup
+- **[System Architecture](documentation/architecture.md)** — Component design and data flows
+- **[Developer & Operations Guide](documentation/development-guide.md)** — Alembic, testing, troubleshooting
+- **[Production Deployment Guide](documentation/production-deployment.md)** — Kubernetes & Helm
+- **[Design System Guidelines](documentation/design-system.md)** — UI/UX standards
+
+---
+
+## 🏗 System Architecture
+
+```
+                              User / Team
+                                   │
+                      WebSocket ╱ ╲ Axios API
+                               ↙     ↘
+                      React + Vite Frontend
+                                  │
+                                  ▼
+                           FastAPI Backend
+                                  │
+       ┌───────────┬────────────┬──┴───────┬────────────┬──────────┐
+       ▼           ▼            ▼          ▼            ▼          ▼
+   Repository   Redis      PostgreSQL    Qdrant     OpenRouter   S3/MinIO
+    Scanner    (Rate Limit/ (RDBMS/      (Vector      LLM        (Storage/
+    (AST/Git)   Caching)   SQLite)       Store)     (AI Engine)  Encryption)
 ```
 
 ---
 
-# 🛠 Tech Stack
+## 🛠 Tech Stack
 
 ### Frontend
-
-- **React 19 & Vite 8** — Ultra-fast development server and optimized build.
-- **Tailwind CSS v4** — Utility-first styling.
-- **XYFlow React** — Dynamic rendering of call graphs and component relationships.
-- **Monaco Editor** — In-browser code editing and viewing with syntax highlighting.
-- **Lucide Icons & Axios** — Sleek iconography and promise-based HTTP client.
+- **React 19 & Vite 8** — Lightning-fast dev server and builds
+- **Tailwind CSS v4** — Utility-first styling
+- **XYFlow React** — Interactive graph visualization
+- **Monaco Editor** — In-browser code editing with syntax highlighting
+- **Axios** — Promise-based HTTP client
 
 ### Backend
+- **FastAPI** — High-performance async web framework
+- **Python 3.11** — Modern typing and features
+- **Celery + Redis** — Distributed task queue for heavy operations
+- **PostgreSQL** — Relational database (SQLite fallback for dev)
+- **GitPython** — Repository cloning and Git operations
+- **Boto3** — S3/MinIO object storage
 
-- **FastAPI** — High-performance ASGI web framework.
-- **Python 3.11** — Modern features and typing.
-- **Uvicorn** — Lightning-fast ASGI web server implementation.
-- **Psycopg2** — Thread-pooled PostgreSQL client.
-- **GitPython** — Programmatic repository interaction.
-- **Boto3** — AWS S3 / MinIO client integration.
-- **Redis Client** — Multi-category rate limit cache.
-
-### Vector Store & AI
-
-- **Qdrant** — Production-grade vector store.
-- **Sentence Transformers** — Local embeddings using `all-MiniLM-L6-v2`.
-- **OpenRouter** — Unified LLM access (default: `openai/gpt-4o-mini`).
-
-### Database & Storage
-
-- **PostgreSQL** — Primary relational database for user records, API keys, and workspace metadata.
-- **SQLite** (`codepilot.db`) — Local development/fallback storage when PostgreSQL is offline.
-- **MinIO / S3** — Object storage for uploaded code artifacts and metadata.
+### AI & Vector Store
+- **Qdrant** — Production-grade vector database
+- **Sentence Transformers** — Local embeddings (`all-MiniLM-L6-v2`)
+- **OpenRouter** — Unified LLM API (OpenAI GPT-4o by default)
 
 ---
 
-# 📁 Project Structure
-
-```text
-codepilot-ai
-├── backend
-│   ├── api/             # API routes (auth, repos, search, collaboration, planner, etc.)
-│   ├── services/        # Business logic (auth_service, storage_service, redis_service, etc.)
-│   ├── models/          # Database models / schemas
-│   ├── parsers/         # Code parsers and AST analysis
-│   ├── vector_store/    # Qdrant client services and indexing helpers
-│   ├── main.py          # FastAPI application initialization & middlewares
-│   ├── settings.py      # Pydantic Settings management (loads .env)
-│   ├── worker.py        # Background task processor
-│   ├── requirements.txt # Backend dependencies
-│   └── Dockerfile       # Application Docker build file
-├── frontend
-│   ├── src/
-│   │   ├── components/  # Reusable UI widgets (auth, explorer, collaboration, etc.)
-│   │   ├── tabs/        # Workspace views (Overview, Chat, Call Graph, Observability, etc.)
-│   │   ├── App.jsx      # Main application hub
-│   │   └── index.css    # Tailwind styling system
-│   ├── package.json     # Node.json package configuration
-│   └── vite.config.js   # Vite server settings
-├── docker-compose.yml   # Multi-container orchestration (production/dev stack)
-└── README.md
-```
-
----
-
-# 📡 Key REST API Endpoints
+## 📡 REST API Endpoints
 
 ### 🔐 Authentication
-
-- `POST /auth/sandbox-login` — Development bypass login.
-- `POST /auth/refresh` — Issue new JWT access token from refresh token.
-- `GET /auth/github/login` — GitHub OAuth URL generation.
-- `POST /auth/keys` — Generate user personal API keys (`sk_live_...`).
+```
+POST   /auth/sandbox-login          # Development login
+POST   /auth/refresh                # Refresh JWT token
+GET    /auth/github/login           # GitHub OAuth
+POST   /auth/keys                   # Generate personal API keys
+```
 
 ### 📂 Repository Management
+```
+POST   /repository/clone            # Clone from GitHub
+POST   /indexer/index               # Index and analyze repository
+GET    /repositories                # List your repositories
+```
 
-- `POST /repository/clone` — Clone repository from a GitHub URL.
-- `POST /indexer/index` — Scan files and insert embeddings into Qdrant.
-- `GET /repositories` — List registered and indexed repositories.
+### 🤖 AI Intelligence
+```
+POST   /ai/ask                      # Ask codebase questions
+POST   /repository/architecture     # Get architecture insights
+POST   /repository/call-graph       # Generate call dependencies
+POST   /repository/flow             # Trace execution flows
+```
 
-### 🤖 AI Code Intelligence
-
-- `POST /ai/ask` — Ask natural language questions with codebase context.
-- `POST /repository/architecture` — Retrieve project structure explanations.
-- `POST /repository/call-graph` — Build static call graphs for workspace files.
-- `POST /repository/flow` — Trace step-by-step logic execution flows.
+Full API documentation: [https://codepilot-backend-wx7u.onrender.com/docs](https://codepilot-backend-wx7u.onrender.com/docs)
 
 ---
 
-# ⚙ Environment Variables
+## ⚙️ Environment Variables
 
-Create a `.env` file in the root or `backend` folder matching this configuration:
+Create a `.env` file in the root directory:
 
 ```env
 # LLM Provider (OpenRouter)
@@ -197,8 +218,9 @@ LLM_MODEL=openai/gpt-4o-mini
 LLM_APP_NAME=CodePilot AI
 LLM_SITE_URL=http://localhost:5173
 
-# Database (PostgreSQL / Auto-fallback to SQLite if empty)
+# Database
 DATABASE_URL=postgresql://codepilot:codepilot_pass_123@localhost:5435/codepilot
+# (Optional: Falls back to SQLite if not set)
 
 # Redis Cache & Rate Limiting
 REDIS_URL=redis://localhost:6379/0
@@ -213,136 +235,182 @@ S3_ACCESS_KEY=minio_user
 S3_SECRET_KEY=minio_password_123
 S3_BUCKET_NAME=codepilot-storage
 
-# Authentication (JWT)
+# Authentication
 JWT_SECRET_KEY=change-this-to-a-long-random-secret-in-production
 ALLOW_DEV_SANDBOX_LOGIN=true
-ENFORCE_STRICT_AUTH=true
+ENFORCE_STRICT_AUTH=false  # Set to true in production
 ```
 
 ---
 
-# 🐳 Docker Compose Deployment
+## 🐳 Docker Compose Deployment
 
-The simplest way to run Codexa locally with all its dependencies (Postgres, Redis, Qdrant, MinIO, Backend, Worker, Nginx) is via **Docker Compose**:
-
-### 1. Copy Environment File
-
-Ensure a `.env` file exists in the root directory.
-
-### 2. Start Services
-
+### Quick Start
 ```bash
 docker compose up -d
 ```
 
-This starts:
+This starts all services:
+- **codepilot-postgres** (Port 5435)
+- **codepilot-redis** (Port 6379)
+- **codepilot-qdrant** (Port 6333)
+- **codepilot-minio** (Ports 9000/9001)
+- **codepilot-backend** (Port 8000)
+- **codepilot-worker** (Background tasks)
+- **codepilot-nginx** (Reverse proxy on port 80)
 
-- **`codepilot-postgres`** (Port `5435`)
-- **`codepilot-redis`** (Port `6379`)
-- **`codepilot-qdrant`** (Port `6333`)
-- **`codepilot-minio`** (Ports `9000` / `9001`)
-- **`codepilot-migrate`** (One-shot DB migration container)
-- **`codepilot-backend`** (FastAPI app on port `8000`)
-- **`codepilot-worker`** (Background worker)
-- **`codepilot-nginx`** (Reverse proxy exposing the API on port `80`)
-
-### 3. Check Logs
-
+### View Logs
 ```bash
 docker compose logs -f backend worker
+docker compose down
 ```
 
 ---
 
-# 🚀 Local Development Installation
+## 🛣️ Roadmap
 
-### 1. Clone & Set Up Repository
+### ✅ Completed
+- ✅ Repository cloning & recursive scanning
+- ✅ Qdrant Vector database integration
+- ✅ Local embeddings with Sentence Transformers
+- ✅ AI repository chat (RAG)
+- ✅ Architecture analysis & insights
+- ✅ Interactive Call graph & Flow visualization
+- ✅ OAuth & JWT authentication with RBAC
+- ✅ Redis-backed rate limiting & caching
+- ✅ S3/MinIO storage with AES256 encryption
+- ✅ Real-time collaboration via WebSockets
+- ✅ Background task worker
 
+### 🚀 Coming Soon
+- ⏳ Multi-repository workspace support
+- ⏳ Private repository support (GitHub token auth)
+- ⏳ VS Code extension
+- ⏳ PDF/Markdown documentation export
+- ⏳ Streaming AI responses in chat
+- ⏳ JetBrains IDE plugin
+- ⏳ Security vulnerability scanning
+- ⏳ Automated test generation from codebase
+
+### 💡 Future Ideas
+- Self-hosted deployment on Kubernetes
+- Enterprise SSO & SAML support
+- Custom LLM model support
+- GitHub/GitLab/Bitbucket integrations
+- Slack/Discord bot integration
+- Plugin marketplace for custom analyzers
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Help us make CodePilot AI better:
+
+1. **Fork** the repository
+2. **Create a branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes** with clear commits
+4. **Push to branch** (`git push origin feature/amazing-feature`)
+5. **Open a Pull Request**
+
+### Development Setup
 ```bash
+# See CONTRIBUTING.md for detailed guidelines
 git clone https://github.com/abhishek-s12/codepilot-ai.git
 cd codepilot-ai
+docker compose -f docker-compose.dev.yml up
 ```
 
-### 2. Start Backend Services
-
-Ensure you have Python 3.11 installed.
-
-```bash
-cd backend
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# Linux / macOS
-source venv/bin/activate
-
-pip install -r requirements.txt
-uvicorn main:app --reload
-```
-
-The API documentation will be available at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
-
-### 3. Start Frontend App
-
-Ensure you have Node.js installed.
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-The interface will be running at [http://localhost:5173](http://localhost:5173).
+### Good First Issues
+Look for issues tagged with `good-first-issue` to get started!
 
 ---
 
-# 🛣 Roadmap
+## 📊 Project Structure
 
-- ✅ Repository cloning & recursive scanning
-- ✅ Qdrant Vector database migration
-- ✅ Local embeddings (`all-MiniLM-L6-v2`)
-- ✅ AI repository chat (RAG)
-- ✅ Architecture analysis
-- ✅ Interactive Call graph & Flow visualization
-- ✅ User authentication (OAuth & JWT) & Hardened RBAC
-- ✅ Redis-backed Rate limiting & Caching
-- ✅ S3 / MinIO Storage with AES256 encryption
-- ✅ Real-time collaboration via WebSockets
-- ✅ Background Task Worker
-- ⏳ Multi-repository workspace support
-- ⏳ Interactive dependency graph enhancements
-- ⏳ Streaming AI responses in chat
-- ⏳ PDF / Markdown documentation export
-
----
-
-# 🤝 Contributing
-
-Contributions are welcome!
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```
+codepilot-ai/
+├── backend/
+│   ├── api/              # REST API routes
+│   ├── services/         # Business logic
+│   ├── models/           # Database models
+│   ├── parsers/          # AST analysis & parsing
+│   ├── vector_store/     # Qdrant integration
+│   ├── main.py           # FastAPI app
+│   └── requirements.txt   # Dependencies
+├── frontend/
+│   ├── src/
+│   │   ├── components/   # Reusable UI components
+│   │   ├── tabs/         # Workspace views
+│   │   └── App.jsx       # Main application
+│   └── vite.config.js    # Build configuration
+├── documentation/        # Detailed guides
+├── helm/                 # Kubernetes Helm charts
+├── docker-compose.yml    # Production stack
+└── README.md
+```
 
 ---
 
-# 👨‍💻 Author
+## 🎓 Use Cases
+
+### 👨‍💼 For Engineering Managers
+- Onboard new developers in days, not weeks
+- Generate architecture documentation automatically
+- Identify knowledge gaps in the team
+
+### 👨‍💻 For Developers
+- Understand unfamiliar codebases instantly
+- Find and trace specific functionality quickly
+- Collaborate with teammates on analysis
+
+### 🔒 For Security Teams
+- Audit codebases for security patterns
+- Find authentication/authorization vulnerabilities
+- Map data flows for compliance analysis
+
+### 📚 For Open Source
+- Understand complex projects before contributing
+- Generate contributor documentation
+- Reduce onboarding friction
+
+---
+
+## 📞 Support & Community
+
+- **🐛 Report Bugs** → [GitHub Issues](https://github.com/abhishek-s12/codepilot-ai/issues)
+- **💬 Ask Questions** → [GitHub Discussions](https://github.com/abhishek-s12/codepilot-ai/discussions)
+- **📧 Email** → [abhishek@example.com](mailto:abhishek@example.com)
+- **🐦 Twitter** → [@CodePilotAI](https://twitter.com)
+
+---
+
+## 👨‍💻 Author
 
 **Abhishek Kumar**
 
-GitHub: [https://github.com/abhishek-s12](https://github.com/abhishek-s12)
+- GitHub: [@abhishek-s12](https://github.com/abhishek-s12)
+- LinkedIn: [abhishek-s12](https://linkedin.com/in/abhishek-s12)
 
 ---
 
-# 📄 License
+## 📄 License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
+This project is licensed under the **MIT License**. See [LICENSE](LICENSE) for details.
 
 ---
+
+## 🌟 Show Your Support
+
+If you find CodePilot AI useful, please:
+- ⭐ **Star this repository** (it really helps!)
+- 🍴 **Fork and contribute** new features
+- 📢 **Share** with your network
+- 💬 **Provide feedback** on GitHub Discussions
 
 <p align="center">
-⭐ If you found this project useful, consider giving it a star on GitHub!
+  <b>Made with ❤️ by the CodePilot AI community</b>
+</p>
+
+<p align="center">
+  <a href="https://github.com/abhishek-s12/codepilot-ai">⭐ Star us on GitHub</a>
 </p>
