@@ -149,6 +149,15 @@ export default function LoginScreen({
               <span aria-hidden="true" className="font-mono text-[#FF9D4D] text-sm">🛡️</span>
               <span>Enterprise Single Sign-On</span>
             </a>
+
+            {/* SAML 2.0 IdP Button */}
+            <a
+              href={`${apiBase}/auth/saml/login`}
+              className="w-full py-3 px-4 rounded-xl border border-border bg-panel-alt/50 hover:bg-[#181e29]/75 hover:border-violet hover:-translate-y-[1px] text-text-strong font-semibold text-xs transition-all duration-250 flex items-center justify-center gap-3 cursor-pointer"
+            >
+              <span aria-hidden="true" className="font-mono text-violet text-sm">⬡</span>
+              <span>Sign in with SAML 2.0 IdP</span>
+            </a>
           </div>
         ) : (
           <form onSubmit={onSandboxLogin} className="space-y-5 text-left" noValidate={false}>

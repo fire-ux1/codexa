@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
 import { fetchRepositoryAnalytics } from "../../services/api";
@@ -314,7 +314,6 @@ function LoaderSpinner() {
 
 function AlertTriangleIcon() {
   return (
-    <span className="text-rose-500 font-bold text-2xl">âš ï¸</span>
+    <span className="text-rose-500 font-bold text-2xl">⚠️</span>
   );
 }
-

@@ -87,8 +87,8 @@ export default function ArchitectureTab({
     return graphEdges.map((edge) => {
       let stroke = "#4b5563";
       let strokeWidth = 1;
-      let opacity = 1;
-      let animated = false;
+      let opacity: number;
+      let animated: boolean;
 
       const isConnected = selectedNode && (edge.source === selectedNode.id || edge.target === selectedNode.id);
 
@@ -100,6 +100,7 @@ export default function ArchitectureTab({
           animated = true;
         } else {
           opacity = 0.1;
+          animated = false;
         }
       } else {
         stroke = "#B69CFF";

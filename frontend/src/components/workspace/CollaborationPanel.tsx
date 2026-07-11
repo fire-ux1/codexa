@@ -8,10 +8,11 @@ import NotificationCenter from "./NotificationCenter";
 
 interface CollaborationPanelProps {
   activeFile: string | null | undefined;
+  repoId?: string;
   onClose?: () => void;
 }
 
-export default function CollaborationPanel({ activeFile, onClose }: CollaborationPanelProps) {
+export default function CollaborationPanel({ activeFile, repoId, onClose }: CollaborationPanelProps) {
   const [collabTab, setCollabTab] = useState<string>("share");
 
   const tabs = [
@@ -65,7 +66,7 @@ export default function CollaborationPanel({ activeFile, onClose }: Collaboratio
         {collabTab === "alerts" && React.createElement(NotificationCenter as any)}
         {collabTab === "reports" && (
           <div className="space-y-4">
-            {React.createElement(ReportGenerator as any)}
+            {React.createElement(ReportGenerator as any, { repositoryId: repoId })}
             {React.createElement(ExportManager as any)}
           </div>
         )}

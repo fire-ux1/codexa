@@ -32,8 +32,9 @@ from api.devops import router as devops_router
 from api.observability import router as observability_router
 from api.system import router as system_router
 from api.admin import router as admin_router
-from api.notifications import router as notifications_router
 from api.compliance import router as compliance_router
+from api.notifications import router as notifications_router
+from api.reports import router as reports_router
 from settings import get_settings
 from services.db_service import init_db
 
@@ -215,6 +216,7 @@ def check_services_connectivity():
         print("[App Startup] All required services are reachable.")
 
 
+validate_config()
 check_services_connectivity()
 
 # Initialize database on app load
@@ -360,3 +362,4 @@ app.include_router(
     notifications_router, prefix="/notifications", tags=["Notifications"]
 )
 app.include_router(compliance_router, prefix="/compliance", tags=["Compliance"])
+app.include_router(reports_router, prefix="/reports", tags=["Reports"])

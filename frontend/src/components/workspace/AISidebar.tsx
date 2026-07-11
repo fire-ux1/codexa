@@ -38,6 +38,7 @@ interface AISidebarProps {
   isPatchStreaming: boolean;
   onOpenFile: (path: string) => void;
   onApplyProfile: (profile: any) => void;
+  repoId?: string;
 }
 
 interface SidebarTab {
@@ -85,6 +86,7 @@ export default function AISidebar({
   isPatchStreaming,
   onOpenFile,
   onApplyProfile,
+  repoId,
 }: AISidebarProps) {
   const handleTabClick = (key: string) => {
     setActiveTab(key);
@@ -248,6 +250,7 @@ export default function AISidebar({
           {activeTab === "collaboration" && (
             React.createElement(CollaborationPanel as any, {
               activeFile,
+              repoId,
               onClose: () => onToggleCollapse(true),
             })
           )}

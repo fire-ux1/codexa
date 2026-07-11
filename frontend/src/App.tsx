@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   fetchUser,
   fetchRepositories,
@@ -76,6 +76,8 @@ export default function App() {
   const {
     repoUrl,
     setRepoUrl,
+    accessToken,
+    setAccessToken,
     repoPath,
     isCloning,
     indexingProgress,
@@ -116,6 +118,22 @@ export default function App() {
   const {
     setFlowData,
   } = useExecutionFlow(repoPath, setStatus) as any;
+
+  // Sign out helper
+  const handleSignOut = useCallback(() => {
+    localStorage.removeItem("codepilot_token");
+    localStorage.removeItem("codepilot_refresh_token");
+    setToken("");
+    setUser(null);
+    setHistory([]);
+    clearWorkspace();
+    setArchitecture("");
+    setCallGraph(null);
+    setFlowData(null);
+    setSelectedFunc(null);
+    setSelectedNode(null);
+    showToast("Signed out successfully.", "info");
+  }, [clearWorkspace, showToast]);
 
   useEffect(() => {
     const handleUnauthorized = () => {
@@ -173,7 +191,7 @@ export default function App() {
     return () => {
       window.removeEventListener("codepilot_unauthorized", handleUnauthorized);
     };
-  }, [token, selectRepositoryFromHistory, showToast]);
+  }, [token, selectRepositoryFromHistory, showToast, handleSignOut]);
 
   const activeRepo = history.find((r: any) => r.repository_path === repoPath);
   const activeRepoId = activeRepo ? activeRepo.id : null;
@@ -199,22 +217,6 @@ export default function App() {
     } finally {
       setIsAuthLoading(false);
     }
-  };
-
-  // Sign out helper
-  const handleSignOut = () => {
-    localStorage.removeItem("codepilot_token");
-    localStorage.removeItem("codepilot_refresh_token");
-    setToken("");
-    setUser(null);
-    setHistory([]);
-    clearWorkspace();
-    setArchitecture("");
-    setCallGraph(null);
-    setFlowData(null);
-    setSelectedFunc(null);
-    setSelectedNode(null);
-    showToast("Signed out successfully.", "info");
   };
 
   // Handle repository selection override
@@ -315,6 +317,8 @@ export default function App() {
                 indexingProgress={indexingProgress}
                 repoUrl={repoUrl}
                 setRepoUrl={setRepoUrl}
+                accessToken={accessToken}
+                setAccessToken={setAccessToken}
                 isCloning={isCloning}
                 onIndexRepository={handleIndexRepository}
               />

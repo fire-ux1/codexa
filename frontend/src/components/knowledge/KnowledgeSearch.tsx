@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { useState } from "react";
 
 export default function KnowledgeSearch({
@@ -107,7 +107,7 @@ export default function KnowledgeSearch({
           onClick={() => {
             setStartNode("");
             setEndNode("");
-            onResetSearch && onResetSearch();
+            if (onResetSearch) onResetSearch();
           }}
           className="px-3 py-1.5 text-[10px] font-mono font-bold rounded-lg bg-white/5 border border-white/8 text-gray-400 hover:text-white transition-all"
         >

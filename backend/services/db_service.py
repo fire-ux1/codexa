@@ -408,6 +408,20 @@ def init_sqlite_db():
         )
         """)
 
+        # Create reports table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS reports (
+            id TEXT PRIMARY KEY,
+            repository_id TEXT,
+            name TEXT,
+            report_type TEXT,
+            s3_key TEXT,
+            file_size INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (repository_id) REFERENCES repositories(id) ON DELETE CASCADE
+        )
+        """)
+
         conn.commit()
     finally:
         conn.close()
@@ -531,5 +545,53 @@ def delete_repository(repo_id: str):
     try:
         cursor.execute("DELETE FROM repositories WHERE id = %s", (repo_id,))
         conn.commit()
+    finally:
+        conn.close()
+
+
+def create_report(
+    report_id: str,
+    repository_id: str,
+    name: str,
+    report_type: str,
+    s3_key: str,
+    file_size: int,
+):
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            INSERT INTO reports (id, repository_id, name, report_type, s3_key, file_size)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (report_id, repository_id, name, report_type, s3_key, file_size),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_reports_by_repo(repository_id: str) -> list[dict]:
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT * FROM reports WHERE repository_id = %s ORDER BY created_at DESC",
+            (repository_id,),
+        )
+        rows = cursor.fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        conn.close()
+
+
+def get_report(report_id: str) -> dict | None:
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("SELECT * FROM reports WHERE id = %s", (report_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
     finally:
         conn.close()

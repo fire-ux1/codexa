@@ -16,8 +16,8 @@ export default function WorkspaceHeader({
   indexingProgress = 85,
   isIndexing = false,
 }: WorkspaceHeaderProps) {
-  const repoName = repoPath ? repoPath.split(/[\\\/]/).pop() || "" : "No Repository Opened";
-  const fileName = activeFile ? activeFile.split(/[\\\/]/).pop() || null : null;
+  const repoName = repoPath ? repoPath.split(/[\\/]/).pop() || "" : "No Repository Opened";
+  const fileName = activeFile ? activeFile.split(/[\\/]/).pop() || null : null;
 
   return (
     <div className="flex items-center gap-3 px-4 h-11 bg-bg border-b border-border shrink-0 select-none justify-between z-30 shadow-sm">

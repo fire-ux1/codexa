@@ -26,6 +26,7 @@ export default function useRepository(
   setHistory: (list: any[]) => void
 ) {
   const [repoUrl, setRepoUrl] = useState<string>("");
+  const [accessToken, setAccessToken] = useState<string>("");
   const [repoPath, setRepoPath] = useState<string>("");
   const [isCloning, setIsCloning] = useState<boolean>(false);
   const [indexingProgress, setIndexingProgress] = useState<IndexingProgressData | null>(null);
@@ -38,6 +39,7 @@ export default function useRepository(
 
   const clearWorkspace = useCallback(() => {
     setRepoPath("");
+    setAccessToken("");
     setMetrics({ filesIndexed: 0, chunksIndexed: 0 });
     setIndexingProgress(null);
     setStatus({
@@ -98,7 +100,7 @@ export default function useRepository(
         message: "Cloning remote repository files...",
       });
 
-      const cloneRes = await cloneRepository(repoUrl.trim());
+      const cloneRes = await cloneRepository(repoUrl.trim(), accessToken.trim() || undefined);
       
       const wsUrl = `${API_BASE_URL.replace("http", "ws")}/indexer/progress?token=${localStorage.getItem("codepilot_token") || ""}`;
       const socket = new WebSocket(wsUrl);
@@ -176,6 +178,8 @@ export default function useRepository(
   return {
     repoUrl,
     setRepoUrl,
+    accessToken,
+    setAccessToken,
     repoPath,
     setRepoPath,
     isCloning,

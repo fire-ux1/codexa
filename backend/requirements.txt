@@ -187,3 +187,5 @@ wrapt==2.2.2
 xxhash==3.7.0
 yarl==1.24.2
 zstandard==0.25.0
+reportlab>=4.1.0
+python3-saml>=1.16.0

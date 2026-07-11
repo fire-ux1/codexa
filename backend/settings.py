@@ -148,6 +148,44 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("MAX_WS_MESSAGE_SIZE"),
     )
 
+    # SAML 2.0 Enterprise SSO
+    saml_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("SAML_ENABLED"),
+    )
+    saml_sp_entity_id: str = Field(
+        default="codepilot-ai",
+        validation_alias=AliasChoices("SAML_SP_ENTITY_ID"),
+    )
+    saml_acs_url: str = Field(
+        default="http://localhost:8000/auth/saml/callback",
+        validation_alias=AliasChoices("SAML_ACS_URL"),
+    )
+    saml_idp_metadata_url: str = Field(
+        default="",
+        validation_alias=AliasChoices("SAML_IDP_METADATA_URL"),
+    )
+    saml_idp_entity_id: str = Field(
+        default="",
+        validation_alias=AliasChoices("SAML_IDP_ENTITY_ID"),
+    )
+    saml_idp_sso_url: str = Field(
+        default="",
+        validation_alias=AliasChoices("SAML_IDP_SSO_URL"),
+    )
+    saml_idp_x509cert: str = Field(
+        default="",
+        validation_alias=AliasChoices("SAML_IDP_X509CERT"),
+    )
+    saml_sp_private_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("SAML_SP_PRIVATE_KEY"),
+    )
+    saml_sp_x509cert: str = Field(
+        default="",
+        validation_alias=AliasChoices("SAML_SP_X509CERT"),
+    )
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

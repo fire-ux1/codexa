@@ -57,7 +57,6 @@ export default function AIWorkspace({
   isArchitectureLoading,
   isGraphLoadingReactFlow,
   onNodeClick,
-  onExplainFile,
   onGetArchitecture,
   getFileColor,
   callGraph,
@@ -1132,6 +1131,7 @@ export default function AIWorkspace({
               isPatchStreaming={isPatchStreaming}
               onOpenFile={handleExplorerFileOpen}
               onApplyProfile={handleApplyProfile}
+              repoId={activeRepoId}
             />
           </Suspense>
         </ErrorBoundary>

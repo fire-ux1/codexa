@@ -22,7 +22,7 @@ export default function ActionCenter({
   onTriggerAction,
   workflowState = null,
 }: ActionCenterProps) {
-  const activeFileName = activeFile ? activeFile.split(/[\\\/]/).pop() || "" : "";
+  const activeFileName = activeFile ? activeFile.split(/[\\/]/).pop() || "" : "";
 
   const smartActions = [
     {
@@ -105,7 +105,7 @@ export default function ActionCenter({
     }
 
     const ext = activeFile.split(".").pop()?.toLowerCase() || "";
-    const fileName = activeFile.split(/[\\\/]/).pop()?.toLowerCase() || "";
+    const fileName = activeFile.split(/[\\/]/).pop()?.toLowerCase() || "";
 
     if (fileName === "package.json") {
       setContextSuggestions([

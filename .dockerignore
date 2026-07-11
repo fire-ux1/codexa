@@ -1,0 +1,35 @@
+# Virtual Environments
+venv/
+backend/venv/
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+
+# Node.js
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Git
+.git/
+.github/
+
+# Local databases and clones
+chroma_db/
+backend/chroma_db/
+backend/repos/
+*.db
+backend/*.db
+
+# Secrets
+.env
+backend/.env
+frontend/.env
+
+# Logs
+*.log

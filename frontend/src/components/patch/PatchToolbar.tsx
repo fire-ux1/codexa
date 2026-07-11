@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 export default function PatchToolbar({
   status,           // "idle" | "generating" | "ready" | "applied" | "rejected"
   instruction,
@@ -49,7 +49,7 @@ export default function PatchToolbar({
             onClick={onStop}
             className="flex items-center gap-1 px-2.5 py-1 text-[10px] font-mono font-bold rounded-lg bg-rose-600/20 border border-rose-500/30 text-rose-400 hover:bg-rose-600/30 transition-all"
           >
-            â–  Stop
+            ■ Stop
           </button>
         )}
 

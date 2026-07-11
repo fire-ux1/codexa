@@ -1,5 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends, Header
-from fastapi.responses import RedirectResponse
+from fastapi import APIRouter, HTTPException, Depends, Header, Request
+from fastapi.responses import RedirectResponse, Response
 from pydantic import BaseModel
 import requests
 import jwt
@@ -776,4 +776,302 @@ def callback_sso(code: str):
     )
 
     frontend_redirect = f"{settings.llm_site_url.rstrip('/')}/auth-callback?token={token}&refresh_token={refresh_token}"
+    return RedirectResponse(url=frontend_redirect)
+
+
+# ─── SAML 2.0 Enterprise SSO ─────────────────────────────────────────────────
+
+
+def _get_saml_auth(request_data: dict):
+    """
+    Builds a python3-saml OneLogin_Saml2_Auth object from settings.
+    request_data must contain: https, http_host, script_name, get_data, post_data
+    """
+    try:
+        from onelogin.saml2.auth import OneLogin_Saml2_Auth
+    except ImportError:
+        raise HTTPException(
+            status_code=501,
+            detail="SAML library (python3-saml) is not installed. Run: pip install python3-saml",
+        )
+
+    if not settings.saml_enabled:
+        raise HTTPException(
+            status_code=503,
+            detail="SAML SSO is not enabled. Set SAML_ENABLED=true in your environment.",
+        )
+
+    saml_settings = {
+        "strict": True,
+        "debug": False,
+        "sp": {
+            "entityId": settings.saml_sp_entity_id,
+            "assertionConsumerService": {
+                "url": settings.saml_acs_url,
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+            },
+            "singleLogoutService": {
+                "url": settings.saml_acs_url.replace("/callback", "/logout"),
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+            },
+            "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+            "x509cert": settings.saml_sp_x509cert,
+            "privateKey": settings.saml_sp_private_key,
+        },
+        "idp": {
+            "entityId": settings.saml_idp_entity_id,
+            "singleSignOnService": {
+                "url": settings.saml_idp_sso_url,
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+            },
+            "x509cert": settings.saml_idp_x509cert,
+        },
+    }
+
+    from onelogin.saml2.auth import OneLogin_Saml2_Auth
+
+    return OneLogin_Saml2_Auth(request_data, saml_settings)
+
+
+def _build_saml_request_data(request) -> dict:
+    """Convert a FastAPI Request object into the format python3-saml expects."""
+    return {
+        "https": "on" if request.url.scheme == "https" else "off",
+        "http_host": request.headers.get("host", "localhost"),
+        "script_name": str(request.url.path),
+        "get_data": dict(request.query_params),
+        "post_data": {},  # POST body is handled separately in callback
+    }
+
+
+@router.get("/saml/metadata")
+async def saml_metadata(request: "Request"):
+    """
+    Generates and returns the SAML 2.0 Service Provider metadata XML.
+    Share this with your Identity Provider (e.g. Okta, Azure AD, Google Workspace).
+    """
+    if not settings.saml_enabled:
+        raise HTTPException(
+            status_code=503,
+            detail="SAML SSO is disabled. Set SAML_ENABLED=true.",
+        )
+
+    try:
+        from onelogin.saml2.settings import OneLogin_Saml2_Settings
+    except ImportError:
+        raise HTTPException(status_code=501, detail="python3-saml is not installed.")
+
+    saml_settings = {
+        "strict": True,
+        "debug": False,
+        "sp": {
+            "entityId": settings.saml_sp_entity_id,
+            "assertionConsumerService": {
+                "url": settings.saml_acs_url,
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+            },
+            "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+            "x509cert": settings.saml_sp_x509cert,
+            "privateKey": settings.saml_sp_private_key,
+        },
+        "idp": {
+            "entityId": settings.saml_idp_entity_id,
+            "singleSignOnService": {
+                "url": settings.saml_idp_sso_url,
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+            },
+            "x509cert": settings.saml_idp_x509cert,
+        },
+    }
+
+    sp_settings = OneLogin_Saml2_Settings(
+        settings=saml_settings, sp_validation_only=True
+    )
+    metadata = sp_settings.get_sp_metadata()
+    errors = sp_settings.validate_metadata(metadata)
+
+    if errors:
+        raise HTTPException(status_code=500, detail=f"SAML metadata errors: {errors}")
+
+    return Response(content=metadata, media_type="application/xml")
+
+
+@router.get("/saml/login")
+async def saml_login_redirect():
+    """
+    Initiates a SAML 2.0 SP-initiated login by redirecting to the IdP SSO URL.
+    """
+    if not settings.saml_enabled:
+        raise HTTPException(
+            status_code=503,
+            detail="SAML SSO is disabled. Set SAML_ENABLED=true.",
+        )
+    if not settings.saml_idp_sso_url:
+        raise HTTPException(
+            status_code=503,
+            detail="SAML IdP SSO URL is not configured (SAML_IDP_SSO_URL).",
+        )
+
+    # Build a minimal relay state and redirect the browser to the IdP
+    import urllib.parse
+
+    relay_state = settings.llm_site_url
+    redirect_url = (
+        f"{settings.saml_idp_sso_url}"
+        f"?SAMLRequest=&RelayState={urllib.parse.quote(relay_state)}"
+    )
+
+    # Use python3-saml to build the proper AuthN request redirect URL
+    try:
+        from onelogin.saml2.auth import OneLogin_Saml2_Auth
+
+        fake_request_data = {
+            "https": "on" if settings.saml_acs_url.startswith("https") else "off",
+            "http_host": settings.saml_acs_url.split("//")[1].split("/")[0],
+            "script_name": "/auth/saml/login",
+            "get_data": {},
+            "post_data": {},
+        }
+        saml_settings_dict = {
+            "strict": True,
+            "debug": False,
+            "sp": {
+                "entityId": settings.saml_sp_entity_id,
+                "assertionConsumerService": {
+                    "url": settings.saml_acs_url,
+                    "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+                },
+                "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+                "x509cert": settings.saml_sp_x509cert,
+                "privateKey": settings.saml_sp_private_key,
+            },
+            "idp": {
+                "entityId": settings.saml_idp_entity_id,
+                "singleSignOnService": {
+                    "url": settings.saml_idp_sso_url,
+                    "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+                },
+                "x509cert": settings.saml_idp_x509cert,
+            },
+        }
+        auth = OneLogin_Saml2_Auth(fake_request_data, saml_settings_dict)
+        redirect_url = auth.login(return_to=relay_state)
+    except Exception as e:
+        # Fallback: direct redirect to IdP
+        print(
+            f"[SAML] Warning building AuthN request: {e}. Falling back to direct redirect."
+        )
+
+    return RedirectResponse(url=redirect_url)
+
+
+@router.post("/saml/callback")
+async def saml_callback(request: "Request"):
+    """
+    Handles the SAML 2.0 Assertion Consumer Service (ACS) POST callback from the IdP.
+    Validates the SAML response, extracts user identity, issues a JWT, and redirects to the frontend.
+    """
+    if not settings.saml_enabled:
+        raise HTTPException(status_code=503, detail="SAML SSO is disabled.")
+
+    try:
+        from onelogin.saml2.auth import OneLogin_Saml2_Auth
+    except ImportError:
+        raise HTTPException(status_code=501, detail="python3-saml is not installed.")
+
+    # Parse the incoming POST form body
+    form = await request.form()
+    post_data = dict(form)
+
+    request_data = {
+        "https": "on" if request.url.scheme == "https" else "off",
+        "http_host": request.headers.get("host", "localhost"),
+        "script_name": str(request.url.path),
+        "get_data": dict(request.query_params),
+        "post_data": post_data,
+    }
+
+    saml_settings_dict = {
+        "strict": True,
+        "debug": False,
+        "sp": {
+            "entityId": settings.saml_sp_entity_id,
+            "assertionConsumerService": {
+                "url": settings.saml_acs_url,
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+            },
+            "NameIDFormat": "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
+            "x509cert": settings.saml_sp_x509cert,
+            "privateKey": settings.saml_sp_private_key,
+        },
+        "idp": {
+            "entityId": settings.saml_idp_entity_id,
+            "singleSignOnService": {
+                "url": settings.saml_idp_sso_url,
+                "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+            },
+            "x509cert": settings.saml_idp_x509cert,
+        },
+    }
+
+    auth = OneLogin_Saml2_Auth(request_data, saml_settings_dict)
+    auth.process_response()
+    errors = auth.get_errors()
+
+    if errors:
+        error_reason = auth.get_last_error_reason()
+        raise HTTPException(
+            status_code=401,
+            detail=f"SAML authentication failed: {errors}. Reason: {error_reason}",
+        )
+
+    if not auth.is_authenticated():
+        raise HTTPException(
+            status_code=401, detail="SAML assertion could not be verified."
+        )
+
+    # Extract user attributes
+    name_id = auth.get_nameid()  # This is typically the email
+    attributes = auth.get_attributes()
+
+    # Normalize common attribute name patterns from various IdPs
+    email = name_id or ""
+    name = (
+        attributes.get(
+            "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/displayname", [None]
+        )[0]
+        or attributes.get("displayName", [None])[0]
+        or attributes.get("name", [None])[0]
+        or email.split("@")[0]
+    )
+
+    if not email:
+        raise HTTPException(
+            status_code=400, detail="SAML assertion missing email / NameID."
+        )
+
+    # Upsert the user
+    user_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, email))
+    create_user(user_id=user_id, email=email, name=name, avatar_url="")
+
+    user = get_user(user_id)
+    token_version = user["token_version"] if user and "token_version" in user else 1
+
+    from services.audit_service import log_audit_event
+
+    log_audit_event(
+        user_id,
+        "saml_login_success",
+        details={"email": email, "idp": settings.saml_idp_entity_id},
+    )
+
+    token = encode_token(user_id=user_id, email=email, token_version=token_version)
+    refresh_token = encode_refresh_token(
+        user_id=user_id, email=email, token_version=token_version
+    )
+
+    frontend_redirect = (
+        f"{settings.llm_site_url.rstrip('/')}/auth-callback"
+        f"?token={token}&refresh_token={refresh_token}"
+    )
     return RedirectResponse(url=frontend_redirect)

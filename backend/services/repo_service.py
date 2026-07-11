@@ -262,7 +262,12 @@ def restore_repo_from_s3(
         return False
 
 
-def clone_repository(repo_url: str, user_id: str = "mock-dev", project_id: str = None):
+def clone_repository(
+    repo_url: str,
+    user_id: str = "mock-dev",
+    project_id: str = None,
+    access_token: str = None,
+):
     """Clones a repository locally, using S3 object storage cache as primary restore mechanism."""
     os.makedirs(CLONE_DIR, exist_ok=True)
 
@@ -317,10 +322,15 @@ def clone_repository(repo_url: str, user_id: str = "mock-dev", project_id: str =
             return repo_path, repo_name, repo_id, False
 
         logger.info(f"event=clone_git_fallback repo={repo_name} url={repo_url}")
-        Repo.clone_from(repo_url, repo_path)
+        clone_url = repo_url
+        if access_token:
+            if repo_url.startswith("https://"):
+                clone_url = repo_url.replace("https://", f"https://{access_token}@")
+        Repo.clone_from(clone_url, repo_path)
 
         # Lock remains held for background S3 upload task
         return repo_path, repo_name, repo_id, True
+
     except Exception as e:
         # Release lock in case of errors before background task is scheduled
         release_repo_lock(repo_name)

@@ -5,6 +5,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from api.schemas import RepositoryCloneRequest
 from services.repo_service import clone_repository
 from services.reader_service import read_file
+from services.redis_service import enqueue_background_job
+from services.audit_service import log_audit_event
 from api.auth import get_current_user_id
 from services.websocket_auth import verify_project_role
 from services.auth_validation import verify_file_access
@@ -24,8 +26,6 @@ def clone_repo(
     project_id: str | None = None,
     user_id: str = Depends(get_current_user_id),
 ):
-    from services.redis_service import enqueue_background_job
-
     # If linked to a project, user must have write role in the project
     if project_id:
         if not verify_project_role(user_id, project_id, ["owner", "admin", "member"]):
@@ -35,7 +35,10 @@ def clone_repo(
             )
 
     path, repo_name, repo_id, needs_backup = clone_repository(
-        str(payload.repo_url), user_id=user_id, project_id=project_id
+        str(payload.repo_url),
+        user_id=user_id,
+        project_id=project_id,
+        access_token=payload.access_token,
     )
 
     if needs_backup:
@@ -48,8 +51,6 @@ def clone_repo(
                 "repo_id": repo_id,
             },
         )
-
-    from services.audit_service import log_audit_event
 
     log_audit_event(
         user_id=user_id,

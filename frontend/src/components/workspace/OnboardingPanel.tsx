@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { IconSparkles, IconLink, IconDatabase, IconCheck } from "../icons/Icons";
 import WelcomeChecklist from "./WelcomeChecklist";
 
@@ -6,6 +6,8 @@ export default function OnboardingPanel({
   indexingProgress,
   repoUrl,
   setRepoUrl,
+  accessToken,
+  setAccessToken,
   isCloning,
   onIndexRepository,
 }) {
@@ -149,6 +151,25 @@ export default function OnboardingPanel({
                       value={repoUrl}
                       onChange={(e) => setRepoUrl(e.target.value)}
                       placeholder="https://github.com/owner/repository"
+                      disabled={isCloning}
+                      className="block w-full pl-12 pr-4 py-4 rounded-2xl bg-black/40 border border-white/10 focus:border-indigo-500/70 focus:ring-1 focus:ring-indigo-500/70 text-white placeholder-gray-500 focus:outline-none transition-all font-mono text-[14px]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-300 mb-2.5">
+                    Access Token (Optional, for private repositories)
+                  </label>
+                  <div className="relative rounded-2xl shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
+                      <span className="text-indigo-400 font-mono text-xs">🔑</span>
+                    </div>
+                    <input
+                      type="password"
+                      value={accessToken}
+                      onChange={(e) => setAccessToken(e.target.value)}
+                      placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
                       disabled={isCloning}
                       className="block w-full pl-12 pr-4 py-4 rounded-2xl bg-black/40 border border-white/10 focus:border-indigo-500/70 focus:ring-1 focus:ring-indigo-500/70 text-white placeholder-gray-500 focus:outline-none transition-all font-mono text-[14px]"
                     />

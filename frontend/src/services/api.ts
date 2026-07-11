@@ -178,9 +178,10 @@ export async function fetchRepositoryFiles(repoPath: string): Promise<any> {
 }
 
 // Existing Core Calls
-export async function cloneRepository(repoUrl: string): Promise<any> {
+export async function cloneRepository(repoUrl: string, accessToken?: string): Promise<any> {
   const response = await api.post("/repository/clone", {
     repo_url: repoUrl,
+    access_token: accessToken || null,
   });
   return response.data;
 }
@@ -399,7 +400,34 @@ export async function fetchWorkspaceActivity(): Promise<any[]> {
 }
 
 export { API_BASE_URL };
+
+// ─── Reports API ─────────────────────────────────────────────────────────────
+
+export async function generateReport(
+  repositoryId: string,
+  reportType: "pdf" | "markdown"
+): Promise<any> {
+  const response = await api.post("/reports/generate", {
+    repository_id: repositoryId,
+    report_type: reportType,
+  });
+  return response.data;
+}
+
+export async function fetchReportHistory(repositoryId: string): Promise<any[]> {
+  const response = await api.get("/reports/history", {
+    params: { repository_id: repositoryId },
+  });
+  return response.data;
+}
+
+export function getReportDownloadUrl(reportId: string): string {
+  const token = localStorage.getItem("codepilot_token") || "";
+  return `${API_BASE_URL}/reports/${reportId}/download?token=${token}`;
+}
+
 export default api;
+
 
 
 
