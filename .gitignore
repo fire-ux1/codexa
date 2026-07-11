@@ -38,3 +38,4 @@ docs/DOCKER_SETUP.txt
 # Databases
 *.db
 backend/*.db
+Authen.md

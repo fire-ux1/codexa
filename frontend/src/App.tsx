@@ -132,8 +132,15 @@ export default function App() {
     setFlowData(null);
     setSelectedFunc(null);
     setSelectedNode(null);
-    showToast("Signed out successfully.", "info");
-  }, [clearWorkspace, showToast]);
+  }, [
+    clearWorkspace,
+    showToast,
+    setArchitecture,
+    setCallGraph,
+    setFlowData,
+    setSelectedFunc,
+    setSelectedNode,
+  ]);
 
   useEffect(() => {
     const handleUnauthorized = () => {

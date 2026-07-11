@@ -1,5 +1,4 @@
 // @ts-nocheck
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useCallback, useRef, useEffect, Suspense, lazy } from "react";
 import useWorkspace from "../../hooks/useWorkspace";
 import { ErrorBoundary } from "../common/ErrorBoundary";
