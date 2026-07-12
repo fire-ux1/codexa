@@ -100,8 +100,13 @@ class SqliteConnectionWrapper:
 def get_db():
     global use_sqlite
     if use_sqlite:
-        conn = sqlite3.connect(_get_sqlite_path())
+        conn = sqlite3.connect(_get_sqlite_path(), timeout=30.0)
         conn.row_factory = sqlite3.Row
+        try:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA busy_timeout=30000;")
+        except Exception:
+            pass
         return SqliteConnectionWrapper(conn)
 
     try:
@@ -112,8 +117,13 @@ def get_db():
         return PoolConnectionWrapper(pool, conn)
     except Exception:
         use_sqlite = True
-        conn = sqlite3.connect(_get_sqlite_path())
+        conn = sqlite3.connect(_get_sqlite_path(), timeout=30.0)
         conn.row_factory = sqlite3.Row
+        try:
+            conn.execute("PRAGMA journal_mode=WAL;")
+            conn.execute("PRAGMA busy_timeout=30000;")
+        except Exception:
+            pass
         return SqliteConnectionWrapper(conn)
 
 
