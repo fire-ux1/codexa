@@ -15,7 +15,7 @@ def _get_sqlite_path() -> str:
     import sys
 
     if "pytest" in sys.modules:
-        return "test_codepilot.db"
+        return "file::memory:?cache=shared"
     if "K_SERVICE" in os.environ:
         return "/tmp/codepilot.db"
     return "codepilot.db"
