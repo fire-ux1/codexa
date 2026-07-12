@@ -295,20 +295,12 @@ def health_ready():
 
     # Check DB
     try:
-        from services.db_service import get_pool
+        from services.db_service import get_db
 
-        pool = get_pool()
-        if pool:
-            conn = pool.getconn()
-            conn.cursor().execute("SELECT 1")
-            pool.putconn(conn)
-        else:
-            # SQLite fallback
-            import sqlite3
-
-            conn = sqlite3.connect("codepilot.db")
-            conn.execute("SELECT 1")
-            conn.close()
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT 1")
+        conn.close()
         checks["database"] = "ok"
     except Exception as e:
         checks["database"] = f"error: {e}"

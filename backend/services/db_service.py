@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import psycopg2
 import psycopg2.pool
@@ -7,6 +8,13 @@ from settings import get_settings
 settings = get_settings()
 db_pool = None
 use_sqlite = False
+
+
+def _get_sqlite_path() -> str:
+    """Returns the SQLite database path. Uses /tmp/ in Cloud Run (read-only filesystem)."""
+    if "K_SERVICE" in os.environ:
+        return "/tmp/codepilot.db"
+    return "codepilot.db"
 
 
 def get_pool():
@@ -19,7 +27,7 @@ def get_pool():
         except Exception:
             print(
                 f"[DB Warning] Failed to connect to PostgreSQL at {settings.postgres_url}. "
-                "Falling back to local SQLite database ('codepilot.db')."
+                f"Falling back to local SQLite database ('{_get_sqlite_path()}')."
             )
             use_sqlite = True
     return db_pool
@@ -92,7 +100,7 @@ class SqliteConnectionWrapper:
 def get_db():
     global use_sqlite
     if use_sqlite:
-        conn = sqlite3.connect("codepilot.db")
+        conn = sqlite3.connect(_get_sqlite_path())
         conn.row_factory = sqlite3.Row
         return SqliteConnectionWrapper(conn)
 
@@ -104,7 +112,7 @@ def get_db():
         return PoolConnectionWrapper(pool, conn)
     except Exception:
         use_sqlite = True
-        conn = sqlite3.connect("codepilot.db")
+        conn = sqlite3.connect(_get_sqlite_path())
         conn.row_factory = sqlite3.Row
         return SqliteConnectionWrapper(conn)
 
