@@ -1,4 +1,5 @@
 import os
+import sys
 import sqlite3
 import psycopg2
 import psycopg2.pool
@@ -12,8 +13,6 @@ use_sqlite = False
 
 def _get_sqlite_path() -> str:
     """Returns the SQLite database path. Uses /tmp/ in Cloud Run (read-only filesystem)."""
-    import sys
-
     if "pytest" in sys.modules:
         return "file::memory:?cache=shared"
     if "K_SERVICE" in os.environ:
@@ -107,8 +106,6 @@ test_keep_alive_conn = None
 def get_db():
     global use_sqlite, test_keep_alive_conn
     if use_sqlite:
-        import sys
-
         if "pytest" in sys.modules and test_keep_alive_conn is None:
             test_keep_alive_conn = sqlite3.connect(
                 "file::memory:?cache=shared", uri=True
@@ -133,8 +130,6 @@ def get_db():
         return PoolConnectionWrapper(pool, conn)
     except Exception:
         use_sqlite = True
-        import sys
-
         if "pytest" in sys.modules and test_keep_alive_conn is None:
             test_keep_alive_conn = sqlite3.connect(
                 "file::memory:?cache=shared", uri=True
