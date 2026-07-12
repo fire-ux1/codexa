@@ -101,10 +101,22 @@ class SqliteConnectionWrapper:
         self._conn.close()
 
 
+test_keep_alive_conn = None
+
+
 def get_db():
-    global use_sqlite
+    global use_sqlite, test_keep_alive_conn
     if use_sqlite:
-        conn = sqlite3.connect(_get_sqlite_path(), timeout=30.0)
+        import sys
+
+        if "pytest" in sys.modules and test_keep_alive_conn is None:
+            test_keep_alive_conn = sqlite3.connect(
+                "file::memory:?cache=shared", uri=True
+            )
+
+        db_path = _get_sqlite_path()
+        uri = db_path.startswith("file:")
+        conn = sqlite3.connect(db_path, timeout=30.0, uri=uri)
         conn.row_factory = sqlite3.Row
         try:
             conn.execute("PRAGMA journal_mode=WAL;")
@@ -121,7 +133,16 @@ def get_db():
         return PoolConnectionWrapper(pool, conn)
     except Exception:
         use_sqlite = True
-        conn = sqlite3.connect(_get_sqlite_path(), timeout=30.0)
+        import sys
+
+        if "pytest" in sys.modules and test_keep_alive_conn is None:
+            test_keep_alive_conn = sqlite3.connect(
+                "file::memory:?cache=shared", uri=True
+            )
+
+        db_path = _get_sqlite_path()
+        uri = db_path.startswith("file:")
+        conn = sqlite3.connect(db_path, timeout=30.0, uri=uri)
         conn.row_factory = sqlite3.Row
         try:
             conn.execute("PRAGMA journal_mode=WAL;")
