@@ -10,7 +10,19 @@ from services.db_service import init_db, get_db, create_user, create_repository
 
 @pytest.fixture(scope="session", autouse=True)
 def init_test_db():
+    import os
+
     settings.enforce_strict_auth = False
+    for fname in [
+        "test_codepilot.db",
+        "test_codepilot.db-wal",
+        "test_codepilot.db-shm",
+    ]:
+        if os.path.exists(fname):
+            try:
+                os.remove(fname)
+            except Exception:
+                pass
     init_db()
 
 

@@ -217,10 +217,14 @@ def check_services_connectivity():
 
 
 validate_config()
-check_services_connectivity()
+import sys
+if "pytest" not in sys.modules:
+    check_services_connectivity()
 
 # Initialize database on app load
-init_db()
+import sys
+if "pytest" not in sys.modules:
+    init_db()
 
 # Ensure S3 storage bucket exists on app load
 import sys

@@ -12,6 +12,10 @@ use_sqlite = False
 
 def _get_sqlite_path() -> str:
     """Returns the SQLite database path. Uses /tmp/ in Cloud Run (read-only filesystem)."""
+    import sys
+
+    if "pytest" in sys.modules:
+        return "test_codepilot.db"
     if "K_SERVICE" in os.environ:
         return "/tmp/codepilot.db"
     return "codepilot.db"
