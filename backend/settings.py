@@ -95,6 +95,10 @@ class Settings(BaseSettings):
         default="",
         validation_alias=AliasChoices("GOOGLE_CLIENT_SECRET"),
     )
+    google_redirect_uri: str = Field(
+        default="http://localhost:8000/auth/callback/google",
+        validation_alias=AliasChoices("GOOGLE_REDIRECT_URI"),
+    )
     sso_enabled: bool = Field(
         default=False,
         validation_alias=AliasChoices("SSO_ENABLED"),

@@ -585,7 +585,7 @@ def login_google(origin: Optional[str] = None):
             detail="Google OAuth client credentials are not configured in backend/.env. Please use the Sandbox Login fallback.",
         )
 
-    backend_redirect_uri = "http://localhost:8000/auth/callback/google"
+    backend_redirect_uri = settings.google_redirect_uri
     state = origin or settings.llm_site_url
     auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?client_id={settings.google_client_id}&redirect_uri={backend_redirect_uri}&response_type=code&scope=openid%20email%20profile&state={state}"
     return RedirectResponse(url=auth_url)
@@ -599,7 +599,7 @@ def callback_google(code: str, state: Optional[str] = None):
             status_code=400, detail="Google Client credentials missing."
         )
 
-    backend_redirect_uri = "http://localhost:8000/auth/callback/google"
+    backend_redirect_uri = settings.google_redirect_uri
     token_res = requests.post(
         "https://oauth2.googleapis.com/token",
         data={

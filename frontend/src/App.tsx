@@ -33,6 +33,8 @@ const getInitialToken = (): string => {
     if (urlRefreshToken) {
       localStorage.setItem("codepilot_refresh_token", urlRefreshToken);
     }
+    // Clean the URL so the token doesn't persist in history/bookmarks
+    window.history.replaceState({}, document.title, window.location.pathname);
     return urlToken;
   }
   return localStorage.getItem("codepilot_token") || "";
@@ -142,6 +144,11 @@ export default function App() {
     setSelectedNode,
   ]);
 
+  // One-time mount effect: reads OAuth params from URL, loads user profile.
+  // IMPORTANT: `token` is intentionally NOT in the dependency array.
+  // Adding it would cause a re-run every time the sandbox login updates the token
+  // state, leading to an infinite fetch loop. User loads happen once on mount
+  // and then again only when the user explicitly logs in via handleSandboxLogin.
   useEffect(() => {
     const handleUnauthorized = () => {
       handleSignOut();
@@ -150,22 +157,33 @@ export default function App() {
 
     window.addEventListener("codepilot_unauthorized", handleUnauthorized);
 
+    // Handle OAuth redirect: token may land on /auth-callback path
     const params = new URLSearchParams(window.location.search);
     const urlToken = params.get("token");
+    const urlRefreshToken = params.get("refresh_token");
     const mfaRequired = params.get("mfa_required") === "true";
     const mfaTemp = params.get("mfa_temp_token");
+
+    // Pick up tokens that were NOT caught by getInitialToken
+    // (e.g. if the app was already mounted and OAuth redirect happened)
+    if (urlToken && !localStorage.getItem("codepilot_token")) {
+      localStorage.setItem("codepilot_token", urlToken);
+      if (urlRefreshToken) {
+        localStorage.setItem("codepilot_refresh_token", urlRefreshToken);
+      }
+      setToken(urlToken);
+      window.history.replaceState({}, document.title, window.location.pathname);
+      showToast("Authentication successful!", "success");
+    }
 
     if (mfaRequired && mfaTemp) {
       window.history.replaceState({}, document.title, window.location.pathname);
       setMfaTempToken(mfaTemp);
       setShowMfaModal(true);
       setIsAuthLoading(false);
-      return;
-    }
-
-    if (urlToken) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      showToast("Authentication successful!", "success");
+      return () => {
+        window.removeEventListener("codepilot_unauthorized", handleUnauthorized);
+      };
     }
 
     const loadUserAndHistory = async () => {
@@ -177,18 +195,26 @@ export default function App() {
           const historyList = await fetchRepositories();
           setHistory(historyList);
 
-          // If there's a recent completed repository, select it
+          // If there's a recent completed repository, auto-select it
           if (historyList.length > 0) {
             const latest = historyList.find((r: any) => r.status === "completed") || historyList[0];
             if (latest.status === "completed") {
               selectRepositoryFromHistory(latest);
             }
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Auth Load Error:", error);
-          localStorage.removeItem("codepilot_token");
-          setToken("");
-          setUser(null);
+          // Only clear session on explicit 401 — not on network errors,
+          // to avoid a loop where a transient error wipes valid credentials.
+          const status = error?.response?.status;
+          if (status === 401 || status === 403) {
+            localStorage.removeItem("codepilot_token");
+            localStorage.removeItem("codepilot_refresh_token");
+            setToken("");
+            setUser(null);
+          }
+          // For network errors / 5xx, just let the user stay on the loading
+          // screen briefly; the retry interceptor will handle retries.
         }
       }
       setIsAuthLoading(false);
@@ -198,7 +224,8 @@ export default function App() {
     return () => {
       window.removeEventListener("codepilot_unauthorized", handleUnauthorized);
     };
-  }, [token, selectRepositoryFromHistory, showToast, handleSignOut]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   const activeRepo = history.find((r: any) => r.repository_path === repoPath);
   const activeRepoId = activeRepo ? activeRepo.id : null;

@@ -69,3 +69,9 @@ jobs:
             S3_ACCESS_KEY=${{ secrets.S3_ACCESS_KEY || 'minio_user' }}
             S3_SECRET_KEY=${{ secrets.S3_SECRET_KEY || 'minio_password_123' }}
             S3_BUCKET_NAME=${{ secrets.S3_BUCKET_NAME || 'codepilot-storage' }}
+            JWT_SECRET=${{ secrets.JWT_SECRET || 'codepilot_secret_key_12345' }}
+            GITHUB_CLIENT_ID=${{ secrets.GH_CLIENT_ID || '' }}
+            GITHUB_CLIENT_SECRET=${{ secrets.GH_CLIENT_SECRET || '' }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID || '' }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET || '' }}
+            GOOGLE_REDIRECT_URI=https://codepilot-api-257937445938.us-central1.run.app/auth/callback/google
