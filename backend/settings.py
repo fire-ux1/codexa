@@ -2,7 +2,7 @@ from functools import lru_cache
 import json
 from typing import Any
 
-from pydantic import AliasChoices, Field, model_validator
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -192,10 +192,10 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    @model_validator(mode="after")
-    def validate_cors_origins(self) -> "Settings":
-        self.cors_origins = parse_cors_origins(self.cors_origins)
-        return self
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def parse_cors_origins_field(cls, v: Any) -> list[str]:
+        return parse_cors_origins(v)
 
 
 @lru_cache

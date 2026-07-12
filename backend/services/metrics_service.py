@@ -85,23 +85,3 @@ repositories_indexed_total = Counter(
     "codepilot_ai_repositories_indexed_total",
     "Total repositories successfully indexed",
 )
-
-
-def update_celery_queue_depths():
-    """
-    Refresh the celery_queue_depth gauge by inspecting Redis list lengths.
-    Call this from a background thread or periodic Celery beat task.
-    """
-    try:
-        from services.redis_service import get_redis
-
-        r = get_redis()
-        if r is None:
-            return
-
-        # Celery uses kombu queues stored as Redis lists
-        for queue_name in ("indexing", "default", "celery"):
-            depth = r.llen(queue_name) or 0
-            celery_queue_depth.labels(queue=queue_name).set(depth)
-    except Exception as e:
-        print(f"[Metrics] Failed to update queue depths: {e}")

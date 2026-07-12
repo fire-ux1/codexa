@@ -31,20 +31,17 @@ def verify_admin_access(repo_id_or_path: str, user_id: str) -> dict:
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT id FROM projects WHERE repository_id = %s", (repo["id"],)
+            """
+            SELECT pm.role FROM project_members pm
+            JOIN projects p ON pm.project_id = p.id
+            WHERE p.repository_id = %s AND pm.user_id = %s
+            """,
+            (repo["id"], user_id),
         )
-        projects = cursor.fetchall()
-        for p in projects:
-            project_id = p["id"]
-            cursor.execute(
-                "SELECT role FROM project_members WHERE project_id = %s AND user_id = %s",
-                (project_id, user_id),
-            )
-            member = cursor.fetchone()
-            if member:
-                role = member["role"]
-                if role in ["owner", "admin"]:
-                    return repo
+        rows = cursor.fetchall()
+        roles = [row["role"] for row in rows]
+        if any(role in ["owner", "admin"] for role in roles):
+            return repo
 
         raise HTTPException(
             status_code=403,

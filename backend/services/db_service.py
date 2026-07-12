@@ -484,16 +484,6 @@ def create_repository(
         conn.close()
 
 
-def get_repository(repo_id: str):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute("SELECT * FROM repositories WHERE id = %s", (repo_id,))
-        row = cursor.fetchone()
-        return dict(row) if row else None
-    finally:
-        conn.close()
-
 
 def get_repositories_for_user(user_id: str):
     conn = get_db()
@@ -533,18 +523,6 @@ def update_repository_status(
     finally:
         conn.close()
 
-
-def update_repository_access(repo_id: str):
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "UPDATE repositories SET last_accessed = CURRENT_TIMESTAMP WHERE id = %s",
-            (repo_id,),
-        )
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def delete_repository(repo_id: str):

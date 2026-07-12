@@ -24,17 +24,8 @@ def extract_function_calls(code: str):
         tree = ast.parse(code)
 
         class CallGraphVisitor(ast.NodeVisitor):
-            def __init__(self):
-                self.class_stack = []
-
-            def visit_ClassDef(self, node):
-                self.class_stack.append(node.name)
-                self.generic_visit(node)
-                self.class_stack.pop()
-
             def visit_FunctionDef(self, node):
-                prefix = ".".join(self.class_stack)
-                function_name = f"{prefix}.{node.name}" if prefix else node.name
+                function_name = node.name
 
                 graph[function_name] = []
 

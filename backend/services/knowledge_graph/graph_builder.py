@@ -57,10 +57,15 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
 
     nodes = []
     edges = []
+    added_node_ids = set()
+
+    def add_node(node):
+        nodes.append(node)
+        added_node_ids.add(node["id"])
 
     # 1. Create Repository Root Node
     repo_node_id = f"{repo_id}::repo"
-    nodes.append(
+    add_node(
         {
             "id": repo_node_id,
             "name": os.path.basename(repo_path.rstrip("/\\")),
@@ -87,7 +92,7 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
     # 2. Create Directory Nodes and CONTAINS edges from repo/parents
     for d in sorted(list(directories)):
         dir_node_id = f"{repo_id}::{d}"
-        nodes.append(
+        add_node(
             {
                 "id": dir_node_id,
                 "name": os.path.basename(d),
@@ -136,7 +141,7 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
         except Exception:
             size = 0
 
-        nodes.append(
+        add_node(
             {
                 "id": file_node_id,
                 "name": f["name"],
@@ -180,7 +185,7 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
                     # A. Classes
                     if isinstance(node, ast.ClassDef):
                         class_node_id = f"{file_node_id}::{node.name}"
-                        nodes.append(
+                        add_node(
                             {
                                 "id": class_node_id,
                                 "name": node.name,
@@ -215,7 +220,7 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
                         )
                         func_node_id = f"{file_node_id}::{func_display_name}"
 
-                        nodes.append(
+                        add_node(
                             {
                                 "id": func_node_id,
                                 "name": func_display_name,
@@ -265,8 +270,8 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
                             for tbl in db_tables:
                                 table_node_id = f"{repo_id}::db::{tbl}"
                                 # Add table node (only once)
-                                if not any(n["id"] == table_node_id for n in nodes):
-                                    nodes.append(
+                                if table_node_id not in added_node_ids:
+                                    add_node(
                                         {
                                             "id": table_node_id,
                                             "name": tbl.upper(),
@@ -331,8 +336,8 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
                         if is_route:
                             endpoint_name = f"{methods[0]} {route_path or '/'}"
                             endpoint_node_id = f"{repo_id}::api::{endpoint_name}"
-                            if not any(n["id"] == endpoint_node_id for n in nodes):
-                                nodes.append(
+                            if endpoint_node_id not in added_node_ids:
+                                add_node(
                                     {
                                         "id": endpoint_node_id,
                                         "name": endpoint_name,
@@ -369,8 +374,8 @@ def build_knowledge_graph(repo_path: str, repo_id: str):
                             if isinstance(target, ast.Name):
                                 var_name = target.id
                                 var_node_id = f"{file_node_id}::var::{var_name}"
-                                if not any(n["id"] == var_node_id for n in nodes):
-                                    nodes.append(
+                                if var_node_id not in added_node_ids:
+                                    add_node(
                                         {
                                             "id": var_node_id,
                                             "name": var_name,

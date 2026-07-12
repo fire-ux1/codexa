@@ -223,12 +223,14 @@ check_services_connectivity()
 init_db()
 
 # Ensure S3 storage bucket exists on app load
-try:
-    from services.storage_service import ensure_bucket_exists
+import sys
+if "pytest" not in sys.modules:
+    try:
+        from services.storage_service import ensure_bucket_exists
 
-    ensure_bucket_exists()
-except Exception as s3_err:
-    print(f"[App Startup] Warning: Could not initialize S3 bucket: {s3_err}")
+        ensure_bucket_exists()
+    except Exception as s3_err:
+        print(f"[App Startup] Warning: Could not initialize S3 bucket: {s3_err}")
 
 
 @app.on_event("shutdown")

@@ -24,71 +24,8 @@ settings.enforce_strict_auth = True
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup_test_db():
+def setup_test_db(shared_test_db):
     settings.enforce_strict_auth = True
-    init_db()
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        # Create test users
-        cursor.execute("DELETE FROM project_members")
-        cursor.execute("DELETE FROM comments")
-        cursor.execute("DELETE FROM projects")
-        cursor.execute("DELETE FROM repositories")
-        cursor.execute("DELETE FROM organizations")
-        cursor.execute("DELETE FROM audit_logs")
-        cursor.execute("DELETE FROM users")
-        conn.commit()
-
-        # Seed users
-        create_user("u-owner", "owner@test.com", "Project Owner", "")
-        create_user("u-admin", "admin@test.com", "Project Admin", "")
-        create_user("u-member", "member@test.com", "Project Member", "")
-        create_user("u-viewer", "viewer@test.com", "Project Viewer", "")
-        create_user("u-stranger", "stranger@test.com", "Stranger", "")
-
-        # Seed repository (owned by u-owner)
-        create_repository(
-            repo_id="repo-auth-test",
-            user_id="u-owner",
-            name="auth-test-repo",
-            path="repos/auth-test-repo",
-            branch="main",
-            status="active",
-        )
-
-        # Seed organization
-        cursor.execute(
-            "INSERT INTO organizations (id, name) VALUES (%s, %s)",
-            ("org-test", "Test Organization"),
-        )
-
-        # Seed project
-        cursor.execute(
-            "INSERT INTO projects (id, org_id, repository_id, name) VALUES (%s, %s, %s, %s)",
-            ("proj-auth-test", "org-test", "repo-auth-test", "Auth Test Project"),
-        )
-
-        # Seed project memberships
-        cursor.execute(
-            "INSERT INTO project_members (project_id, user_id, role) VALUES (%s, %s, %s)",
-            ("proj-auth-test", "u-owner", "owner"),
-        )
-        cursor.execute(
-            "INSERT INTO project_members (project_id, user_id, role) VALUES (%s, %s, %s)",
-            ("proj-auth-test", "u-admin", "admin"),
-        )
-        cursor.execute(
-            "INSERT INTO project_members (project_id, user_id, role) VALUES (%s, %s, %s)",
-            ("proj-auth-test", "u-member", "member"),
-        )
-        cursor.execute(
-            "INSERT INTO project_members (project_id, user_id, role) VALUES (%s, %s, %s)",
-            ("proj-auth-test", "u-viewer", "viewer"),
-        )
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def test_token_encode_decode():

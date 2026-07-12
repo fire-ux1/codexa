@@ -15,81 +15,22 @@ client = TestClient(app)
 
 
 @pytest.fixture(scope="module", autouse=True)
-def setup_test_db():
-    settings.enforce_strict_auth = False
-    init_db()
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        # Clear tables
-        cursor.execute("DELETE FROM project_members")
-        cursor.execute("DELETE FROM projects")
-        cursor.execute("DELETE FROM repositories")
-        cursor.execute("DELETE FROM audit_logs")
-        cursor.execute("DELETE FROM users")
-        conn.commit()
-
-        # Seed users
-        create_user("u-owner", "owner@test.com", "Project Owner", "")
-        create_user("u-admin", "admin@test.com", "Project Admin", "")
-        create_user("u-viewer", "viewer@test.com", "Project Viewer", "")
-        create_user("u-stranger", "stranger@test.com", "Stranger", "")
-
-        # Seed repository (owned by u-owner)
-        create_repository(
-            repo_id="repo-admin-test",
-            user_id="u-owner",
-            name="admin-test-repo",
-            path="repos/admin-test-repo",
-            branch="main",
-            status="active",
-        )
-
-        # Seed organization
-        cursor.execute(
-            "INSERT INTO organizations (id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
-            ("org-test", "Test Organization"),
-        )
-
-        # Seed project
-        cursor.execute(
-            "INSERT INTO projects (id, org_id, repository_id, name) VALUES (%s, %s, %s, %s)",
-            ("proj-admin-test", "org-test", "repo-admin-test", "Admin Test Project"),
-        )
-
-        # Seed project memberships
-        cursor.execute(
-            "INSERT INTO project_members (project_id, user_id, role) VALUES (%s, %s, %s)",
-            ("proj-admin-test", "u-owner", "owner"),
-        )
-        cursor.execute(
-            "INSERT INTO project_members (project_id, user_id, role) VALUES (%s, %s, %s)",
-            ("proj-admin-test", "u-admin", "admin"),
-        )
-        cursor.execute(
-            "INSERT INTO project_members (project_id, user_id, role) VALUES (%s, %s, %s)",
-            ("proj-admin-test", "u-viewer", "viewer"),
-        )
-        conn.commit()
-
-        # Add mock audit logs
-        log_audit_event(
-            "u-owner",
-            "clone_repo",
-            "proj-admin-test",
-            {"details": "Cloned repo successfully"},
-            "127.0.0.1",
-        )
-        log_audit_event(
-            "u-admin",
-            "apply_patch",
-            "proj-admin-test",
-            {"details": "Applied optimization patch"},
-            "127.0.0.1",
-        )
-
-    finally:
-        conn.close()
+def setup_test_db(shared_test_db):
+    # Add mock audit logs
+    log_audit_event(
+        "u-owner",
+        "clone_repo",
+        "proj-admin-test",
+        {"details": "Cloned repo successfully"},
+        "127.0.0.1",
+    )
+    log_audit_event(
+        "u-admin",
+        "apply_patch",
+        "proj-admin-test",
+        {"details": "Applied optimization patch"},
+        "127.0.0.1",
+    )
 
 
 def test_get_members_strict_mode():

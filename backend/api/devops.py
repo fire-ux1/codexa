@@ -44,5 +44,7 @@ def generate_devops_or_doc_asset(
             "asset_type": payload.asset_type,
             "content": content,
         }
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

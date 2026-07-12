@@ -45,6 +45,28 @@ def get_repository_by_path_or_id(repo_id_or_path: str) -> dict | None:
         conn.close()
 
 
+def _get_user_roles_in_repo_projects(repo_id: str, user_id: str) -> list[str]:
+    """Retrieves all roles a user has in any projects linked to the given repository."""
+    conn = get_db()
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT pm.role FROM project_members pm
+            JOIN projects p ON pm.project_id = p.id
+            WHERE p.repository_id = %s AND pm.user_id = %s
+            """,
+            (repo_id, user_id),
+        )
+        rows = cursor.fetchall()
+        return [row["role"] for row in rows]
+    except Exception as e:
+        print(f"[Auth Validation] DB query error in _get_user_roles_in_repo_projects: {e}")
+        return []
+    finally:
+        conn.close()
+
+
 def verify_repo_access(repo_id_or_path: str, user_id: str) -> dict:
     """
     Validates if the user has access to the given repository.
@@ -71,34 +93,16 @@ def verify_repo_access(repo_id_or_path: str, user_id: str) -> dict:
     if repo["user_id"] == user_id:
         return repo
 
-    # 2. Project membership access
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        # Check all projects linked to this repository
-        cursor.execute(
-            "SELECT id FROM projects WHERE repository_id = %s", (repo["id"],)
-        )
-        projects = cursor.fetchall()
+    # 2. Project membership access (using optimized single JOIN query instead of N+1)
+    roles = _get_user_roles_in_repo_projects(repo["id"], user_id)
+    if roles:
+        return repo
 
-        for p in projects:
-            project_id = p["id"]
-            # Check if user is a member of this project
-            cursor.execute(
-                "SELECT role FROM project_members WHERE project_id = %s AND user_id = %s",
-                (project_id, user_id),
-            )
-            member = cursor.fetchone()
-            if member:
-                return repo  # Access granted through project membership
-
-        # Neither owner nor project member
-        raise HTTPException(
-            status_code=403,
-            detail="Access Denied: You do not have permission to access this repository.",
-        )
-    finally:
-        conn.close()
+    # Neither owner nor project member
+    raise HTTPException(
+        status_code=403,
+        detail="Access Denied: You do not have permission to access this repository.",
+    )
 
 
 def verify_repo_write_access(repo_id_or_path: str, user_id: str) -> dict:
@@ -111,30 +115,14 @@ def verify_repo_write_access(repo_id_or_path: str, user_id: str) -> dict:
         return repo
 
     # If the user accessed via project membership, verify role is write-capable
-    conn = get_db()
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "SELECT id FROM projects WHERE repository_id = %s", (repo["id"],)
-        )
-        projects = cursor.fetchall()
-        for p in projects:
-            project_id = p["id"]
-            cursor.execute(
-                "SELECT role FROM project_members WHERE project_id = %s AND user_id = %s",
-                (project_id, user_id),
-            )
-            member = cursor.fetchone()
-            if member:
-                role = member["role"]
-                if role in ["owner", "admin", "member"]:
-                    return repo
-        raise HTTPException(
-            status_code=403,
-            detail="Access Denied: You have read-only (viewer) access to this project.",
-        )
-    finally:
-        conn.close()
+    roles = _get_user_roles_in_repo_projects(repo["id"], user_id)
+    if any(role in ["owner", "admin", "member"] for role in roles):
+        return repo
+
+    raise HTTPException(
+        status_code=403,
+        detail="Access Denied: You have read-only (viewer) access to this project.",
+    )
 
 
 def get_authorized_repositories_for_user(user_id: str) -> list:
@@ -219,10 +207,8 @@ def verify_file_access(file_path: str, user_id: str, write: bool = False) -> str
     return None
 
 
-async def require_repo_read(
-    request: Request, user_id: str = Depends(get_current_user_id)
-) -> dict:
-    """FastAPI dependency to enforce repository read permissions on the request."""
+async def _extract_repo_id_or_path(request: Request) -> str:
+    """Helper to extract repository identifier or path from query, path, or JSON body params."""
     repo_id_or_path = (
         request.query_params.get("repo_id")
         or request.query_params.get("repo_path")
@@ -255,6 +241,14 @@ async def require_repo_read(
             detail="Missing repository path or identifier (repo_id, repo_path, or repo).",
         )
 
+    return repo_id_or_path
+
+
+async def require_repo_read(
+    request: Request, user_id: str = Depends(get_current_user_id)
+) -> dict:
+    """FastAPI dependency to enforce repository read permissions on the request."""
+    repo_id_or_path = await _extract_repo_id_or_path(request)
     return verify_repo_access(repo_id_or_path, user_id)
 
 
@@ -262,36 +256,5 @@ async def require_repo_write(
     request: Request, user_id: str = Depends(get_current_user_id)
 ) -> dict:
     """FastAPI dependency to enforce repository write permissions on the request."""
-    repo_id_or_path = (
-        request.query_params.get("repo_id")
-        or request.query_params.get("repo_path")
-        or request.query_params.get("repo")
-    )
-
-    if not repo_id_or_path:
-        repo_id_or_path = (
-            request.path_params.get("repo_id")
-            or request.path_params.get("repo_path")
-            or request.path_params.get("repo")
-        )
-
-    if not repo_id_or_path:
-        try:
-            body = await request.json()
-            if isinstance(body, dict):
-                repo_id_or_path = (
-                    body.get("repo_id")
-                    or body.get("repo_path")
-                    or body.get("repo")
-                    or body.get("repository_id")
-                )
-        except Exception:
-            pass
-
-    if not repo_id_or_path:
-        raise HTTPException(
-            status_code=400,
-            detail="Missing repository path or identifier (repo_id, repo_path, or repo).",
-        )
-
+    repo_id_or_path = await _extract_repo_id_or_path(request)
     return verify_repo_write_access(repo_id_or_path, user_id)
