@@ -53,6 +53,7 @@ export default function Sidebar({
         <button
           onClick={onSignOut}
           title="Log Out"
+          aria-label="Log Out"
           className="p-2 rounded-lg bg-panel-alt hover:bg-danger-bg text-muted hover:text-danger border border-border hover:border-danger/20 transition-all cursor-pointer"
         >
           <IconLogout className="w-4 h-4" />
@@ -101,6 +102,8 @@ export default function Sidebar({
                   </div>
                   <button
                     onClick={(e) => onDeleteRepo(e, repo.id)}
+                    title="Delete repository"
+                    aria-label={`Delete repository ${repo.repository_name}`}
                     className="p-1.5 rounded hover:bg-danger-bg text-muted hover:text-danger transition-all ml-1 shrink-0 cursor-pointer"
                   >
                     <IconTrash className="w-3.5 h-3.5" />
