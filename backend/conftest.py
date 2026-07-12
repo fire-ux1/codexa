@@ -8,15 +8,32 @@ settings.enforce_strict_auth = False
 from services.db_service import init_db, get_db, create_user, create_repository
 
 
+def pytest_runtest_setup(item):
+    import os
+
+    module_name = item.module.__name__
+    os.environ["CURRENT_TEST_DB"] = f"test_{module_name}.db"
+
+
 @pytest.fixture(scope="session", autouse=True)
 def init_test_db():
+    import glob
+    import os
+
     settings.enforce_strict_auth = False
+    for pat in ["test_*.db", "test_*.db-wal", "test_*.db-shm"]:
+        for fname in glob.glob(pat):
+            try:
+                os.remove(fname)
+            except Exception:
+                pass
     init_db()
 
 
 @pytest.fixture(scope="module")
 def shared_test_db():
     """Clears standard database tables and seeds standard test data for RBAC and Admin tests."""
+    init_db()
     conn = get_db()
     cursor = conn.cursor()
     try:

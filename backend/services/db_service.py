@@ -1,5 +1,4 @@
 import os
-import sys
 import sqlite3
 import psycopg2
 import psycopg2.pool
@@ -13,8 +12,8 @@ use_sqlite = False
 
 def _get_sqlite_path() -> str:
     """Returns the SQLite database path. Uses /tmp/ in Cloud Run (read-only filesystem)."""
-    if "pytest" in sys.modules:
-        return "file::memory:?cache=shared"
+    if "CURRENT_TEST_DB" in os.environ:
+        return os.environ["CURRENT_TEST_DB"]
     if "K_SERVICE" in os.environ:
         return "/tmp/codepilot.db"
     return "codepilot.db"
@@ -100,20 +99,11 @@ class SqliteConnectionWrapper:
         self._conn.close()
 
 
-test_keep_alive_conn = None
-
-
 def get_db():
-    global use_sqlite, test_keep_alive_conn
+    global use_sqlite
     if use_sqlite:
-        if "pytest" in sys.modules and test_keep_alive_conn is None:
-            test_keep_alive_conn = sqlite3.connect(
-                "file::memory:?cache=shared", uri=True
-            )
-
         db_path = _get_sqlite_path()
-        uri = db_path.startswith("file:")
-        conn = sqlite3.connect(db_path, timeout=30.0, uri=uri)
+        conn = sqlite3.connect(db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
         try:
             conn.execute("PRAGMA journal_mode=WAL;")
@@ -130,14 +120,8 @@ def get_db():
         return PoolConnectionWrapper(pool, conn)
     except Exception:
         use_sqlite = True
-        if "pytest" in sys.modules and test_keep_alive_conn is None:
-            test_keep_alive_conn = sqlite3.connect(
-                "file::memory:?cache=shared", uri=True
-            )
-
         db_path = _get_sqlite_path()
-        uri = db_path.startswith("file:")
-        conn = sqlite3.connect(db_path, timeout=30.0, uri=uri)
+        conn = sqlite3.connect(db_path, timeout=30.0)
         conn.row_factory = sqlite3.Row
         try:
             conn.execute("PRAGMA journal_mode=WAL;")
