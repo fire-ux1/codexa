@@ -218,11 +218,13 @@ def check_services_connectivity():
 
 validate_config()
 import sys
+
 if "pytest" not in sys.modules:
     check_services_connectivity()
 
 # Initialize database on app load
 import sys
+
 if "pytest" not in sys.modules:
     init_db()
 
