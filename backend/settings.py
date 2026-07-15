@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     cors_origins: Any = Field(
         default=[
             "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:8000",
+            "http://127.0.0.1:8000",
             "https://codepilot-ai-wine.vercel.app",
             "https://codepilot-api-257937445938.us-central1.run.app",
         ],

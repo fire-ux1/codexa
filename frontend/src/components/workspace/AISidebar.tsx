@@ -1,4 +1,5 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useState } from "react";
+import { ChevronDown, MessageSquare, Bot, ClipboardList } from "lucide-react";
 import ConversationPanel from "./ConversationPanel";
 
 // Lazy-loaded components
@@ -88,6 +89,8 @@ export default function AISidebar({
   onApplyProfile,
   repoId,
 }: AISidebarProps) {
+  const [showSwitcher, setShowSwitcher] = useState(false);
+
   const handleTabClick = (key: string) => {
     setActiveTab(key);
     if (collapsed) {
@@ -98,7 +101,7 @@ export default function AISidebar({
   // Renders a narrow ribbon of icons if collapsed
   if (collapsed) {
     return (
-      <div className="w-10 bg-panel-alt-2/60 border-l border-border flex flex-col items-center py-2 gap-4 h-full shrink-0 z-10 select-none">
+      <div className="w-10 bg-panel border-l border-border flex flex-col items-center py-2 gap-4 h-full shrink-0 z-10 select-none">
         <button
           onClick={() => onToggleCollapse(false)}
           className="p-1.5 rounded-lg hover:bg-panel text-muted hover:text-text-strong transition-all mb-2 border border-transparent hover:border-border cursor-pointer"
@@ -126,34 +129,89 @@ export default function AISidebar({
     );
   }
 
+  const activeTabObj = TABS.find((t) => t.key === activeTab) || TABS[0];
+
   return (
     <div
       style={{ width: `${width}px` }}
       className="shrink-0 flex flex-col h-full bg-panel border-l border-border overflow-hidden z-10 transition-all"
     >
       {/* Horizontal Tabs Header Bar */}
-      <div className="flex items-center border-b border-border bg-panel-alt-2/40 shrink-0 select-none pr-1">
-        {TABS.map((tab) => (
+      <div className="flex items-center justify-between border-b border-border bg-panel-alt px-2 py-1.5 shrink-0 select-none h-[42px] relative z-20">
+        
+        {/* Dropdown Selector */}
+        <div className="relative flex-grow min-w-0">
           <button
-            key={tab.key}
-            onClick={() => handleTabClick(tab.key)}
-            className={`flex-1 py-2.5 px-1 text-[9px] font-mono font-bold uppercase tracking-wider transition-all border-b-2 flex flex-col items-center gap-0.5 cursor-pointer ${
-              activeTab === tab.key
-                ? "border-accent text-accent bg-accent-dim/10"
-                : "border-transparent text-muted hover:text-text-strong hover:bg-panel-alt"
-            }`}
+            onClick={() => setShowSwitcher((s) => !s)}
+            className="flex items-center gap-1.5 px-2 py-1 text-text-strong hover:text-white font-sans text-xs font-semibold select-none cursor-pointer w-full text-left justify-between bg-bg border border-border rounded-lg hover:bg-panel-alt-2 transition-colors"
           >
-            <span className="text-xs">{tab.icon}</span>
-            <span className="whitespace-nowrap">{tab.label}</span>
+            <span className="flex items-center gap-1.5 truncate">
+              <span className="text-sm shrink-0">{activeTabObj.icon}</span>
+              <span className="truncate">{activeTabObj.label}</span>
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-muted shrink-0 ml-1" />
           </button>
-        ))}
+
+          {showSwitcher && (
+            <>
+              {/* Backdrop overlay to close switcher */}
+              <div className="fixed inset-0 z-40 cursor-default" onClick={() => setShowSwitcher(false)} />
+              <div className="absolute top-[calc(100%+4px)] left-0 mt-1 w-52 bg-panel-alt-2 border border-border rounded-xl shadow-2xl p-1 z-50 animate-fade-in">
+                {TABS.map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() => {
+                      handleTabClick(tab.key);
+                      setShowSwitcher(false);
+                    }}
+                    className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-left rounded-lg text-xs font-sans transition-all cursor-pointer ${
+                      activeTab === tab.key
+                        ? "bg-accent-dim/10 text-accent font-semibold"
+                        : "text-muted hover:text-text-strong hover:bg-panel-alt"
+                    }`}
+                  >
+                    <span className="text-sm shrink-0">{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Quick Access Icon Buttons */}
+        <div className="flex items-center gap-0.5 shrink-0 px-1 border-l border-border/60 ml-2">
+          {[
+            { key: "chat", icon: MessageSquare, tooltip: "Chat" },
+            { key: "agents", icon: Bot, tooltip: "Agents Coordinator" },
+            { key: "planner", icon: ClipboardList, tooltip: "Planner Workspace" },
+          ].map((action) => {
+            const Icon = action.icon;
+            const isActive = activeTab === action.key;
+            return (
+              <button
+                key={action.key}
+                onClick={() => handleTabClick(action.key)}
+                className={`p-1.5 rounded-lg transition-all cursor-pointer relative ${
+                  isActive
+                    ? "text-accent bg-accent-dim/10"
+                    : "text-muted hover:text-text-strong hover:bg-panel-alt-2"
+                }`}
+                title={action.tooltip}
+              >
+                <Icon className="w-3.5 h-3.5" />
+              </button>
+            );
+          })}
+        </div>
+
         {/* Collapse arrow toggle */}
         <button
           onClick={() => onToggleCollapse(true)}
-          className="p-1.5 rounded-lg hover:bg-panel text-muted hover:text-text-strong transition-all border border-transparent hover:border-border ml-1 mr-1 cursor-pointer"
+          className="p-1.5 rounded-lg hover:bg-panel-alt-2 text-muted hover:text-text-strong transition-all border border-transparent hover:border-border ml-1 cursor-pointer shrink-0"
           title="Collapse Assistant Panel"
         >
-          <svg className="w-3 h-3 text-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <svg className="w-3.5 h-3.5 text-muted" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </button>

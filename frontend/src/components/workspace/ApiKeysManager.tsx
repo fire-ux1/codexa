@@ -27,7 +27,15 @@ export default function ApiKeysManager() {
       setLoading(true);
       setError(null);
       const data = await fetchApiKeys();
-      setKeys(data);
+      setKeys(
+        data.map((k: any) => ({
+          id: k.id,
+          name: k.name,
+          prefix: k.prefix || k.key?.substring(0, 8) || "cp_key",
+          created_at: k.created_at,
+          expires_at: k.expires_at || null,
+        }))
+      );
     } catch (err: any) {
       console.error("Error fetching API keys:", err);
       setError(err?.response?.data?.detail || err?.message || "Failed to retrieve API keys.");
@@ -48,7 +56,7 @@ export default function ApiKeysManager() {
       setIsCreating(true);
       setError(null);
       const res = await createApiKey(keyName, expiresInDays);
-      setNewKeyPlain(res.api_key);
+      setNewKeyPlain(res.key || (res as any).api_key || null);
       setKeyName("");
       // Refresh list
       loadKeys();

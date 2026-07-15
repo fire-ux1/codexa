@@ -1,8 +1,9 @@
-import { useState } from "react";
 import {
   Folder, Search, Network, Bot, History, Settings,
-  ChevronLeft, ChevronRight, Flame, Sparkles
+  FileCode, ClipboardCheck, Activity,
 } from "lucide-react";
+
+const ACTIVITY_BAR_WIDTH = "48px";
 
 interface ActivityBarProps {
   activeActivity: string;
@@ -12,7 +13,18 @@ interface ActivityBarProps {
   rightTab: string;
   onSelectRightTab: (tab: string) => void;
   onToggleRightSidebar: (collapsed: boolean) => void;
-  onExecuteQuickAction?: (id: string, label: string) => void;
+  /** Current user identity, replacing the hardcoded "Abhishek" */
+  userName?: string;
+  userPlan?: string;
+  userAvatarUrl?: string;
+}
+
+interface NavItem {
+  key: string;
+  label: string;
+  icon: typeof Folder;
+  isActive: boolean;
+  onClick: () => void;
 }
 
 export default function ActivityBar({
@@ -23,11 +35,15 @@ export default function ActivityBar({
   rightTab,
   onSelectRightTab,
   onToggleRightSidebar,
-  onExecuteQuickAction,
+  userName = "Guest",
+  userPlan,
+  userAvatarUrl,
 }: ActivityBarProps) {
-  const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-
-  const navItems = [
+  // Primary group — the 6 core nav destinations called out in the design
+  // spec (Explorer, Search, Graph, Agents, History, Settings). Selecting
+  // Explorer/Search/History/Settings also returns to editor mode, matching
+  // previous behavior; Graph and Agents switch mode/right-tab directly.
+  const navItems: NavItem[] = [
     {
       key: "explorer",
       label: "Explorer",
@@ -46,8 +62,9 @@ export default function ActivityBar({
       key: "graph",
       label: "Graph",
       icon: Network,
+      // Covers both the graph view and its trace sub-view, as before
       isActive: activeMode === "understand" || activeMode === "trace",
-      onClick: () => { onSelectMode("understand"); },
+      onClick: () => onSelectMode("understand"),
     },
     {
       key: "agents",
@@ -72,106 +89,100 @@ export default function ActivityBar({
     },
   ];
 
-  const quickActions = [
-    { id: "explain", label: "Explain Code" },
-    { id: "generate_tests", label: "Generate Tests" },
-    { id: "find_bugs", label: "Find Bugs" },
-    { id: "refactor", label: "Refactor" },
+  // Secondary group: remaining workspace modes not covered by the design
+  // spec's 6-icon list. Kept separate (rather than deleted) so switching
+  // into Editor/Review/Trace mode doesn't lose a reachable entry point —
+  // the spec doesn't mention these, so this is a conservative choice to
+  // avoid a navigation regression rather than a literal spec requirement.
+  // TODO — confirm the real mode string for "Review" against wherever
+  // activeMode is set (likely AIWorkspace.tsx); "review" below is a guess.
+  const modeItems: NavItem[] = [
+    {
+      key: "editor",
+      label: "Editor",
+      icon: FileCode,
+      isActive: activeMode === "editor",
+      onClick: () => onSelectMode("editor"),
+    },
+    {
+      key: "review",
+      label: "Review",
+      icon: ClipboardCheck,
+      isActive: activeMode === "review",
+      onClick: () => onSelectMode("review"),
+    },
+    {
+      key: "trace",
+      label: "Trace",
+      icon: Activity,
+      isActive: activeMode === "trace",
+      onClick: () => onSelectMode("trace"),
+    },
   ];
+
+  const userInitial = userName.trim().charAt(0).toUpperCase() || "?";
+  const userTitle = userPlan ? `${userName} — ${userPlan}` : userName;
+
+  const renderNavButton = (item: NavItem, ariaMode: "nav" | "toggle") => {
+    const Icon = item.icon;
+    return (
+      <button
+        key={item.key}
+        type="button"
+        onClick={item.onClick}
+        aria-label={item.label}
+        {...(ariaMode === "nav"
+          ? { "aria-current": item.isActive ? ("page" as const) : undefined }
+          : { "aria-pressed": item.isActive })}
+        title={item.label}
+        className={`flex items-center justify-center p-2.5 rounded-xl transition-all relative cursor-pointer ${
+          item.isActive
+            ? "bg-accent-dim/15 text-accent border border-accent/20"
+            : "text-text hover:text-text-strong hover:bg-panel border border-transparent"
+        }`}
+      >
+        <Icon className="w-4 h-4 shrink-0" />
+        {item.isActive && (
+          <span aria-hidden="true" className="absolute left-0 top-[25%] bottom-[25%] w-[2.5px] bg-accent rounded-r-md" />
+        )}
+      </button>
+    );
+  };
 
   return (
     <div
-      style={{ width: isCollapsed ? "52px" : "150px" }}
-      className="shrink-0 bg-bg border-r border-border flex flex-col justify-between select-none py-3 transition-all duration-200 z-20 h-full overflow-hidden shadow-sm"
+      style={{ width: ACTIVITY_BAR_WIDTH }}
+      className="shrink-0 bg-[var(--activity-bar-bg,var(--bg))] border-r border-border flex flex-col justify-between select-none py-3 z-20 h-full overflow-hidden shadow-sm"
     >
-      {/* Top Menu list */}
-      <div className="flex flex-col gap-5 px-2">
-        {/* Toggle Collapse */}
-        <div className="flex justify-end pr-1 border-b border-border pb-2 mb-1">
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-1 rounded hover:bg-panel-alt text-muted hover:text-text-strong transition-colors cursor-pointer"
-            title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+      <div className="flex flex-col gap-3">
+        <nav aria-label="Primary" className="flex flex-col gap-1.5 px-1.5">
+          {navItems.map((item) => renderNavButton(item, "nav"))}
+        </nav>
+
+        <div className="border-t border-border mx-2" aria-hidden="true" />
+
+        <nav aria-label="Workspace mode" className="flex flex-col gap-1.5 px-1.5">
+          {modeItems.map((item) => renderNavButton(item, "toggle"))}
+        </nav>
+      </div>
+
+      {/* User context — avatar only; bar is always icon-width now */}
+      <div className="border-t border-border pt-2.5 px-1.5 flex justify-center select-none" title={userTitle}>
+        {userAvatarUrl ? (
+          <img
+            src={userAvatarUrl}
+            alt={userName}
+            className="w-7 h-7 rounded-full shrink-0 object-cover border border-border shadow"
+          />
+        ) : (
+          <div
+            aria-hidden="true"
+            className="w-7 h-7 rounded-full bg-gradient-to-tr from-accent to-blue-400 flex items-center justify-center shrink-0 text-bg font-bold text-[10px] shadow border border-border"
           >
-            {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-          </button>
-        </div>
-
-        {/* Menu Items */}
-        <div className="flex flex-col gap-1.5">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                onClick={item.onClick}
-                className={`flex items-center gap-2.5 p-2 rounded-xl text-left transition-all relative cursor-pointer ${
-                  item.isActive
-                    ? "bg-accent-dim/15 text-accent border border-accent/20"
-                    : "text-text hover:text-text-strong hover:bg-panel border border-transparent"
-                }`}
-                title={isCollapsed ? item.label : undefined}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                {!isCollapsed && <span className="text-[11px] font-semibold font-sans">{item.label}</span>}
-                {item.isActive && (
-                  <span className="absolute left-0 top-[25%] bottom-[25%] w-[2.5px] bg-accent rounded-r-md" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Middle/Bottom panels */}
-      <div className="flex flex-col gap-4.5 px-2.5">
-        {!isCollapsed && (
-          <>
-            {/* Project Health Card */}
-            <div className="bg-panel border border-border rounded-xl p-2.5 space-y-1.5 shadow-sm">
-              <span className="text-[8px] font-mono font-bold uppercase text-muted tracking-wider block">Project Health</span>
-              <div className="flex items-center gap-2">
-                <Flame className="w-3.5 h-3.5 text-success" />
-                <div className="flex flex-col text-left">
-                  <span className="text-[10px] font-bold text-text-strong font-sans leading-none">Excellent</span>
-                  <span className="text-[8px] text-muted font-mono mt-0.5">100% clean</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions Panel */}
-            <div className="space-y-1.5">
-              <span className="text-[8px] font-mono font-bold uppercase text-muted tracking-wider block select-none">Quick Actions</span>
-              <div className="flex flex-col gap-1">
-                {quickActions.map((action) => (
-                  <button
-                    key={action.id}
-                    onClick={() => onExecuteQuickAction && onExecuteQuickAction(action.id, action.label)}
-                    className="w-full text-left p-1.5 rounded-lg border border-border hover:border-accent/20 hover:bg-panel text-[9px] text-text hover:text-text-strong transition-all font-mono flex items-center gap-1 select-none cursor-pointer"
-                  >
-                    <Sparkles className="w-2.5 h-2.5 text-accent shrink-0" />
-                    <span className="truncate">{action.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* User context card */}
-        <div className="border-t border-border pt-2.5 flex items-center gap-2 select-none overflow-hidden">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-accent to-blue-400 flex items-center justify-center shrink-0 text-bg font-bold text-[10px] shadow border border-border">
-            A
+            {userInitial}
           </div>
-          {!isCollapsed && (
-            <div className="flex flex-col text-left overflow-hidden">
-              <span className="text-[10px] font-bold text-text font-sans leading-tight truncate">Abhishek</span>
-              <span className="text-[7.5px] font-mono text-accent uppercase font-bold tracking-wider leading-none mt-0.5">Pro Plan</span>
-            </div>
-          )}
-        </div>
+        )}
       </div>
-
     </div>
   );
 }

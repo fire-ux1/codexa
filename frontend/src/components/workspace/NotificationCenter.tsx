@@ -23,7 +23,17 @@ export default function NotificationCenter() {
     try {
       setLoading(true);
       const data = await fetchNotifications();
-      setNotifications(data);
+      setNotifications(
+        data.map((item: any) => ({
+          id: item.id,
+          user_id: item.user_id || "system",
+          title: item.title || (item.type ? item.type.charAt(0).toUpperCase() + item.type.slice(1) : "Notification"),
+          message: item.message,
+          read: item.read,
+          type: item.type || "system",
+          created_at: item.created_at,
+        }))
+      );
     } catch (err) {
       console.error("Failed to load notifications:", err);
     } finally {

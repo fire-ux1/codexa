@@ -1,35 +1,35 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { useState } from "react";
 
 const TOUR_STEPS = [
   {
     target: "body",
-    title: "ðŸš€ Welcome to CodePilot AI!",
+    title: "🚀 Welcome to ChunkWiser!",
     content: "Let's take a quick 1-minute tour of your new AI-powered workspace to get you up to speed.",
   },
   {
     target: "explorer",
-    title: "ðŸ“ Repository File Explorer",
+    title: "📁 Repository File Explorer",
     content: "Browse all the source files in the currently cloned repository. Click any file to open it in the editor.",
   },
   {
     target: "editor",
-    title: "ðŸ“ Code Editor with Inline AI",
+    title: "📝 Code Editor with Inline AI",
     content: "View and edit source code here. Right-click or select code blocks to trigger context-aware inline AI actions like Refactor, Explain, or Generate Tests.",
   },
   {
     target: "ai-assistant",
-    title: "ðŸ¤– AI Assistant Sidebar",
+    title: "🤖 AI Assistant Sidebar",
     content: "Ask natural language questions about the codebase, run multi-agent scripts, or generate and apply .diff patches directly in this pane.",
   },
   {
     target: "dock-tabs",
-    title: "ðŸ“Š Deep Code Analyzers",
+    title: "📊 Deep Code Analyzers",
     content: "Launch architectural visualizations, view import maps, trace function call graphs, run code quality reviews, or inspect the project timeline.",
   },
   {
     target: "command-palette",
-    title: "âŒ¨ï¸ Keyboard Shortcuts & Commands",
+    title: "⌨️ Keyboard Shortcuts & Commands",
     content: "Press Ctrl+P or Ctrl+K at any time to open the VS-Code style Command Palette for quick search and navigation.",
   }
 ];

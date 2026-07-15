@@ -3,25 +3,28 @@ import { Users, FileText, Search, ArrowLeft, ArrowRight, Download, Shield, Loade
 import { fetchProjectMembers, updateMemberRole, fetchAuditLogs } from "../../services/api";
 
 interface Member {
-  project_id: string;
-  project_name: string;
+  project_id?: string;
+  project_name?: string;
   user_id: string;
   email: string;
   name: string;
-  avatar_url: string;
+  avatar_url?: string;
   role: string;
 }
 
 interface AuditLog {
   id: string;
-  user_id: string;
-  user_name: string | null;
-  user_email: string | null;
+  actor?: string;
+  user_id?: string;
+  user_name?: string | null;
+  user_email?: string | null;
   action: string;
-  project_id: string | null;
-  details: string;
-  ip_address: string | null;
-  created_at: string;
+  project_id?: string | null;
+  target?: string;
+  details?: string;
+  ip_address?: string | null;
+  created_at?: string;
+  timestamp?: string;
 }
 
 interface AdminDashboardProps {
@@ -71,8 +74,9 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
       setError(null);
       const offset = pageNum * LOGS_LIMIT;
       const data = await fetchAuditLogs(repositoryIdentifier, LOGS_LIMIT, offset, query);
-      setLogs(data);
-      setHasMoreLogs(data.length === LOGS_LIMIT);
+      const logs = Array.isArray(data) ? data : (data as any)?.entries ?? [];
+      setLogs(logs);
+      setHasMoreLogs(logs.length === LOGS_LIMIT);
     } catch (err: any) {
       console.error("Error loading audit logs:", err);
       setError(err?.response?.data?.detail || err?.message || "Failed to load audit logs.");
@@ -96,7 +100,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
     try {
       setUpdatingRoleFor(member.user_id);
       setError(null);
-      await updateMemberRole(repositoryIdentifier, member.project_id, member.user_id, newRole);
+      await updateMemberRole(repositoryIdentifier, member.project_id ?? "", member.user_id, newRole);
       
       // Update local state
       setMembers((prev) =>
@@ -129,7 +133,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
       log.user_email || "N/A",
       log.action,
       log.ip_address || "N/A",
-      log.details.replace(/"/g, '""'),
+      (log.details ?? "").replace(/"/g, '""'),
     ]);
 
     const csvContent =
@@ -173,11 +177,11 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
             <ArrowLeft className="w-3.5 h-3.5" />
           </button>
           <div>
-            <h2 className="text-sm font-bold text-white flex items-center gap-1.5 uppercase font-mono">
+            <h2 className="text-[15px] font-semibold text-white flex items-center gap-1.5 font-sans">
               <Shield className="w-4 h-4 text-[#FF9D4D]" />
               <span>Admin Panel: RBAC & Audit Trails</span>
             </h2>
-            <p className="text-[10px] text-gray-500 font-mono mt-0.5">
+            <p className="text-[11px] text-muted font-sans mt-0.5">
               Repository: {repoPath.split(/[/\\]/).pop()}
             </p>
           </div>
@@ -190,7 +194,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
               setActiveTab("members");
               setError(null);
             }}
-            className={`px-3 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded-lg text-[11px] font-sans font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "members" ? "bg-[#FF9D4D]/15 text-[#FF9D4D]" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -203,7 +207,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
               setError(null);
               setPage(0);
             }}
-            className={`px-3 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded-lg text-[11px] font-sans font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "audit" ? "bg-[#FF9D4D]/15 text-[#FF9D4D]" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -215,7 +219,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
               setActiveTab("permissions");
               setError(null);
             }}
-            className={`px-3 py-1 rounded-lg text-[10px] font-mono font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-3 py-1 rounded-lg text-[11px] font-sans font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeTab === "permissions" ? "bg-[#FF9D4D]/15 text-[#FF9D4D]" : "text-gray-500 hover:text-gray-300"
             }`}
           >
@@ -228,11 +232,11 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
       {/* Main Content Area */}
       <div className="flex-grow p-6 overflow-y-auto min-h-0 relative select-text">
         {error && (
-          <div className="mb-5 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl text-xs font-mono flex items-center justify-between gap-3 select-text">
+          <div className="mb-5 p-3.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl text-xs font-sans flex items-center justify-between gap-3 select-text">
             <span>{error}</span>
             <button
               onClick={activeTab === "members" ? loadMembers : () => loadLogs(page, searchQuery)}
-              className="p-1.5 hover:bg-rose-500/20 rounded-lg cursor-pointer transition-colors text-rose-300 flex items-center gap-1 font-mono text-[10px]"
+              className="p-1.5 hover:bg-rose-500/20 rounded-lg cursor-pointer transition-colors text-rose-300 flex items-center gap-1 font-sans text-[11px]"
             >
               <RefreshCw className="w-3 h-3" />
               <span>Retry</span>
@@ -244,14 +248,14 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
         {activeTab === "members" && (
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-[#1c2230]/40 pb-2">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Members Matrix</h3>
-              <p className="text-[10px] text-gray-500">Configure workspace access levels for project developers.</p>
+              <h3 className="text-[13px] font-semibold text-white font-sans">Members Matrix</h3>
+              <p className="text-[11px] text-gray-500 font-sans">Configure workspace access levels for project developers.</p>
             </div>
 
             {loadingMembers ? (
               <div className="py-16 text-center text-gray-500 flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-6 h-6 text-[#FF9D4D] animate-spin" />
-                <span className="text-xs font-mono animate-pulse">Loading members...</span>
+                <span className="text-xs font-sans animate-pulse">Loading members...</span>
               </div>
             ) : members.length === 0 ? (
               <div className="py-16 text-center text-gray-500 border border-dashed border-[#1c2230] rounded-2xl flex flex-col items-center justify-center gap-3">
@@ -272,13 +276,13 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
                         className="w-9 h-9 rounded-xl bg-[#0c0f16] border border-[#222834] shrink-0"
                       />
                       <div className="space-y-1 min-w-0">
-                        <div className="font-bold text-white text-xs truncate">{member.name}</div>
-                        <div className="text-[10px] font-mono text-gray-500 truncate">{member.email}</div>
+                        <div className="font-semibold text-white text-xs truncate">{member.name}</div>
+                        <div className="text-[11px] font-sans text-muted truncate">{member.email}</div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3 self-end sm:self-center">
-                      <span className="text-[9.5px] font-mono text-gray-500 bg-[#0c0f16] border border-[#1c2230] px-2 py-0.5 rounded-lg shrink-0">
+                      <span className="text-[11px] font-sans text-muted bg-[#0c0f16] border border-[#1c2230] px-2 py-0.5 rounded-lg shrink-0">
                         Project: {member.project_name}
                       </span>
 
@@ -287,7 +291,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
                           value={member.role}
                           disabled={updatingRoleFor === member.user_id}
                           onChange={(e) => handleRoleChange(member, e.target.value)}
-                          className="bg-[#0c0f16] border border-[#1c2230] text-gray-300 text-[10px] font-mono font-bold rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#FF9D4D]/50 cursor-pointer disabled:opacity-50"
+                          className="bg-[#0c0f16] border border-[#1c2230] text-gray-300 text-[11px] font-sans font-medium rounded-lg px-2.5 py-1 focus:outline-none focus:border-[#FF9D4D]/50 cursor-pointer disabled:opacity-50"
                         >
                           <option value="owner">Owner</option>
                           <option value="admin">Admin</option>
@@ -320,7 +324,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
                   placeholder="Filter logs by action or user..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 bg-[#0c0f16] border border-[#1c2230] rounded-xl text-xs font-mono text-white placeholder-gray-600 focus:outline-none focus:border-[#FF9D4D]/50"
+                  className="w-full pl-9 pr-3 py-1.5 bg-[#0c0f16] border border-[#1c2230] rounded-xl text-xs font-sans text-white placeholder-gray-600 focus:outline-none focus:border-[#FF9D4D]/50"
                 />
                 <Search className="w-3.5 h-3.5 text-gray-600 absolute left-3 top-2.5" />
               </form>
@@ -328,7 +332,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
               <button
                 onClick={downloadCSV}
                 disabled={logs.length === 0 || loadingLogs}
-                className="px-4 py-1.5 bg-[#141822] hover:bg-[#1b212f] disabled:opacity-50 text-gray-400 hover:text-white border border-[#1c2230] rounded-xl text-[10px] font-mono font-bold uppercase transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                className="px-4 py-1.5 bg-[#141822] hover:bg-[#1b212f] disabled:opacity-50 text-gray-400 hover:text-white border border-[#1c2230] rounded-xl text-[11px] font-sans font-semibold transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
@@ -338,7 +342,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
             {loadingLogs ? (
               <div className="py-16 text-center text-gray-500 flex flex-col items-center justify-center gap-3">
                 <Loader2 className="w-6 h-6 text-[#FF9D4D] animate-spin" />
-                <span className="text-xs font-mono animate-pulse">Querying database logs...</span>
+                <span className="text-xs font-sans animate-pulse">Querying database logs...</span>
               </div>
             ) : logs.length === 0 ? (
               <div className="py-16 text-center text-gray-500 border border-dashed border-[#1c2230] rounded-2xl flex flex-col items-center justify-center gap-3">
@@ -350,9 +354,9 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
                 
                 {/* Table */}
                 <div className="border border-[#1c2230] rounded-2xl overflow-x-auto bg-[#10141B]/40">
-                  <table className="w-full border-collapse text-left font-mono text-[10.5px]">
+                  <table className="w-full border-collapse text-left font-sans text-[11px]">
                     <thead>
-                      <tr className="border-b border-[#1c2230] bg-[#0c0f16]/60 text-gray-500 uppercase tracking-wider text-[9px] font-bold">
+                      <tr className="border-b border-[#1c2230] bg-[#0c0f16]/60 text-gray-500 text-[10px] font-semibold">
                         <th className="p-3">Timestamp</th>
                         <th className="p-3">User</th>
                         <th className="p-3">Action</th>
@@ -364,14 +368,14 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
                       {logs.map((log) => (
                         <tr key={log.id} className="hover:bg-[#141822]/40 transition-colors">
                           <td className="p-3 whitespace-nowrap text-gray-400">
-                            {new Date(log.created_at).toLocaleString()}
+                            {new Date(log.created_at ?? log.timestamp ?? "").toLocaleString()}
                           </td>
                           <td className="p-3 whitespace-nowrap">
-                            <div className="font-bold text-white">{log.user_name || "Unknown"}</div>
-                            <div className="text-[9px] text-gray-600 mt-0.5">{log.user_email || "N/A"}</div>
+                            <div className="font-semibold text-white">{log.user_name || "Unknown"}</div>
+                            <div className="text-[10px] text-gray-500 mt-0.5">{log.user_email || "N/A"}</div>
                           </td>
                           <td className="p-3 whitespace-nowrap">
-                            <span className={`px-2 py-0.5 border rounded-lg text-[9px] font-bold uppercase tracking-wider ${getActionBadgeColor(log.action)}`}>
+                            <span className={`px-2 py-0.5 border rounded-lg text-[10px] font-semibold ${getActionBadgeColor(log.action)}`}>
                               {log.action}
                             </span>
                           </td>
@@ -389,7 +393,7 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
 
                 {/* Pagination */}
                 <div className="flex items-center justify-between pt-2 select-none">
-                  <span className="text-[10px] text-gray-500 font-mono">
+                  <span className="text-[11px] text-gray-500 font-sans">
                     Page {page + 1}
                   </span>
                   <div className="flex gap-2">
@@ -418,16 +422,16 @@ export default function AdminDashboard({ repoPath, repoId, onBack }: AdminDashbo
         {/* Tab 3: ROLE PERMISSIONS */}
         {activeTab === "permissions" && (
           <div className="space-y-4">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider font-mono">Permissions Matrix</h3>
+            <h3 className="text-[13px] font-semibold text-white font-sans">Permissions Matrix</h3>
             <div className="overflow-x-auto">
-              <table className="min-w-full border border-[#1c2230] bg-[#10141B]/40 text-xs font-mono">
-                <thead className="bg-[#0c0f16]/60 text-gray-500 uppercase tracking-wider">
+              <table className="min-w-full border border-[#1c2230] bg-[#10141B]/40 text-xs font-sans">
+                <thead className="bg-[#0c0f16]/60 text-gray-500">
                   <tr className="border-b border-[#1c2230]">
-                    <th className="p-2 text-left">Capability</th>
-                    <th className="p-2 text-center">Owner</th>
-                    <th className="p-2 text-center">Admin</th>
-                    <th className="p-2 text-center">Member</th>
-                    <th className="p-2 text-center">Viewer</th>
+                    <th className="p-2 text-left font-semibold">Capability</th>
+                    <th className="p-2 text-center font-semibold">Owner</th>
+                    <th className="p-2 text-center font-semibold">Admin</th>
+                    <th className="p-2 text-center font-semibold">Member</th>
+                    <th className="p-2 text-center font-semibold">Viewer</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1c2230]">

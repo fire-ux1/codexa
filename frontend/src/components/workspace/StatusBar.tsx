@@ -1,14 +1,19 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { WifiOff, FileCode, AlertTriangle } from "lucide-react";
 import GitStatusWidget from "./GitStatusWidget";
 import AIStatusWidget from "./AIStatusWidget";
 import RepositoryStatusWidget from "./RepositoryStatusWidget";
 import PerformanceWidget from "./PerformanceWidget";
 
+
+
 interface StatusBarProps {
   gitStatus?: any;
   filesCount?: number;
   symbolsCount?: number;
+  /** Optional: real dependency-graph node count. Omitted from the widget if not provided —
+   *  we no longer fabricate this from filesCount. */
+  dependencyNodes?: number;
   activeModel?: string;
   isTaskActive?: boolean;
   isOffline?: boolean;
@@ -16,12 +21,31 @@ interface StatusBarProps {
   language?: string;
   cursorLine?: number;
   cursorCol?: number;
+  indexingProgress?: any;
+}
+
+const RETRY_INDICATOR_TIMEOUT_MS = 4000;
+
+interface RetryEventDetail {
+  attempt: number;
+  maxAttempts: number;
+  delay: number;
+}
+
+function isRetryEventDetail(detail: unknown): detail is RetryEventDetail {
+  return (
+    typeof detail === "object" &&
+    detail !== null &&
+    typeof (detail as RetryEventDetail).attempt === "number" &&
+    typeof (detail as RetryEventDetail).maxAttempts === "number"
+  );
 }
 
 export default function StatusBar({
   gitStatus = {},
   filesCount = 0,
   symbolsCount = 0,
+  dependencyNodes,
   activeModel = "Gemini 1.5 Pro",
   isTaskActive = false,
   isOffline = false,
@@ -29,6 +53,7 @@ export default function StatusBar({
   language = "JavaScript",
   cursorLine = 1,
   cursorCol = 1,
+  indexingProgress = null,
 }: StatusBarProps) {
   const [openWidget, setOpenWidget] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -40,32 +65,48 @@ export default function StatusBar({
   } | null>(null);
   const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const toggleWidget = (widgetId: string) => {
+  const toggleWidget = useCallback((widgetId: string) => {
     setOpenWidget((prev) => (prev === widgetId ? null : widgetId));
-  };
+  }, []);
+
+  const closeWidget = useCallback(() => setOpenWidget(null), []);
 
   // Click outside listener to close open status overlays
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpenWidget(null);
+        closeWidget();
       }
     };
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
+  }, [closeWidget]);
+
+  // Escape key closes any open widget popover
+  useEffect(() => {
+    if (!openWidget) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeWidget();
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [openWidget, closeWidget]);
 
   // Listen for API retry events dispatched by the Axios interceptor
   useEffect(() => {
     const handleRetry = (e: Event) => {
-      const { attempt, maxAttempts } = (e as CustomEvent<{ attempt: number; maxAttempts: number; delay: number }>).detail;
-      setRetryInfo({ attempt, maxAttempts });
+      const detail = (e as CustomEvent<unknown>).detail;
+      if (!isRetryEventDetail(detail)) {
+        console.warn("Ignored malformed api_request_retry event", detail);
+        return;
+      }
+      setRetryInfo({ attempt: detail.attempt, maxAttempts: detail.maxAttempts });
 
-      // Auto-clear the indicator 4 s after the last retry event
+      // Auto-clear the indicator a few seconds after the last retry event
       if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
       retryTimerRef.current = setTimeout(() => {
         setRetryInfo(null);
-      }, 4000);
+      }, RETRY_INDICATOR_TIMEOUT_MS);
     };
 
     window.addEventListener("api_request_retry", handleRetry);
@@ -83,25 +124,34 @@ export default function StatusBar({
       {/* Left side options */}
       <div className="flex items-center gap-4">
         {/* Git Widget */}
-        {React.createElement(GitStatusWidget as any, {
-          gitStatus,
-          isOpen: openWidget === "git",
-          onToggle: () => toggleWidget("git"),
-        })}
+        <GitStatusWidget
+          gitStatus={gitStatus}
+          isOpen={openWidget === "git"}
+          onToggle={() => toggleWidget("git")}
+        />
 
         {/* Repository Index Widget */}
-        {React.createElement(RepositoryStatusWidget as any, {
-          filesCount,
-          symbolsCount,
-          dependencyNodes: filesCount * 2,
-          isOpen: openWidget === "repo",
-          onToggle: () => toggleWidget("repo"),
-        })}
+        <RepositoryStatusWidget
+          filesCount={filesCount}
+          symbolsCount={symbolsCount}
+          dependencyNodes={dependencyNodes}
+          isOpen={openWidget === "repo"}
+          onToggle={() => toggleWidget("repo")}
+        />
 
-        {/* Connection state */}
-        <div className="flex items-center gap-1.5 text-success font-bold select-none">
-          <span className="w-1.5 h-1.5 rounded-full bg-success glowing-dot animate-pulse" />
-          <span>Connected</span>
+        {/* Connection state — single source of truth derived from isOffline,
+            so this can never contradict the OFFLINE banner below. */}
+        <div
+          className={`flex items-center gap-1.5 font-bold select-none ${
+            isOffline ? "text-danger" : "text-success"
+          }`}
+        >
+          {isOffline ? (
+            <WifiOff className="w-3 h-3" />
+          ) : (
+            <span className="w-1.5 h-1.5 rounded-full bg-success glowing-dot animate-pulse" />
+          )}
+          <span>{isOffline ? "Disconnected" : "Connected"}</span>
         </div>
       </div>
 
@@ -125,11 +175,13 @@ export default function StatusBar({
       </div>
 
       {/* Right side telemetry widgets */}
-      <div className="flex items-center gap-4.5 select-none font-semibold">
+      <div className="flex items-center gap-4 select-none font-semibold">
         {isTaskActive && (
-          <div className="flex items-center gap-1 text-accent animate-pulse mr-1.5">
+          <div className="flex items-center gap-1 text-accent animate-pulse mr-1.5 font-bold">
             <span className="w-1.5 h-1.5 rounded-full bg-accent glowing-dot animate-ping mr-1" />
-            <span>AI indexing...</span>
+            <span>
+              ◆ Indexing {indexingProgress && typeof indexingProgress.progress === "number" ? `${Math.round(indexingProgress.progress)}%` : "..."}
+            </span>
           </div>
         )}
 
@@ -146,18 +198,18 @@ export default function StatusBar({
         <span>Ln {cursorLine}, Col {cursorCol}</span>
 
         {/* AI Model Status Widget */}
-        {React.createElement(AIStatusWidget as any, {
-          activeModel,
-          activeTask: isTaskActive ? "Scanning symbols context" : null,
-          isOpen: openWidget === "ai",
-          onToggle: () => toggleWidget("ai"),
-        })}
+        <AIStatusWidget
+          activeModel={activeModel}
+          activeTask={isTaskActive ? "Scanning symbols context" : null}
+          isOpen={openWidget === "ai"}
+          onToggle={() => toggleWidget("ai")}
+        />
 
         {/* Performance live status widget */}
-        {React.createElement(PerformanceWidget as any, {
-          isOpen: openWidget === "perf",
-          onToggle: () => toggleWidget("perf"),
-        })}
+        <PerformanceWidget
+          isOpen={openWidget === "perf"}
+          onToggle={() => toggleWidget("perf")}
+        />
       </div>
     </div>
   );

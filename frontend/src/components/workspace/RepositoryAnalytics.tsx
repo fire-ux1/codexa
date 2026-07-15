@@ -71,7 +71,7 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
       <div className="flex-1 bg-[#090b10] flex items-center justify-center p-8 select-none">
         <div className="text-center space-y-4">
           <LoaderSpinner />
-          <p className="text-gray-400 font-mono text-[11px] animate-pulse">Scanning dependencies and complexity models...</p>
+          <p className="text-gray-400 font-sans text-[11px] animate-pulse">Scanning dependencies and complexity models...</p>
         </div>
       </div>
     );
@@ -83,14 +83,14 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
         <div className="max-w-md bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 text-center space-y-4">
           <AlertTriangleIcon />
           <h3 className="text-sm font-bold text-white font-sans">Analytics Failed</h3>
-          <p className="text-xs text-gray-400 font-mono leading-relaxed">{error || "Could not retrieve repository analytics."}</p>
+          <p className="text-xs text-gray-400 font-sans leading-relaxed">{error || "Could not retrieve repository analytics."}</p>
           <div className="flex justify-center gap-3">
             {onBack && (
-              <button onClick={onBack} className="px-3 py-1.5 rounded-lg border border-[#1c2230] hover:bg-white/5 text-[10px] text-gray-300 font-mono">
+              <button onClick={onBack} className="px-3 py-1.5 rounded-lg border border-[#1c2230] hover:bg-white/5 text-[11px] text-gray-300 font-sans font-semibold">
                 Go Back
               </button>
             )}
-            <button onClick={loadAnalytics} className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] font-mono">
+            <button onClick={loadAnalytics} className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] font-sans">
               Retry Load
             </button>
           </div>
@@ -104,7 +104,7 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
   const maxFolderSize = Math.max(...data.largest_folders.map((f) => f.size), 1);
 
   return (
-    <div className="flex-1 bg-[#090b10] overflow-y-auto p-6 sm:p-8 select-text scrollbar-thin text-left flex flex-col min-h-0">
+    <div className="flex-1 bg-[#090b10] overflow-y-auto p-6 sm:p-8 select-text scrollbar-thin text-left flex flex-col min-h-0 font-sans">
       <div className="max-w-4xl mx-auto space-y-6 w-full">
         
         {/* Header */}
@@ -114,9 +114,9 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
               {onBack && (
                 <button
                   onClick={onBack}
-                  className="px-2.5 py-1 text-[10px] font-mono rounded bg-white/5 border border-[#1c2230] text-gray-400 hover:text-white transition-colors cursor-pointer mr-1"
+                  className="px-2.5 py-1 text-[11px] font-sans font-semibold rounded bg-white/5 border border-[#1c2230] text-gray-400 hover:text-white transition-colors cursor-pointer mr-1"
                 >
-                  â† Back
+                  ← Back
                 </button>
               )}
               <h2 className="text-lg font-bold text-white tracking-tight flex items-center gap-1.5">
@@ -124,11 +124,11 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
                 <span>Repository Analytics</span>
               </h2>
             </div>
-            <p className="text-[10px] text-gray-500 font-mono">{repoPath}</p>
+            <p className="text-[11px] text-gray-500 font-sans">{repoPath}</p>
           </div>
           <button
             onClick={loadAnalytics}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141822] hover:bg-[#1b212f] border border-[#1c2230] text-[10px] text-gray-300 font-mono hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141822] hover:bg-[#1b212f] border border-[#1c2230] text-[11px] text-gray-300 font-sans font-semibold hover:text-white transition-all cursor-pointer"
           >
             <RefreshCw className="w-3 h-3 text-gray-500" />
             <span>Refresh Stats</span>
@@ -138,7 +138,7 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
         {/* AI Repository Summary */}
         <div className="bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 space-y-3.5 shadow">
           <div className="flex items-center justify-between border-b border-[#1c2230]/40 pb-2.5 select-none">
-            <div className="flex items-center gap-2 text-indigo-400 font-bold font-mono text-[9px] uppercase tracking-wider">
+            <div className="flex items-center gap-2 text-indigo-400 font-semibold font-sans text-[11px]">
               <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
               <span>AI Repository Summary</span>
             </div>
@@ -152,7 +152,7 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
           
           {/* Languages Distribution */}
           <div className="bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 space-y-4 shadow select-none">
-            <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider border-b border-[#1c2230]/40 pb-2 block">
+            <span className="text-[10px] font-sans font-semibold text-gray-500 border-b border-[#1c2230]/40 pb-2 block">
               Language Distribution
             </span>
             {/* Horizontal Bar Chart */}
@@ -176,7 +176,7 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
               {data.languages.map((lang) => {
                 const pct = ((lang.files / totalLangFiles) * 100).toFixed(1);
                 return (
-                  <div key={lang.language} className="flex items-center justify-between text-[11px] font-mono text-gray-400">
+                  <div key={lang.language} className="flex items-center justify-between text-[11px] font-sans text-gray-400">
                     <div className="flex items-center gap-1.5">
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getLanguageColor(lang.language) }} />
                       <span>{lang.language}</span>
@@ -191,10 +191,10 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
           {/* Complexity Distribution */}
           <div className="bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 space-y-4 shadow select-none">
             <div className="flex justify-between items-center border-b border-[#1c2230]/40 pb-2">
-              <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider">
+              <span className="text-[10px] font-sans font-semibold text-gray-500">
                 Control Flow Complexity
               </span>
-              <span className="text-[9px] text-indigo-400 bg-indigo-500/5 px-2 py-0.5 rounded border border-indigo-500/10 font-mono">
+              <span className="text-[10px] text-indigo-400 bg-indigo-500/5 px-2 py-0.5 rounded border border-indigo-500/10 font-sans font-semibold">
                 Avg: {data.cyclomatic_complexity} / fn
               </span>
             </div>
@@ -207,7 +207,7 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
                 if (hist.range.includes("Complex")) barColor = "bg-rose-500";
 
                 return (
-                  <div key={hist.range} className="space-y-1.5 text-[11px] font-mono text-gray-400">
+                  <div key={hist.range} className="space-y-1.5 text-[11px] font-sans text-gray-400">
                     <div className="flex justify-between">
                       <span>{hist.range}</span>
                       <span>{pct}% ({hist.count})</span>
@@ -222,23 +222,22 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
           </div>
 
         </div>
-
         {/* Hotspots / Size details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           
           {/* Largest Files */}
-          <div className="bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 space-y-4 shadow">
-            <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider border-b border-[#1c2230]/40 pb-2 block select-none">
+          <div className="bg-panel border border-border rounded-2xl p-5 space-y-4 shadow">
+            <span className="text-[11px] font-medium text-muted border-b border-border pb-2 block select-none">
               Largest Files (By Size)
             </span>
-            <div className="space-y-3 font-mono text-xs">
+            <div className="space-y-3 font-sans text-xs">
               {data.largest_files.map((file, idx) => {
                 const widthPct = ((file.size / maxFileSize) * 100).toFixed(1);
                 return (
                   <div key={idx} className="space-y-1">
                     <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-gray-300 truncate max-w-[200px]" title={file.path}>
-                        ðŸ“„ {file.name}
+                      <span className="text-gray-300 truncate max-w-[200px] font-mono" title={file.path}>
+                        📄 {file.name}
                       </span>
                       <span className="text-gray-500 text-[10px]">
                         {file.lines} lines ({formatBytes(file.size)})
@@ -254,18 +253,18 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
           </div>
 
           {/* Largest Folders */}
-          <div className="bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 space-y-4 shadow">
-            <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider border-b border-[#1c2230]/40 pb-2 block select-none">
+          <div className="bg-panel border border-border rounded-2xl p-5 space-y-4 shadow">
+            <span className="text-[11px] font-medium text-muted border-b border-border pb-2 block select-none">
               Largest Folders
             </span>
-            <div className="space-y-3 font-mono text-xs">
+            <div className="space-y-3 font-sans text-xs">
               {data.largest_folders.map((folder, idx) => {
                 const widthPct = ((folder.size / maxFolderSize) * 100).toFixed(1);
                 return (
                   <div key={idx} className="space-y-1">
                     <div className="flex justify-between items-center text-[11px]">
-                      <span className="text-gray-300 truncate max-w-[200px]" title={folder.path}>
-                        ðŸ“ {folder.path}
+                      <span className="text-gray-300 truncate max-w-[200px] font-mono" title={folder.path}>
+                        📁 {folder.path}
                       </span>
                       <span className="text-gray-500 text-[10px]">
                         {folder.count} files ({formatBytes(folder.size)})
@@ -283,20 +282,20 @@ export default function RepositoryAnalytics({ repoPath, onBack }) {
         </div>
 
         {/* Dependency diagnostics */}
-        <div className="bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 space-y-4 shadow">
-          <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider border-b border-[#1c2230]/40 pb-2 block select-none">
+        <div className="bg-panel border border-border rounded-2xl p-5 space-y-4 shadow">
+          <span className="text-[11px] font-medium text-muted border-b border-border pb-2 block select-none">
             Dependency Diagnostics
           </span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-            <div className="p-3 bg-[#141822] border border-[#1c2230] rounded-xl space-y-1 select-none">
-              <span className="text-[8px] text-gray-500 block uppercase tracking-wider font-bold">Unused Packages</span>
-              <span className="text-emerald-400 font-bold">0 detected</span>
-              <p className="text-[9px] text-gray-500 leading-normal mt-1 select-text">All listed dependencies are referenced in import calls.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-[12px] font-sans">
+            <div className="p-3 bg-bg border border-border rounded-xl space-y-1 select-none">
+              <span className="text-[10px] text-muted font-medium block">Unused Packages</span>
+              <span className="text-success font-bold text-[13px]">0 detected</span>
+              <p className="text-[11px] text-muted leading-normal mt-1 select-text">All listed dependencies are referenced in import calls.</p>
             </div>
-            <div className="p-3 bg-[#141822] border border-[#1c2230] rounded-xl space-y-1 select-none">
-              <span className="text-[8px] text-gray-500 block uppercase tracking-wider font-bold">Circular Imports</span>
-              <span className="text-emerald-400 font-bold">0 detected</span>
-              <p className="text-[9px] text-gray-500 leading-normal mt-1 select-text">Codebase structural checks did not find any circular import loops.</p>
+            <div className="p-3 bg-bg border border-border rounded-xl space-y-1 select-none">
+              <span className="text-[10px] text-muted font-medium block">Circular Imports</span>
+              <span className="text-success font-bold text-[13px]">0 detected</span>
+              <p className="text-[11px] text-muted leading-normal mt-1 select-text">Codebase structural checks did not find any circular import loops.</p>
             </div>
           </div>
         </div>

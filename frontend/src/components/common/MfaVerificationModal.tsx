@@ -27,7 +27,7 @@ export default function MfaVerificationModal({
       
       const res = await loginMfaVerify(tempToken, code);
       // Success: trigger callback with newly created session tokens
-      onSuccess(res.token, res.refresh_token, res.user);
+      onSuccess(res.token, res.refresh_token ?? "", res.user);
     } catch (err: any) {
       console.error("Error verifying MFA login:", err);
       setError(err?.response?.data?.detail || err?.message || "Invalid authenticator code. Verification failed.");

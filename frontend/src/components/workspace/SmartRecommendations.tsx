@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { Sparkles } from "lucide-react";
 
 export function AIInsightCards({ insights = [] }) {
@@ -10,38 +10,38 @@ export function AIInsightCards({ insights = [] }) {
         return {
           bg: "bg-rose-500/10 border-rose-500/20 text-rose-400",
           badge: "Security Risk",
-          icon: "ðŸ›¡ï¸",
+          icon: "🛡️",
         };
       case "smell":
         return {
           bg: "bg-amber-500/10 border-amber-500/20 text-amber-400",
           badge: "Code Smell",
-          icon: "âš ï¸",
+          icon: "⚠️",
         };
       case "debt":
         return {
           bg: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400",
           badge: "Technical Debt",
-          icon: "ðŸ’¸",
+          icon: "💸",
         };
       case "best_practice":
         return {
           bg: "bg-blue-500/10 border-blue-500/20 text-blue-400",
           badge: "Best Practice",
-          icon: "ðŸ’¡",
+          icon: "💡",
         };
       default:
         return {
           bg: "bg-gray-500/10 border-gray-500/20 text-gray-400",
           badge: "Insight",
-          icon: "ðŸ“",
+          icon: "📝",
         };
     }
   };
 
   return (
     <div className="space-y-2 select-none text-left">
-      <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider font-mono">AI Static Code Insights</span>
+      <span className="text-[11px] font-medium text-muted select-none">AI Static Code Insights</span>
       <div className="space-y-2.5">
         {insights.map((ins, idx) => {
           const style = getInsightStyle(ins.type);
@@ -49,11 +49,11 @@ export function AIInsightCards({ insights = [] }) {
             <div key={idx} className={`p-3.5 border rounded-2xl ${style.bg} flex gap-3 shadow-md animate-fade-in`}>
               <span className="text-sm shrink-0 mt-0.5">{style.icon}</span>
               <div className="space-y-1">
-                <span className="text-[8.5px] uppercase font-mono font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/5 border border-white/5 inline-block">
+                <span className="text-[9px] font-mono font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/5 border border-white/5 inline-block">
                   {style.badge}
                 </span>
-                <h4 className="text-[10px] font-bold text-white leading-snug">{ins.title}</h4>
-                <p className="text-[9.5px] opacity-80 leading-relaxed font-sans">{ins.description}</p>
+                <h4 className="text-[11px] font-bold text-white leading-snug">{ins.title}</h4>
+                <p className="text-[11px] opacity-80 leading-relaxed font-sans">{ins.description}</p>
               </div>
             </div>
           );
@@ -72,9 +72,9 @@ export default function SmartRecommendations({
 
   const getSmartRecommendations = () => {
     const list = [
-      { label: "ðŸ” Explain File Logic", prompt: `Explain the file ${fileName} and summarize its key operations.` },
-      { label: "ðŸ§ª Generate Unit Tests", prompt: `Create comprehensive automated unit tests for functions defined in ${fileName}.` },
-      { label: "ðŸ§¼ Review Code Quality", prompt: `Scan the file ${fileName} for code quality issues, style guidelines, and compliance.` },
+      { label: "🔍 Explain File Logic", prompt: `Explain the file ${fileName} and summarize its key operations.` },
+      { label: "🧪 Generate Unit Tests", prompt: `Create comprehensive automated unit tests for functions defined in ${fileName}.` },
+      { label: "🧼 Review Code Quality", prompt: `Scan the file ${fileName} for code quality issues, style guidelines, and compliance.` },
     ];
     return list;
   };
@@ -84,8 +84,8 @@ export default function SmartRecommendations({
       return {
         title: "React Framework Advisor",
         items: [
-          { label: "âš›ï¸ Audit Hooks Dependencies", prompt: "Check React component hooks dependency arrays for loops or missing variables." },
-          { label: "ðŸŽ¨ Clean CSS Classnames", prompt: "Verify if custom Tailwind classes or CSS variables align with workspace styles." },
+          { label: "⚛️ Audit Hooks Dependencies", prompt: "Check React component hooks dependency arrays for loops or missing variables." },
+          { label: "🎨 Clean CSS Classnames", prompt: "Verify if custom Tailwind classes or CSS variables align with workspace styles." },
         ],
       };
     }
@@ -93,8 +93,8 @@ export default function SmartRecommendations({
       return {
         title: "FastAPI / Python Advisor",
         items: [
-          { label: "ðŸ Validate PEP-8 Formatting", prompt: "Review active python file structures for standard PEP-8 style guidelines." },
-          { label: "ðŸ›¡ï¸ Audit API Security", prompt: "Inspect FastAPI route definitions for path authorization parameters." },
+          { label: "🐍 Validate PEP-8 Formatting", prompt: "Review active python file structures for standard PEP-8 style guidelines." },
+          { label: "🛡️ Audit API Security", prompt: "Inspect FastAPI route definitions for path authorization parameters." },
         ],
       };
     }
@@ -144,11 +144,11 @@ export default function SmartRecommendations({
   const insights = getAIInsights();
 
   return (
-    <div className="space-y-5 p-4 rounded-2xl bg-[#0f1219]/30 border border-[#1c2230] text-left select-none animate-fade-in">
+    <div className="space-y-5 p-4 rounded-2xl bg-panel border border-border text-left select-none animate-fade-in">
       
       {/* File Action suggestions */}
       <div className="space-y-2">
-        <span className="text-[9px] uppercase font-bold text-indigo-400 tracking-wider font-mono flex items-center gap-1.5 pb-1 border-b border-[#1c2230]/40">
+        <span className="text-[11px] font-medium text-indigo-400 flex items-center gap-1.5 pb-1 border-b border-border">
           <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> Smart Suggestions ({fileName})
         </span>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -156,7 +156,7 @@ export default function SmartRecommendations({
             <button
               key={idx}
               onClick={() => onTriggerAction(rec.prompt)}
-              className="p-2 text-left rounded-xl bg-[#141822] hover:bg-[#1b212f] border border-[#1c2230] hover:border-indigo-500/20 text-gray-300 hover:text-white transition-all text-[9.5px] font-mono truncate"
+              className="p-2 text-left rounded-xl bg-bg hover:bg-panel-alt border border-border hover:border-indigo-500/20 text-gray-300 hover:text-white transition-all text-[11px] font-sans truncate cursor-pointer"
             >
               {rec.label}
             </button>
@@ -166,8 +166,8 @@ export default function SmartRecommendations({
 
       {/* Framework advisors */}
       {frameworkAdvisor && (
-        <div className="space-y-2 pt-2 border-t border-[#1c2230]/40">
-          <span className="text-[9px] uppercase font-bold text-gray-500 tracking-wider font-mono">
+        <div className="space-y-2 pt-2 border-t border-border">
+          <span className="text-[11px] font-medium text-muted">
             {frameworkAdvisor.title}
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -175,7 +175,7 @@ export default function SmartRecommendations({
               <button
                 key={idx}
                 onClick={() => onTriggerAction(item.prompt)}
-                className="p-2 text-left rounded-xl bg-[#0f1219] hover:bg-[#141822] border border-[#1c2230] text-[9.5px] text-gray-400 hover:text-white transition-all font-mono truncate"
+                className="p-2 text-left rounded-xl bg-bg hover:bg-panel-alt border border-border text-[11px] text-text hover:text-text-strong transition-all font-sans truncate cursor-pointer"
               >
                 {item.label}
               </button>
@@ -186,7 +186,7 @@ export default function SmartRecommendations({
 
       {/* Insight list */}
       {insights.length > 0 && (
-        <div className="pt-2 border-t border-[#1c2230]/40">
+        <div className="pt-2 border-t border-border">
           <AIInsightCards insights={insights} />
         </div>
       )}

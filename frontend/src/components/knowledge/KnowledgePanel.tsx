@@ -1,6 +1,6 @@
 ﻿// @ts-nocheck
 /* eslint-disable react-hooks/set-state-in-effect */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchKnowledgeGraph, queryKnowledgeGraph, fetchCriticalMetrics } from "../../services/knowledge";
 import KnowledgeGraph from "./KnowledgeGraph";
 import KnowledgeSearch from "./KnowledgeSearch";
@@ -19,22 +19,33 @@ export default function KnowledgePanel({ repoId }) {
   // Search Results details
   const [searchResults, setSearchResults] = useState(null);
 
+  // Tracks the most recent load request so a slower, stale response
+  // (e.g. from rapidly switching repoId) can't clobber newer state.
+  const requestIdRef = useRef(0);
+
   const loadGraphAndMetrics = useCallback(async () => {
     if (!repoId) return;
+    const requestId = ++requestIdRef.current;
     setLoading(true);
     setSearchResults(null);
     setHighlightedNodes(new Set());
     setHighlightedEdges(new Set());
     try {
       const gData = await fetchKnowledgeGraph(repoId);
+      if (requestIdRef.current !== requestId) return; // a newer request has since started
       setGraphData(gData);
 
       const cData = await fetchCriticalMetrics(repoId);
+      if (requestIdRef.current !== requestId) return; // a newer request has since started
       setCriticalData(cData);
     } catch (err) {
-      console.error("[KnowledgePanel] Load error:", err);
+      if (requestIdRef.current === requestId) {
+        console.error("[KnowledgePanel] Load error:", err);
+      }
     } finally {
-      setLoading(false);
+      if (requestIdRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [repoId]);
 
@@ -59,15 +70,17 @@ export default function KnowledgePanel({ repoId }) {
           if (res.target_node) nodeIds.add(res.target_node.id);
           (res.dependers || []).forEach((dep) => {
             nodeIds.add(dep.id);
-            // Highlight edges connecting them
-            graphData.edges.forEach((edge) => {
-              if (
-                (edge.source === dep.id && edge.target === res.target_node.id) ||
-                (edge.target === dep.id && edge.source === res.target_node.id)
-              ) {
-                edgeIds.add(edge.id);
-              }
-            });
+            // Highlight edges connecting them (target_node must exist to compare against)
+            if (res.target_node) {
+              graphData.edges.forEach((edge) => {
+                if (
+                  (edge.source === dep.id && edge.target === res.target_node.id) ||
+                  (edge.target === dep.id && edge.source === res.target_node.id)
+                ) {
+                  edgeIds.add(edge.id);
+                }
+              });
+            }
           });
         } else if (queryType === "path") {
           const pathNodes = res.path || [];
@@ -148,12 +161,12 @@ export default function KnowledgePanel({ repoId }) {
                 <p className="text-gray-400 font-bold">
                   Dependents of {searchResults.data.target_node?.name}:
                 </p>
-                {searchResults.data.dependers?.length === 0 ? (
+                {(searchResults.data.dependers || []).length === 0 ? (
                   <p className="text-gray-600 italic">No dependents found.</p>
                 ) : (
                   searchResults.data.dependers.map((dep, i) => (
                     <div key={i} className="text-gray-300 leading-none">
-                      â€¢ <span className="text-gray-500">[{dep.type}]</span> {dep.name}
+                      • <span className="text-gray-500">[{dep.type}]</span> {dep.name}
                     </div>
                   ))
                 )}
@@ -163,7 +176,7 @@ export default function KnowledgePanel({ repoId }) {
                 <p className="text-gray-400 font-bold">Shortest Dependency Path:</p>
                 {searchResults.data.path?.map((p, i) => (
                   <div key={i} className="text-gray-300 leading-none">
-                    {i > 0 && <span className="text-gray-600 pl-2">â†“</span>}
+                    {i > 0 && <span className="text-gray-600 pl-2">↓</span>}
                     <div className="pl-4">
                       <span className="text-gray-500">[{p.type}]</span> {p.name}
                     </div>
@@ -186,11 +199,11 @@ export default function KnowledgePanel({ repoId }) {
               <div className="space-y-1 max-h-[140px] overflow-y-auto scrollbar-thin">
                 {(criticalData.cycles?.cycles || []).map((cycle, i) => (
                   <div key={i} className="p-2 bg-rose-950/10 border border-rose-500/10 rounded text-[9px] font-mono text-rose-300 leading-relaxed">
-                    ðŸ” Cycle: {cycle.join(" â†’ ")}
+                    🔁 Cycle: {cycle.join(" → ")}
                   </div>
                 ))}
                 {criticalData.cycles?.total_cycles === 0 && (
-                  <p className="text-[10px] text-emerald-400 font-mono">âœ“ No recursion circular dependencies.</p>
+                  <p className="text-[10px] text-emerald-400 font-mono">✓ No recursion circular dependencies.</p>
                 )}
               </div>
             </div>
@@ -242,4 +255,3 @@ export default function KnowledgePanel({ repoId }) {
     </div>
   );
 }
-

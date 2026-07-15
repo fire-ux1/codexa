@@ -33,7 +33,7 @@ export default function FileExplorer({ repoPath, selectedPath, onOpenFile }: Fil
         // Reconstruct flat array into tree structure
         const root: RawTreeNode = { name: "root", isDir: true, children: {} };
 
-        (res.files as any[]).forEach((file) => {
+        res.forEach((file) => {
           const relPath = file.path
             .replace(repoPath, "")
             .replace(/\\/g, "/")
@@ -47,7 +47,7 @@ export default function FileExplorer({ repoPath, selectedPath, onOpenFile }: Fil
               current.children[part] = {
                 name: part,
                 path: file.path,
-                extension: file.extension,
+                extension: part.includes(".") ? part.split(".").pop() : undefined,
                 isDir: !isLast,
                 children: isLast ? null : {},
               };

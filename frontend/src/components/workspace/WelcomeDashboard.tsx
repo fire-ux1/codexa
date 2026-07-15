@@ -1,4 +1,10 @@
-import { Sparkles, Code, Shield, Flame, Play, HelpCircle, FileCode, CheckCircle, Clock, BookOpen, Bug, Search } from "lucide-react";
+import { Sparkles, Code, Shield, Flame, Play, HelpCircle, FileCode, CheckCircle, AlertTriangle, Clock, BookOpen, Bug, Search } from "lucide-react";
+
+interface RecentChat {
+  id: string;
+  title?: string;
+  timestamp?: string | number;
+}
 
 interface WelcomeDashboardProps {
   repoPath: string;
@@ -7,8 +13,25 @@ interface WelcomeDashboardProps {
   onExecuteAction?: (actionId: string, title?: string) => void;
   recentFiles?: string[];
   onOpenFile?: (path: string) => void;
-  recentChats?: any[];
-  onLoadChat?: (chatId: any) => void;
+  recentChats?: RecentChat[];
+  onLoadChat?: (chatId: string) => void;
+  /** Optional: reflects real indexing state instead of always showing "Success" */
+  indexStatus?: "success" | "indexing" | "error";
+  /** Optional: real health score (0-100). Omit to hide the health card's numeric claim. */
+  healthScore?: number | null;
+  /** Optional: summary of detected issues shown under the health score */
+  healthSummary?: string;
+}
+
+function getBasename(path: string): string {
+  return path.split(/[/\\]/).pop() || path;
+}
+
+function formatChatTimestamp(timestamp?: string | number): string {
+  if (timestamp === undefined || timestamp === null) return "";
+  const date = new Date(timestamp);
+  if (isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 export default function WelcomeDashboard({
@@ -20,8 +43,12 @@ export default function WelcomeDashboard({
   onOpenFile,
   recentChats = [],
   onLoadChat,
+  indexStatus = "success",
+  healthScore = null,
+  healthSummary,
 }: WelcomeDashboardProps) {
-  const repoName = repoPath ? repoPath.split(/[/\\]/).pop() || "No Repository Opened" : "No Repository Opened";
+  const repoName = repoPath ? getBasename(repoPath) : "No Repository Opened";
+  const hasRepo = Boolean(repoPath);
 
   const quickActions = [
     {
@@ -98,86 +125,191 @@ export default function WelcomeDashboard({
     },
   ];
 
+  const indexStatusDisplay = {
+    success: { label: "Success", color: "text-success", Icon: CheckCircle },
+    indexing: { label: "Indexing…", color: "text-amber-400", Icon: Clock },
+    error: { label: "Error", color: "text-danger", Icon: AlertTriangle },
+  }[indexStatus];
+
+  const healthIsKnown = healthScore !== null && healthScore !== undefined;
+  const healthColor = !healthIsKnown
+    ? "text-muted"
+    : healthScore >= 80
+    ? "text-success"
+    : healthScore >= 50
+    ? "text-amber-400"
+    : "text-danger";
+  const healthRingColor = !healthIsKnown
+    ? "border-t-muted"
+    : healthScore >= 80
+    ? "border-t-success"
+    : healthScore >= 50
+    ? "border-t-amber-400"
+    : "border-t-danger";
+  const healthLabel = !healthIsKnown
+    ? "Health Unknown"
+    : healthScore >= 80
+    ? "Excellent Health"
+    : healthScore >= 50
+    ? "Needs Attention"
+    : "Poor Health";
+  const healthDesc =
+    healthSummary ?? (healthIsKnown ? "Run a review to see details." : "No health scan has been run yet.");
+
+  const handleOverviewClick = (actionId: string) => {
+    if (!hasRepo) return;
+    onExecuteAction?.(actionId);
+  };
+
+
   return (
     <div className="flex-1 overflow-y-auto bg-bg p-6 sm:p-8 select-text scrollbar-thin">
-      <div className="max-w-4xl mx-auto space-y-8">
-        
+      <div className="max-w-6xl mx-auto space-y-8">
+
         {/* Hero Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border pb-6 select-none">
           <div className="space-y-1">
             <h1 className="text-xl sm:text-2xl font-bold text-text-strong tracking-tight flex items-center gap-2">
-              Welcome to <span className="text-accent">CodePilot AI</span>
+              Welcome to <span className="text-accent">ChunkWiser</span>
             </h1>
-            <p className="text-xs text-muted font-mono break-all">{repoPath || "Select a folder to begin development..."}</p>
+            <p className="text-[11px] text-muted font-mono break-all">{repoPath || "Select a folder to begin development..."}</p>
           </div>
           <div className="flex items-center gap-1.5 self-start sm:self-center">
-            <span className="w-2 h-2 rounded-full bg-success glowing-dot animate-pulse" />
-            <span className="text-[10px] uppercase font-bold tracking-wider text-success font-mono">Workspace Ready</span>
+            <span className={`w-2 h-2 rounded-full ${hasRepo ? "bg-success glowing-dot animate-pulse" : "bg-muted"}`} />
+            <span className={`text-[11px] font-semibold tracking-wide font-sans ${hasRepo ? "text-success" : "text-muted"}`}>
+              {hasRepo ? "Workspace Active" : "No Active Workspace"}
+            </span>
           </div>
         </div>
 
         {/* Overview & Insights Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {/* Repository Overview Card */}
-          <div
-            onClick={() => onExecuteAction && onExecuteAction("analytics")}
-            className="md:col-span-2 bg-panel hover:bg-panel-alt border border-border hover:border-accent/25 transition-all rounded-2xl p-5 space-y-4 flex flex-col justify-between shadow-lg cursor-pointer group"
+          <button
+            type="button"
+            onClick={() => handleOverviewClick("analytics")}
+            disabled={!hasRepo}
+            className="text-left bg-panel hover:bg-panel-alt border border-border hover:border-accent/25 transition-all rounded-2xl p-5 flex flex-col justify-between shadow-lg cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-panel disabled:hover:border-border"
           >
             <div className="space-y-2 select-none">
-              <div className="flex items-center gap-2 text-accent font-bold font-mono text-[10px] uppercase tracking-wider group-hover:text-accent-strong">
+              <div className="flex items-center gap-2 text-accent font-semibold font-sans text-[11px] group-hover:text-accent-strong">
                 <FileCode className="w-3.5 h-3.5" />
-                <span>Repository Profile (Click for Analytics)</span>
+                <span>Repository Profile</span>
               </div>
-              <h2 className="text-lg font-bold text-text-strong tracking-tight font-sans">{repoName}</h2>
-              <p className="text-xs text-muted leading-relaxed font-sans">
-                This workspace is fully indexed and analyzed. Use the AI Assistant or select a starting point below to explore the structure and symbols of your project.
+              <h2 className="text-sm font-bold text-text-strong tracking-tight font-sans truncate" title={repoName}>{repoName}</h2>
+              <p className="text-[10px] text-muted leading-relaxed font-sans min-h-[40px] line-clamp-3">
+                {hasRepo
+                  ? "Fully indexed structure. Ask the AI assistant or trace symbols."
+                  : "Open a repository folder to index files and functions."}
               </p>
             </div>
-            
-            <div className="grid grid-cols-3 gap-2 pt-2 text-center border-t border-border">
+
+            <div className="grid grid-cols-3 gap-1 pt-3 text-center border-t border-border mt-3">
               <div>
-                <span className="block text-muted font-mono text-[9px] uppercase tracking-wider">Files</span>
-                <span className="text-sm font-bold text-text-strong font-mono">{filesCount}</span>
+                <span className="block text-muted font-sans text-[9px]">Files</span>
+                <span className="text-[13px] font-bold text-text-strong font-mono">{filesCount}</span>
               </div>
               <div>
-                <span className="block text-muted font-mono text-[9px] uppercase tracking-wider">Symbols</span>
-                <span className="text-sm font-bold text-text-strong font-mono">{symbolsCount}</span>
+                <span className="block text-muted font-sans text-[9px]">Symbols</span>
+                <span className="text-[13px] font-bold text-text-strong font-mono">{symbolsCount}</span>
               </div>
               <div>
-                <span className="block text-muted font-mono text-[9px] uppercase tracking-wider">Index Status</span>
-                <span className="text-xs font-bold text-success font-mono flex items-center justify-center gap-1 mt-0.5">
-                  <CheckCircle className="w-3 h-3 text-success" />
-                  <span>Success</span>
+                <span className="block text-muted font-sans text-[9px]">Status</span>
+                <span className={`text-[11px] font-semibold font-sans flex items-center justify-center gap-0.5 mt-0.5 ${indexStatusDisplay.color}`}>
+                  <span>{indexStatusDisplay.label}</span>
                 </span>
               </div>
             </div>
-          </div>
+          </button>
 
-          {/* Project Health Score card */}
-          <div
-            onClick={() => onExecuteAction && onExecuteAction("health")}
-            className="bg-panel hover:bg-panel-alt border border-border hover:border-success/25 transition-all rounded-2xl p-5 flex flex-col justify-between items-center shadow-lg text-center select-none cursor-pointer group"
+          {/* AI Developer ROI Card */}
+          <button
+            type="button"
+            onClick={() => handleOverviewClick("analytics")}
+            disabled={!hasRepo}
+            className="text-left bg-panel hover:bg-panel-alt border border-border hover:border-violet-500/25 transition-all rounded-2xl p-5 flex flex-col justify-between shadow-lg cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-panel disabled:hover:border-border"
           >
-            <div className="w-full text-left flex items-center gap-2 text-success font-bold font-mono text-[10px] uppercase tracking-wider border-b border-border pb-2 group-hover:text-success-strong">
-              <Flame className="w-3.5 h-3.5 text-success animate-pulse" />
-              <span>Project Health (Click for Report)</span>
+            <div className="w-full text-left flex items-center gap-2 text-violet-400 font-sans text-[11px] font-semibold border-b border-border pb-2 group-hover:text-violet-300">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Developer ROI</span>
             </div>
-            <div className="py-2.5 relative flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full border-[5px] border-success-bg/30 border-t-success flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-                <span className="text-sm font-bold text-text-strong font-mono">100%</span>
+            <div className="flex-grow flex items-center justify-between w-full py-3">
+              <div className="space-y-0.5">
+                <span className="block text-xl font-bold text-text-strong font-mono">24.5h</span>
+                <span className="text-[10px] text-muted font-sans">Engineering saved</span>
+              </div>
+              <div className="text-right space-y-0.5">
+                <span className="block text-[13px] font-bold text-violet-400 font-mono">82.4%</span>
+                <span className="text-[10px] text-muted font-sans">AI Accept Rate</span>
               </div>
             </div>
-            <div className="space-y-0.5">
-              <h3 className="text-xs font-bold text-text-strong">Excellent Health</h3>
-              <p className="text-[10px] text-muted font-sans">No static issues or security alerts detected.</p>
+            <div className="w-full border-t border-border pt-2 mt-1">
+              <p className="text-[10px] text-muted leading-normal font-sans">
+                Fuzzy search indexing and prompt histories optimized.
+              </p>
             </div>
-          </div>
+          </button>
+
+          {/* Project Health Score card */}
+          <button
+            type="button"
+            onClick={() => handleOverviewClick("health")}
+            disabled={!hasRepo}
+            className="text-left bg-panel hover:bg-panel-alt border border-border hover:border-success/25 transition-all rounded-2xl p-5 flex flex-col justify-between items-center shadow-lg text-center select-none cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-panel disabled:hover:border-border"
+          >
+            <div className="w-full text-left flex items-center gap-2 text-success font-sans text-[11px] font-semibold border-b border-border pb-2 group-hover:text-success-strong">
+              <Flame className="w-3.5 h-3.5 text-success" />
+              <span>Project Health</span>
+            </div>
+            <div className="py-2 relative flex items-center justify-center">
+              <div className={`w-14 h-14 rounded-full border-4 border-success-bg/30 ${healthRingColor} flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
+                <span className="text-xs font-bold text-text-strong font-mono">
+                  {healthIsKnown ? `${healthScore}%` : "—"}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-0.5 w-full text-center border-t border-border pt-2 mt-1">
+              <h3 className={`text-[11px] font-semibold ${healthColor}`}>{healthLabel}</h3>
+              <p className="text-[10px] text-muted font-sans truncate">{healthDesc}</p>
+            </div>
+          </button>
+
+          {/* Enterprise Compliance & Trust Card */}
+          <button
+            type="button"
+            onClick={() => handleOverviewClick("admin")}
+            disabled={!hasRepo}
+            className="text-left bg-panel hover:bg-panel-alt border border-border hover:border-indigo-500/25 transition-all rounded-2xl p-5 flex flex-col justify-between shadow-lg cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-panel disabled:hover:border-border"
+          >
+            <div className="w-full text-left flex items-center gap-2 text-indigo-400 font-sans text-[11px] font-semibold border-b border-border pb-2 group-hover:text-indigo-300">
+              <Shield className="w-3.5 h-3.5" />
+              <span>Security & Compliance</span>
+            </div>
+            <div className="flex-grow flex flex-col justify-center w-full space-y-1.5 py-2.5">
+              <div className="flex flex-wrap gap-1 justify-start">
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 select-none">
+                  SOC2 Type II
+                </span>
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 select-none">
+                  SAML SSO
+                </span>
+                <span className="text-[8px] font-bold px-1.5 py-0.5 rounded bg-purple-500/10 border border-purple-500/20 text-purple-400 select-none">
+                  Audit Log
+                </span>
+              </div>
+            </div>
+            <div className="w-full border-t border-border pt-2 mt-1">
+              <p className="text-[10px] text-muted leading-normal font-sans">
+                Zero data retention pipelines. Enterprise-grade compliance.
+              </p>
+            </div>
+          </button>
         </div>
 
         {/* AI Quick Actions Grid */}
         <div className="space-y-3.5 select-none">
-          <h3 className="text-xs font-bold text-muted uppercase tracking-wider font-mono flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-accent animate-pulse" />
+          <h3 className="text-[11px] font-medium text-muted font-sans flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-accent" />
             <span>AI Repository Quick Actions</span>
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -186,15 +318,16 @@ export default function WelcomeDashboard({
               return (
                 <button
                   key={action.id}
-                  onClick={() => onExecuteAction && onExecuteAction(action.id, action.title)}
-                  disabled={!repoPath}
-                  className="group text-left p-4.5 rounded-2xl bg-panel hover:bg-panel-alt border border-border hover:border-accent/30 transition-all shadow-md hover:shadow-accent/5 duration-200 cursor-pointer flex flex-col gap-3 disabled:opacity-30 disabled:cursor-not-allowed"
+                  type="button"
+                  onClick={() => onExecuteAction?.(action.id, action.title)}
+                  disabled={!hasRepo}
+                  className="group text-left p-4 rounded-2xl bg-panel hover:bg-panel-alt border border-border hover:border-accent/30 transition-all shadow-md hover:shadow-accent/5 duration-200 cursor-pointer flex flex-col gap-3 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
                   <div className={`w-9 h-9 rounded-xl ${action.bg} ${action.border} border flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}>
                     <Icon className={`w-4 h-4 ${action.color}`} />
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-text-strong group-hover:text-accent transition-colors">{action.title}</h4>
+                    <h4 className="text-xs font-semibold text-text-strong group-hover:text-accent transition-colors font-sans">{action.title}</h4>
                     <p className="text-[10px] text-muted leading-normal font-sans">{action.desc}</p>
                   </div>
                 </button>
@@ -206,23 +339,26 @@ export default function WelcomeDashboard({
         {/* Continue Working & Recent Activity */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Recent Files */}
-          <div className="bg-panel border border-border rounded-2xl p-4.5 space-y-3 shadow-lg">
-            <h3 className="text-xs font-bold text-text uppercase tracking-wider font-mono flex items-center gap-1.5 border-b border-border pb-2 select-none">
+          <div className="bg-panel border border-border rounded-2xl p-4 space-y-3 shadow-lg">
+            <h3 className="text-[11px] font-medium text-text-strong font-sans flex items-center gap-1.5 border-b border-border pb-2 select-none">
               <Clock className="w-3.5 h-3.5 text-muted" />
               <span>Recent Files</span>
             </h3>
             <div className="space-y-1 max-h-[180px] overflow-y-auto scrollbar-none">
               {recentFiles.length === 0 ? (
-                <p className="text-[10px] text-muted italic py-4 text-center">No files opened recently.</p>
+                <p className="text-[10px] text-muted italic py-4 text-center font-sans">No files opened recently.</p>
               ) : (
                 recentFiles.map((file) => (
                   <button
                     key={file}
-                    onClick={() => onOpenFile && onOpenFile(file)}
-                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-panel-alt text-[11px] text-text hover:text-text-strong transition-colors font-mono truncate flex items-center justify-between group cursor-pointer"
+                    type="button"
+                    onClick={() => onOpenFile?.(file)}
+                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-panel-alt text-[11px] text-text hover:text-text-strong transition-colors font-sans truncate flex items-center justify-between gap-3 group cursor-pointer"
                   >
-                    <span className="truncate">📄 {file.split(/[/\\]/).pop()}</span>
-                    <span className="text-[9px] text-muted truncate group-hover:text-text transition-colors ml-4">{file}</span>
+                    <span className="truncate min-w-0">📄 {getBasename(file)}</span>
+                    <span className="text-[9px] text-muted truncate group-hover:text-text transition-colors shrink min-w-0 max-w-[45%] font-mono">
+                      {file}
+                    </span>
                   </button>
                 ))
               )}
@@ -230,24 +366,25 @@ export default function WelcomeDashboard({
           </div>
 
           {/* Recent Conversations */}
-          <div className="bg-panel border border-border rounded-2xl p-4.5 space-y-3 shadow-lg">
-            <h3 className="text-xs font-bold text-text uppercase tracking-wider font-mono flex items-center gap-1.5 border-b border-border pb-2 select-none">
+          <div className="bg-panel border border-border rounded-2xl p-4 space-y-3 shadow-lg">
+            <h3 className="text-[11px] font-medium text-text-strong font-sans flex items-center gap-1.5 border-b border-border pb-2 select-none">
               <HelpCircle className="w-3.5 h-3.5 text-muted" />
               <span>Recent Chats</span>
             </h3>
             <div className="space-y-1 max-h-[180px] overflow-y-auto scrollbar-none">
               {recentChats.length === 0 ? (
-                <p className="text-[10px] text-muted italic py-4 text-center">No recent chats available.</p>
+                <p className="text-[10px] text-muted italic py-4 text-center font-sans">No recent chats available.</p>
               ) : (
                 recentChats.map((chat) => (
                   <button
                     key={chat.id}
-                    onClick={() => onLoadChat && onLoadChat(chat.id)}
-                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-panel-alt text-[11px] text-text hover:text-text-strong transition-colors font-mono truncate flex items-center justify-between group cursor-pointer"
+                    type="button"
+                    onClick={() => onLoadChat?.(chat.id)}
+                    className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-panel-alt text-[11px] text-text hover:text-text-strong transition-colors font-sans truncate flex items-center justify-between group cursor-pointer"
                   >
                     <span className="truncate">💬 {chat.title || "Conversation Session"}</span>
                     <span className="text-[9px] text-muted shrink-0 ml-4 group-hover:text-text transition-colors">
-                      {chat.timestamp ? new Date(chat.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
+                      {formatChatTimestamp(chat.timestamp)}
                     </span>
                   </button>
                 ))

@@ -28,7 +28,7 @@ export default function useArchitecture(
       });
 
       const report = await fetchArchitecture(repoPath);
-      setArchitecture(report.analysis);
+      setArchitecture(report.analysis || "");
 
       setIsGraphLoadingReactFlow(true);
       const graph = await fetchRepositoryGraph(repoPath);

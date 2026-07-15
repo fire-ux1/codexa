@@ -1,18 +1,18 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { useState, useEffect, useRef, useMemo } from "react";
 import { fetchRepositoryFiles } from "../../services/api";
 
 const COMMANDS = [
-  { key: "architecture", label: "Open Architecture Dependency Graph", icon: "ðŸ§©" },
-  { key: "review", label: "Run AI Repository Review", icon: "ðŸ”" },
-  { key: "analytics", label: "View Repository Analytics", icon: "ðŸ“Š" },
-  { key: "graph", label: "Open Call Graph", icon: "ðŸ•¸ï¸" },
-  { key: "knowledge", label: "Open Semantic Knowledge Graph", icon: "ðŸ§ " },
-  { key: "planner", label: "Open Autonomous Task Planner", icon: "ðŸ“‹" },
-  { key: "git", label: "Git Intelligence Dashboard", icon: "ðŸ™" },
-  { key: "chat", label: "Focus AI Chat", icon: "ðŸ’¬" },
-  { key: "agents", label: "Focus AI Multi-Agent Session", icon: "ðŸ¤–" },
-  { key: "patch", label: "Focus AI Patch generation", icon: "ðŸ©¹" },
+  { key: "architecture", label: "Open Architecture Dependency Graph", icon: "🧩" },
+  { key: "review", label: "Run AI Repository Review", icon: "🔍" },
+  { key: "analytics", label: "View Repository Analytics", icon: "📊" },
+  { key: "graph", label: "Open Call Graph", icon: "🕸️" },
+  { key: "knowledge", label: "Open Semantic Knowledge Graph", icon: "🧠" },
+  { key: "planner", label: "Open Autonomous Task Planner", icon: "📋" },
+  { key: "git", label: "Git Intelligence Dashboard", icon: "🏗️" },
+  { key: "chat", label: "Focus AI Chat", icon: "💬" },
+  { key: "agents", label: "Focus AI Multi-Agent Session", icon: "🤖" },
+  { key: "patch", label: "Focus AI Patch generation", icon: "🩹" },
 ];
 
 export default function CommandPalette({
@@ -128,8 +128,8 @@ export default function CommandPalette({
       >
         {/* Search Input Bar */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/5 shrink-0 bg-black/20">
-          <span className="text-gray-500 font-mono text-sm shrink-0">
-            {isCommandMode ? ">" : "ðŸ”"}
+          <span className="text-gray-500 font-sans text-sm shrink-0">
+            {isCommandMode ? ">" : "🔍"}
           </span>
           <input
             ref={inputRef}
@@ -144,11 +144,11 @@ export default function CommandPalette({
                 ? "Type a command name..."
                 : "Search files, or type '>' for commands..."
             }
-            className="flex-grow bg-transparent text-white font-mono text-sm focus:outline-none border-none placeholder-gray-600 outline-none w-full"
+            className="flex-grow bg-transparent text-white font-sans text-sm focus:outline-none border-none placeholder-gray-600 outline-none w-full"
           />
           <button
             onClick={onClose}
-            className="text-[10px] uppercase font-mono px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-500 hover:text-white"
+            className="text-[10px] uppercase font-sans px-2 py-1 rounded bg-white/5 border border-white/10 text-gray-500 hover:text-white"
           >
             Esc
           </button>
@@ -159,10 +159,10 @@ export default function CommandPalette({
           {loading ? (
             <div className="p-8 text-center text-gray-500 flex items-center justify-center gap-2">
               <span className="w-4 h-4 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></span>
-              <span className="font-mono text-xs">Scanning files...</span>
+              <span className="font-sans text-xs">Scanning files...</span>
             </div>
           ) : filteredItems.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 font-mono text-xs">
+            <div className="p-8 text-center text-gray-500 font-sans text-xs">
               No results found for "{cleanQuery}"
             </div>
           ) : (
@@ -173,14 +173,14 @@ export default function CommandPalette({
                   <button
                     key={item.key || item.path}
                     onClick={() => handleSelectItem(item)}
-                    className={`w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl font-mono text-xs transition-all ${
+                    className={`w-full flex items-center justify-between text-left px-3 py-2.5 rounded-xl font-sans text-xs transition-all ${
                       isSelected
                         ? "bg-indigo-600 text-white font-semibold"
                         : "text-gray-400 hover:text-gray-200 hover:bg-white/3"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 truncate">
-                      <span>{item.icon || "ðŸ“„"}</span>
+                      <span>{item.icon || "📄"}</span>
                       <span className="truncate">
                         {isCommandMode
                           ? item.label
@@ -188,7 +188,7 @@ export default function CommandPalette({
                       </span>
                       {!isCommandMode && (
                         <span
-                          className={`truncate text-[9px] font-normal ${
+                          className={`truncate text-[9px] font-mono font-normal ${
                             isSelected ? "text-indigo-200" : "text-gray-600"
                           }`}
                         >
@@ -197,8 +197,8 @@ export default function CommandPalette({
                       )}
                     </div>
                     {isSelected && (
-                      <span className="text-[10px] opacity-70 shrink-0 font-sans">
-                        â†µ Enter
+                      <span className="text-[10px] opacity-70 font-sans">
+                        ↵ Enter
                       </span>
                     )}
                   </button>
@@ -209,12 +209,12 @@ export default function CommandPalette({
         </div>
 
         {/* Palette Footer */}
-        <div className="px-4 py-2 border-t border-white/5 bg-black/30 shrink-0 flex items-center justify-between text-[9px] font-mono text-gray-600 uppercase tracking-widest select-none">
+        <div className="px-4 py-2.5 border-t border-border bg-black/10 shrink-0 flex items-center justify-between text-[10px] text-muted select-none">
           <div>
-            Use <span className="text-gray-400 font-bold">â†‘â†“</span> to navigate
+            Use <span className="text-text font-bold">↑↓</span> to navigate
           </div>
           <div>
-            Type <span className="text-gray-400 font-bold">&gt;</span> for commands
+            Type <span className="text-text font-bold">&gt;</span> for commands
           </div>
         </div>
       </div>

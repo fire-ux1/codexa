@@ -60,7 +60,15 @@ export default function ReportGenerator({ repositoryId }: ReportGeneratorProps) 
     setHistoryLoading(true);
     try {
       const data = await fetchReportHistory(repositoryId);
-      setHistory(data || []);
+      const mapped: ReportRecord[] = (data || []).map((item: any) => ({
+        id: item.id,
+        repository_id: item.repository_id,
+        name: item.name || `Report_${item.id.substring(0, 8)}.${item.report_type === "pdf" ? "pdf" : "md"}`,
+        report_type: item.report_type as "pdf" | "markdown",
+        file_size: item.file_size || 0,
+        created_at: item.created_at,
+      }));
+      setHistory(mapped);
     } catch {
       // Silently fail — history is non-critical
       setHistory([]);
@@ -83,8 +91,15 @@ export default function ReportGenerator({ repositoryId }: ReportGeneratorProps) 
     setError(null);
     try {
       const res = await generateReport(repositoryId, reportType);
-      if (res?.report) {
-        setSuccessReport(res.report as ReportRecord);
+      if (res?.report_id) {
+        setSuccessReport({
+          id: res.report_id,
+          repository_id: repositoryId,
+          name: `Compliance_${reportType.toUpperCase()}_Report`,
+          report_type: reportType,
+          file_size: 0,
+          created_at: new Date().toISOString(),
+        });
         await loadHistory();
       }
     } catch (e: any) {

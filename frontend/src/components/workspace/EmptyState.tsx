@@ -187,7 +187,7 @@ export default function EmptyState({
 
           <div className="space-y-2 text-text font-sans text-xs">
             <p className="text-muted leading-relaxed">
-              CodePilot AI has mapped local classes, modules, functions, and import paths. You are ready to develop with AI context:
+              ChunkWiser has mapped local classes, modules, functions, and import paths. You are ready to develop with AI context:
             </p>
             <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[10px] text-muted">
               <div className="flex items-center gap-1.5"><span className="text-success">✓</span> Explain complex code</div>

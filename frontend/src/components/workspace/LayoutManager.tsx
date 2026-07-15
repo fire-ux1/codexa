@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { useState } from "react";
 import { Eye, EyeOff, LayoutGrid, Zap } from "lucide-react";
 
@@ -95,23 +95,23 @@ export default function LayoutManager() {
         </div>
 
         {/* Zen Mode */}
-        <div className="pt-2 border-t border-[#1c2230]/40">
+        <div className="pt-2 border-t border-border">
           <button
             onClick={() => updatePreference("layout-zen-mode", !zenMode, setZenMode)}
             className={`w-full p-3 rounded-xl border flex items-center justify-between transition-all cursor-pointer ${
               zenMode
                 ? "bg-purple-600/10 border-purple-500/40 text-purple-400 shadow-md shadow-purple-500/5 animate-pulse"
-                : "bg-[#141822] border-[#1c2230] text-gray-400 hover:text-gray-200"
+                : "bg-panel border-border text-text hover:text-text-strong"
             }`}
           >
             <div className="flex items-center gap-2 text-left">
-              <span className="text-lg">ðŸ§˜</span>
+              <span className="text-lg">🧘</span>
               <div>
-                <span className="text-[10px] font-bold font-sans block">Zen Focus Productivity Mode</span>
-                <span className="text-[8.5px] text-gray-500 font-mono">Hides sidebars, docks, and notifications.</span>
+                <span className="text-[11px] font-medium block">Zen Focus Productivity Mode</span>
+                <span className="text-[9px] text-muted block">Hides sidebars, docks, and notifications.</span>
               </div>
             </div>
-            <Zap className={`w-4 h-4 ${zenMode ? 'text-purple-400 fill-purple-400/20' : 'text-gray-600'}`} />
+            <Zap className={`w-4 h-4 ${zenMode ? 'text-purple-400 fill-purple-400/20' : 'text-muted'}`} />
           </button>
         </div>
       </div>

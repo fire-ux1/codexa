@@ -1,18 +1,46 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import type { editor as MonacoEditor } from "monaco-editor";
 import { fetchFileContent, fetchFileSymbols, saveFileContent } from "../services/api";
 
 export interface SymbolItem {
   name: string;
   line: number;
   column?: number;
-  [key: string]: any;
+  kind?: string; // e.g. "function" | "class" | "variable" — adjust to match your backend's actual symbol kinds
 }
 
-export default function useWorkspace() {
+export interface UseWorkspaceResult {
+  openFiles: string[];
+  activeFile: string | null;
+  activeFileContent: string;
+  dirtyFiles: Set<string>;
+  isFileLoading: boolean;
+  activeSymbol: string;
+  setActiveSymbol: (symbol: string) => void;
+  symbols: SymbolItem[];
+  editorRef: React.MutableRefObject<MonacoEditor.IStandaloneCodeEditor | null>;
+  openFile: (filePath: string, jumpToLine?: number | null) => Promise<void>;
+  closeFile: (filePath: string) => void;
+  updateFileContent: (filePath: string, newContent: string) => void;
+  saveFile: (filePath?: string) => Promise<boolean>;
+  jumpToSymbol: (symbol: SymbolItem) => void;
+  activePanelBottom: string | null;
+  setActivePanelBottom: (panel: string | null) => void;
+  closeBottomPanel: () => void;
+}
+
+/** Narrow an unknown catch value to a human-readable message without assuming its shape. */
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === "string") return err;
+  return "Unknown error";
+}
+
+export default function useWorkspace(): UseWorkspaceResult {
   const [openFiles, setOpenFiles] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem("codepilot_open_files");
-      return saved ? JSON.parse(saved) : [];
+      return saved ? (JSON.parse(saved) as string[]) : [];
     } catch {
       return [];
     }
@@ -24,7 +52,7 @@ export default function useWorkspace() {
   const [activeSymbol, setActiveSymbol] = useState<string>("");
   const [symbols, setSymbols] = useState<SymbolItem[]>([]);
   const [activePanelBottom, setActivePanelBottom] = useState<string | null>(null);
-  const editorRef = useRef<any>(null);
+  const editorRef = useRef<MonacoEditor.IStandaloneCodeEditor | null>(null);
 
   // Sync refs to avoid stale closures in callbacks with empty dependencies
   const fileContentsRef = useRef<Record<string, string>>({});
@@ -42,21 +70,9 @@ export default function useWorkspace() {
     activeFileRef.current = activeFile;
   }, [activeFile]);
 
-  // On mount, open the active file or first file if openFiles is not empty
-  useEffect(() => {
-    const savedActive = localStorage.getItem("codepilot_active_file");
-    if (savedActive && openFiles.includes(savedActive)) {
-      openFile(savedActive);
-    } else if (openFiles.length > 0) {
-      openFile(openFiles[0]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   const openFile = useCallback(async (filePath: string, jumpToLine: number | null = null) => {
     if (!filePath) return;
 
-    // Add to open files list if not already there
     setOpenFiles(prev => {
       const next = prev.includes(filePath) ? prev : [...prev, filePath];
       localStorage.setItem("codepilot_open_files", JSON.stringify(next));
@@ -67,10 +83,8 @@ export default function useWorkspace() {
     localStorage.setItem("codepilot_active_file", filePath);
     setActiveSymbol("");
 
-    // Check cache within functional update to avoid recreating openFile callback
     setFileContents(currentContents => {
       if (currentContents[filePath] !== undefined) {
-        // Already cached, just load symbols and jump to line if requested
         (async () => {
           try {
             const syms = await fetchFileSymbols(filePath);
@@ -92,7 +106,6 @@ export default function useWorkspace() {
         return currentContents;
       }
 
-      // Not cached, fetch from backend API
       setIsFileLoading(true);
       (async () => {
         try {
@@ -116,8 +129,11 @@ export default function useWorkspace() {
               }
             }, 300);
           }
-        } catch (err: any) {
-          setFileContents(prev => ({ ...prev, [filePath]: `// Error loading file: ${err?.message || err}` }));
+        } catch (err: unknown) {
+          setFileContents(prev => ({
+            ...prev,
+            [filePath]: `// Error loading file: ${getErrorMessage(err)}`,
+          }));
           setSymbols([]);
         } finally {
           setIsFileLoading(false);
@@ -126,6 +142,17 @@ export default function useWorkspace() {
 
       return currentContents;
     });
+  }, []);
+
+  // On mount, open the active file or first file if openFiles is not empty
+  useEffect(() => {
+    const savedActive = localStorage.getItem("codepilot_active_file");
+    if (savedActive && openFiles.includes(savedActive)) {
+      void openFile(savedActive);
+    } else if (openFiles.length > 0) {
+      void openFile(openFiles[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const closeFile = useCallback((filePath: string) => {
@@ -183,7 +210,7 @@ export default function useWorkspace() {
     });
   }, []);
 
-  const saveFile = useCallback(async (filePath?: string) => {
+  const saveFile = useCallback(async (filePath?: string): Promise<boolean> => {
     const targetPath = filePath || activeFileRef.current;
     if (!targetPath) return false;
 
@@ -198,9 +225,9 @@ export default function useWorkspace() {
         return next;
       });
       return true;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Save file failed:", err);
-      alert(`Failed to save file: ${err?.message || err}`);
+      alert(`Failed to save file: ${getErrorMessage(err)}`);
       return false;
     }
   }, []);

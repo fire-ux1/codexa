@@ -114,11 +114,11 @@ export default function ChatTab({
                       <button
                         key={sIdx}
                         onClick={() => onOpenFile(src.path)}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-panel border border-border text-xs text-secondary hover:border-secondary-strong transition-all font-mono hover:bg-secondary-dim/5"
+                        className="cite-chip font-mono text-[10px]"
                       >
-                        <IconCode className="w-3 h-3 text-secondary" />
+                        <IconCode className="w-3 h-3 text-[#FF9D4D]" />
                         {src.symbol || src.file}
-                        <span className="text-[9px] text-muted ml-1">({src.score})</span>
+                        <span className="text-[8px] opacity-70 ml-1">({src.score})</span>
                       </button>
                     ))}
                   </div>

@@ -119,9 +119,9 @@ export default function BottomPanel({
             <button
               key={tab.id}
               onClick={() => setCurrentTab(tab.id)}
-              className={`px-2.5 py-0.5 rounded text-[10px] font-mono font-bold uppercase transition-all duration-150 cursor-pointer ${
+              className={`px-2.5 py-1 rounded text-[12px] font-sans font-medium transition-all duration-150 cursor-pointer ${
                 currentTab === tab.id
-                  ? "bg-accent-dim/15 text-accent border border-accent/25"
+                  ? "bg-accent-dim/15 text-accent border border-accent/25 font-semibold"
                   : "text-muted hover:text-text border border-transparent"
               }`}
             >

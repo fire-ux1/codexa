@@ -1,15 +1,15 @@
 import { useState, useCallback } from "react";
-import { cloneRepository, deleteRepository, fetchRepositories, getErrorMessage, API_BASE_URL } from "../services/api";
-
-export interface IndexingProgressData {
-  progress: number;
-  stage: string;
-  message: string;
-  data?: any;
-}
+import {
+  cloneRepository,
+  deleteRepository,
+  fetchRepositories,
+  getErrorMessage,
+  API_BASE_URL,
+} from "../services/api";
+import type { IndexingProgressData, Repository } from "../services/api";
 
 export interface WorkspaceStatus {
-  tone: string;
+  tone: "idle" | "loading" | "success" | "error";
   label: string;
   message: string;
 }
@@ -19,12 +19,47 @@ export interface RepositoryMetrics {
   chunksIndexed: number;
 }
 
+export interface UseRepositoryResult {
+  repoUrl: string;
+  setRepoUrl: (url: string) => void;
+  accessToken: string;
+  setAccessToken: (token: string) => void;
+  repoPath: string;
+  setRepoPath: (path: string) => void;
+  isCloning: boolean;
+  indexingProgress: IndexingProgressData | null;
+  metrics: RepositoryMetrics;
+  status: WorkspaceStatus;
+  setStatus: (status: WorkspaceStatus) => void;
+  clearWorkspace: () => void;
+  selectRepositoryFromHistory: (repo: Repository) => void;
+  handleDeleteRepository: (e: React.MouseEvent, repoId: string | number) => Promise<void>;
+  handleIndexRepository: () => Promise<void>;
+}
+
+/**
+ * Type guard for messages coming off the indexing-progress WebSocket.
+ * The WS payload isn't validated by the backend contract at build time the
+ * way REST responses are, so we do a minimal runtime shape check here rather
+ * than blindly trusting JSON.parse's `any`. Worth swapping for a zod schema
+ * once zod is wired in for env validation — same pattern applies here.
+ */
+function isIndexingProgressData(value: unknown): value is IndexingProgressData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Record<string, unknown>).progress === "number" &&
+    typeof (value as Record<string, unknown>).stage === "string" &&
+    typeof (value as Record<string, unknown>).message === "string"
+  );
+}
+
 export default function useRepository(
   _token: string | null | undefined,
   showToast: (message: string, type: "success" | "error") => void,
-  history: any[],
-  setHistory: (list: any[]) => void
-) {
+  history: Repository[],
+  setHistory: (list: Repository[]) => void
+): UseRepositoryResult {
   const [repoUrl, setRepoUrl] = useState<string>("");
   const [accessToken, setAccessToken] = useState<string>("");
   const [repoPath, setRepoPath] = useState<string>("");
@@ -49,7 +84,7 @@ export default function useRepository(
     });
   }, []);
 
-  const selectRepositoryFromHistory = useCallback((repo: any) => {
+  const selectRepositoryFromHistory = useCallback((repo: Repository) => {
     setRepoPath(repo.repository_path);
     setMetrics({
       filesIndexed: repo.files_indexed,
@@ -63,27 +98,34 @@ export default function useRepository(
     });
   }, []);
 
-  const handleDeleteRepository = useCallback(async (e: React.MouseEvent, repoId: string | number) => {
-    e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this repository index? This deletes the SQLite record, ChromaDB collection, and cloned folder.")) {
-      return;
-    }
-    try {
-      await deleteRepository(repoId);
-      showToast("Repository index deleted.", "success");
-      const list = await fetchRepositories();
-      setHistory(list);
-
-      if (repoPath) {
-        const deleted = history.find((r) => r.id === repoId);
-        if (deleted && deleted.repository_path === repoPath) {
-          clearWorkspace();
-        }
+  const handleDeleteRepository = useCallback(
+    async (e: React.MouseEvent, repoId: string | number) => {
+      e.stopPropagation();
+      if (
+        !confirm(
+          "Are you sure you want to delete this repository index? This deletes the SQLite record, ChromaDB collection, and cloned folder."
+        )
+      ) {
+        return;
       }
-    } catch {
-      showToast("Deletion failed.", "error");
-    }
-  }, [repoPath, history, setHistory, showToast, clearWorkspace]);
+      try {
+        await deleteRepository(repoId);
+        showToast("Repository index deleted.", "success");
+        const list = await fetchRepositories();
+        setHistory(list);
+
+        if (repoPath) {
+          const deleted = history.find((r) => r.id === repoId);
+          if (deleted && deleted.repository_path === repoPath) {
+            clearWorkspace();
+          }
+        }
+      } catch {
+        showToast("Deletion failed.", "error");
+      }
+    },
+    [repoPath, history, setHistory, showToast, clearWorkspace]
+  );
 
   const handleIndexRepository = useCallback(async () => {
     if (!repoUrl.trim()) {
@@ -101,7 +143,7 @@ export default function useRepository(
       });
 
       const cloneRes = await cloneRepository(repoUrl.trim(), accessToken.trim() || undefined);
-      
+
       const wsUrl = `${API_BASE_URL.replace("http", "ws")}/indexer/progress?token=${localStorage.getItem("codepilot_token") || ""}`;
       const socket = new WebSocket(wsUrl);
 
@@ -109,10 +151,22 @@ export default function useRepository(
         socket.send(JSON.stringify({ repo_path: cloneRes.path }));
       };
 
-      socket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
+      socket.onmessage = (event: MessageEvent<string>) => {
+        let parsed: unknown;
+        try {
+          parsed = JSON.parse(event.data);
+        } catch (parseError) {
+          console.error("Indexing WS: failed to parse message", parseError);
+          return;
+        }
+
+        if (!isIndexingProgressData(parsed)) {
+          console.error("Indexing WS: unexpected message shape", parsed);
+          return;
+        }
+        const data = parsed;
         setIndexingProgress(data);
-        
+
         setStatus({
           tone: "loading",
           label: `Indexing: ${data.stage}`,
@@ -121,16 +175,23 @@ export default function useRepository(
 
         if (data.stage === "Completed") {
           setRepoPath(cloneRes.path);
-          setMetrics({
-            filesIndexed: data.data.files_indexed,
-            chunksIndexed: data.data.chunks_indexed,
-          });
-          
-          setStatus({
-            tone: "success",
-            label: "Ready",
-            message: `Successfully indexed ${data.data.files_indexed} files and ${data.data.chunks_indexed} code symbols!`,
-          });
+          if (data.data) {
+            setMetrics({
+              filesIndexed: data.data.files_indexed,
+              chunksIndexed: data.data.chunks_indexed,
+            });
+            setStatus({
+              tone: "success",
+              label: "Ready",
+              message: `Successfully indexed ${data.data.files_indexed} files and ${data.data.chunks_indexed} code symbols!`,
+            });
+          } else {
+            setStatus({
+              tone: "success",
+              label: "Ready",
+              message: "Indexing completed.",
+            });
+          }
 
           fetchRepositories().then(setHistory);
           setIndexingProgress(null);
@@ -149,7 +210,7 @@ export default function useRepository(
         }
       };
 
-      socket.onerror = (err) => {
+      socket.onerror = (err: Event) => {
         console.error("WS Error:", err);
         setStatus({
           tone: "error",
@@ -159,8 +220,7 @@ export default function useRepository(
         setIndexingProgress(null);
         setIsCloning(false);
       };
-
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
       setRepoPath("");
       setIndexingProgress(null);
@@ -173,7 +233,7 @@ export default function useRepository(
       showToast(errMsg, "error");
       setIsCloning(false);
     }
-  }, [repoUrl, showToast, setHistory]);
+  }, [repoUrl, accessToken, showToast, setHistory]);
 
   return {
     repoUrl,

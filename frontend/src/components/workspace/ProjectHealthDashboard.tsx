@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback } from "react";
 import { fetchRepositoryAnalytics } from "../../services/api";
@@ -33,7 +33,7 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
       <div className="flex-1 bg-[#090b10] flex items-center justify-center p-8 select-none">
         <div className="text-center space-y-4">
           <LoaderSpinner />
-          <p className="text-gray-400 font-mono text-[11px] animate-pulse">Running static code audits and compiling project health score...</p>
+          <p className="text-gray-400 font-sans text-[11px] animate-pulse">Running static code audits and compiling project health score...</p>
         </div>
       </div>
     );
@@ -45,14 +45,14 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
         <div className="max-w-md bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 text-center space-y-4">
           <AlertTriangle className="w-10 h-10 text-rose-400 mx-auto" />
           <h3 className="text-sm font-bold text-white font-sans">Health Audit Failed</h3>
-          <p className="text-xs text-gray-400 font-mono leading-relaxed">{error || "Could not retrieve repository analytics."}</p>
+          <p className="text-xs text-gray-400 font-sans leading-relaxed">{error || "Could not retrieve repository analytics."}</p>
           <div className="flex justify-center gap-3">
             {onBack && (
-              <button onClick={onBack} className="px-3 py-1.5 rounded-lg border border-[#1c2230] hover:bg-white/5 text-[10px] text-gray-300 font-mono">
+              <button onClick={onBack} className="px-3 py-1.5 rounded-lg border border-[#1c2230] hover:bg-white/5 text-[11px] text-gray-300 font-sans">
                 Go Back
               </button>
             )}
-            <button onClick={loadHealth} className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[10px] font-mono">
+            <button onClick={loadHealth} className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] font-sans">
               Retry Audit
             </button>
           </div>
@@ -122,7 +122,7 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
   }
 
   return (
-    <div className="flex-1 bg-[#090b10] overflow-y-auto p-6 sm:p-8 select-text scrollbar-thin text-left flex flex-col min-h-0">
+    <div className="flex-1 bg-[#090b10] overflow-y-auto p-6 sm:p-8 select-text scrollbar-thin text-left flex flex-col min-h-0 font-sans">
       <div className="max-w-4xl mx-auto space-y-6 w-full">
         
         {/* Header Block */}
@@ -132,18 +132,18 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
               {onBack && (
                 <button
                   onClick={onBack}
-                  className="px-2.5 py-1 text-[10px] font-mono rounded bg-white/5 border border-[#1c2230] text-gray-400 hover:text-white transition-colors cursor-pointer mr-1"
+                  className="px-2.5 py-1 text-[11px] font-sans font-semibold rounded bg-white/5 border border-[#1c2230] text-gray-400 hover:text-white transition-colors cursor-pointer mr-1"
                 >
-                  â† Back
+                  ← Back
                 </button>
               )}
               <h2 className="text-lg font-bold text-white tracking-tight">Repository Health Report</h2>
             </div>
-            <p className="text-[10px] text-gray-500 font-mono">{repoPath}</p>
+            <p className="text-[11px] text-gray-500 font-sans">{repoPath}</p>
           </div>
           <button
             onClick={loadHealth}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141822] hover:bg-[#1b212f] border border-[#1c2230] text-[10px] text-gray-300 font-mono hover:text-white transition-all cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141822] hover:bg-[#1b212f] border border-[#1c2230] text-[11px] text-gray-300 font-sans font-semibold hover:text-white transition-all cursor-pointer"
           >
             <RefreshCw className="w-3 h-3 text-gray-500" />
             <span>Recalculate</span>
@@ -154,23 +154,23 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {/* Main Health Score Gauges */}
           <div className="md:col-span-1 bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 flex flex-col items-center justify-between shadow select-none text-center">
-            <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider w-full text-left border-b border-[#1c2230]/40 pb-2">
+            <span className="text-[10px] font-sans font-semibold text-gray-500 text-left w-full border-b border-[#1c2230]/40 pb-2">
               Overall Score
             </span>
             <div className="py-4 relative flex items-center justify-center">
               <div className={`w-24 h-24 rounded-full border-[7px] border-white/5 ${scoreProgressColor} flex flex-col items-center justify-center shadow-inner`}>
-                <span className="text-xl font-extrabold text-white font-mono leading-none">{healthScore}%</span>
-                <span className="text-[9px] text-gray-500 font-mono mt-1 uppercase tracking-wide font-bold">{scoreLevel}</span>
+                <span className="text-xl font-bold text-white font-sans leading-none">{healthScore}%</span>
+                <span className="text-[10px] text-gray-500 font-sans mt-1 font-semibold">{scoreLevel}</span>
               </div>
             </div>
-            <span className={`px-2.5 py-0.5 rounded-lg border text-[9px] font-mono font-bold ${scoreColor}`}>
-              HEALTH LEVEL: {scoreLevel.toUpperCase()}
+            <span className={`px-2.5 py-0.5 rounded-lg border text-[10px] font-sans font-semibold ${scoreColor}`}>
+              Health Level: {scoreLevel}
             </span>
           </div>
 
           {/* Key Metrics Checklist Panel */}
           <div className="md:col-span-2 bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 space-y-4 shadow flex flex-col justify-between select-none">
-            <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider border-b border-[#1c2230]/40 pb-2 block">
+            <span className="text-[10px] font-sans font-semibold text-gray-500 border-b border-[#1c2230]/40 pb-2 block">
               Static Code Audits
             </span>
             <div className="grid grid-cols-2 gap-x-5 gap-y-3">
@@ -184,7 +184,7 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
               ].map((m, idx) => (
                 <div key={idx} className="flex justify-between items-center text-xs">
                   <span className="text-gray-400">{m.label}</span>
-                  <span className={`font-mono font-bold ${m.color}`}>{m.val}</span>
+                  <span className={`font-sans font-semibold ${m.color}`}>{m.val}</span>
                 </div>
               ))}
             </div>
@@ -193,12 +193,12 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
 
         {/* Project Badges */}
         <div className="bg-[#0f1219] border border-[#1c2230] rounded-2xl p-4.5 space-y-3 shadow select-none">
-          <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider block">Repository Certificates</span>
+          <span className="text-[10px] font-sans font-semibold text-gray-500 block">Repository Certificates</span>
           <div className="flex flex-wrap gap-2 pt-0.5">
             {badges.map((b) => (
               <span
                 key={b.label}
-                className="px-2.5 py-1 rounded-xl bg-emerald-500/5 border border-emerald-500/15 text-[9px] font-bold text-emerald-400 font-mono flex items-center gap-1"
+                className="px-2.5 py-1 rounded-xl bg-emerald-500/5 border border-emerald-500/15 text-[10px] font-semibold text-emerald-400 font-sans flex items-center gap-1"
               >
                 <CheckCircle className="w-3 h-3 text-emerald-400" />
                 <span>{b.label}</span>
@@ -208,15 +208,15 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
         </div>
 
         {/* AI Insights & Diagnostics */}
-        <div className="bg-[#0f1219] border border-[#1c2230] rounded-2xl p-5 space-y-4 shadow flex-1">
-          <span className="text-[9px] font-mono font-bold uppercase text-gray-500 tracking-wider border-b border-[#1c2230]/40 pb-2 block select-none">
+        <div className="bg-panel border border-border rounded-2xl p-5 space-y-4 shadow flex-1">
+          <span className="text-[11px] font-medium text-muted border-b border-border pb-2 block select-none">
             AI Automated Recommendations
           </span>
           <div className="space-y-3.5">
             {aiInsights.map((insight, idx) => (
-              <div key={idx} className="flex items-start gap-3 text-xs leading-relaxed text-gray-300">
+              <div key={idx} className="flex items-start gap-3 text-[13px] leading-relaxed text-text">
                 <span className="text-sm shrink-0">
-                  {insight.type === "warning" ? "âš ï¸" : insight.type === "success" ? "âœ…" : "ðŸ’¡"}
+                  {insight.type === "warning" ? "⚠️" : insight.type === "success" ? "✅" : "💡"}
                 </span>
                 <p className="font-sans pt-0.5">{insight.text}</p>
               </div>
@@ -235,12 +235,11 @@ export default function ProjectHealthDashboard({ repoPath, onBack }) {
             { label: "Dependencies", val: dependencyCount },
           ].map((stat, idx) => (
             <div key={idx} className="bg-[#0f1219] border border-[#1c2230] rounded-xl p-3.5 text-center space-y-1 shadow">
-              <span className="block text-[8.5px] font-mono font-bold text-gray-500 uppercase tracking-wider">{stat.label}</span>
-              <span className="block text-sm font-extrabold text-white font-mono">{stat.val}</span>
+              <span className="block text-[10px] font-sans font-semibold text-gray-500">{stat.label}</span>
+              <span className="block text-[13px] font-bold text-white font-sans">{stat.val}</span>
             </div>
           ))}
         </div>
-
       </div>
     </div>
   );

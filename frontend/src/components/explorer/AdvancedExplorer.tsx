@@ -1,37 +1,63 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Folder, FolderOpen, FileCode, Search, Minimize2, Maximize2, Plus, Sparkles, AlertCircle, FileText } from "lucide-react";
 import { fetchRepositoryFiles } from "../../services/api";
+import type { RepositoryFileNode } from "../../services/api";
 
-export interface FlatFileItem {
-  name: string;
-  path: string;
-  size: number;
-  lines: number;
-  extension?: string;
-  [key: string]: any;
-}
+// RepositoryFileNode is used directly; FlatFileItem is an alias for compatibility.
+export type FlatFileItem = RepositoryFileNode;
 
 export interface AdvTreeNode {
   name: string;
   path: string;
   extension?: string;
   isDir: boolean;
-  children: any; // Raw or built array
+  children: AdvTreeNode[] | null;
   forceOpen?: boolean;
+}
+
+// Intermediate shape used only while building the tree from a flat file
+// list — `children` is a keyed map here so lookups by path segment are O(1)
+// during construction, then converted to the array-shaped AdvTreeNode once
+// the whole tree is assembled. Keeping this as a distinct type (rather than
+// mutating an AdvTreeNode's `children` from object to array in place) is
+// what let us drop `any` here: the two shapes never had to coexist in one
+// type.
+interface RawTreeNode {
+  name: string;
+  path: string;
+  extension?: string;
+  isDir: boolean;
+  children: Record<string, RawTreeNode> | null;
+}
+
+// INFERRED — only `unstaged` is actually read in this component. Extend with
+// staged/untracked/etc. once a consumer needs them; confirm field names
+// against whatever hook/service actually produces this (e.g. useGitStatus).
+export interface GitStatus {
+  unstaged?: string[];
+}
+
+interface GitDecoration {
+  badge: string;
+  color: string;
+  label: string;
 }
 
 interface AdvancedExplorerProps {
   repoPath: string;
   selectedPath: string;
   onOpenFile: (path: string) => void;
-  gitStatus?: any;
+  gitStatus?: GitStatus | null;
   onTriggerContextAction?: (actionId: string, path: string) => void;
 }
 
-interface HoverFileInfo {
+interface HoverTriggerInfo {
   name: string;
   path: string;
-  gitDecoration: any;
+  gitDecoration: GitDecoration | null;
+}
+
+interface HoverFileInfo extends HoverTriggerInfo {
   lines?: number | string;
   size?: number | string;
 }
@@ -55,14 +81,14 @@ export default function AdvancedExplorer({
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Expand/collapse state manager
   const [globalExpanded, setGlobalExpanded] = useState<boolean | null>(null);
-  
+
   // Hover preview states
   const [hoveredFile, setHoveredFile] = useState<HoverFileInfo | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const hoverTimeoutRef = useRef<any>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Context Menu states
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null);
@@ -74,11 +100,12 @@ export default function AdvancedExplorer({
       setLoading(true);
       setError(null);
       const res = await fetchRepositoryFiles(repoPath);
-      setFlatFiles(res.files || []);
+      const files = Array.isArray(res) ? res : [];
+      setFlatFiles(files);
 
-      // Build tree structure
-      const root: any = { name: "root", isDir: true, children: {} };
-      (res.files || []).forEach((file: any) => {
+      // Build tree structure (keyed map, see RawTreeNode)
+      const root: RawTreeNode = { name: "root", path: "", isDir: true, children: {} };
+      files.forEach((file) => {
         const relPath = file.path
           .replace(repoPath, "")
           .replace(/\\/g, "/")
@@ -86,14 +113,18 @@ export default function AdvancedExplorer({
         const parts = relPath.split("/");
 
         let current = root;
-        parts.forEach((part: string, index: number) => {
+        parts.forEach((part, index) => {
           const isLast = index === parts.length - 1;
+          if (!current.children) {
+            current.children = {};
+          }
           if (!current.children[part]) {
             current.children[part] = {
               name: part,
               path: file.path,
-              extension: file.extension,
-              isDir: !isLast,
+              // RepositoryFileNode has no explicit extension field; derive from name
+              extension: part.includes(".") ? part.split(".").pop() : undefined,
+              isDir: !isLast || file.type === "directory",
               children: isLast ? null : {},
             };
           }
@@ -101,16 +132,33 @@ export default function AdvancedExplorer({
         });
       });
 
-      const convertToArray = (node: any): AdvTreeNode => {
-        if (!node.isDir) return node as AdvTreeNode;
+      // Converts the keyed-map RawTreeNode into the array-shaped AdvTreeNode
+      // the render tree consumes. Builds a new object rather than mutating
+      // `node.children` in place, since that field changes shape (map -> array).
+      const convertToArray = (node: RawTreeNode): AdvTreeNode => {
+        if (!node.isDir) {
+          return {
+            name: node.name,
+            path: node.path,
+            extension: node.extension,
+            isDir: false,
+            children: null,
+          };
+        }
         const childKeys = Object.keys(node.children || {});
-        node.children = childKeys.map((key) => convertToArray(node.children[key]));
-        node.children.sort((a: AdvTreeNode, b: AdvTreeNode) => {
+        const children = childKeys.map((key) => convertToArray((node.children as Record<string, RawTreeNode>)[key]));
+        children.sort((a, b) => {
           if (a.isDir && !b.isDir) return -1;
           if (!a.isDir && b.isDir) return 1;
           return a.name.localeCompare(b.name);
         });
-        return node as AdvTreeNode;
+        return {
+          name: node.name,
+          path: node.path,
+          extension: node.extension,
+          isDir: true,
+          children,
+        };
       };
 
       const finalTree = convertToArray(root).children || [];
@@ -138,9 +186,9 @@ export default function AdvancedExplorer({
   const filterTree = (nodes: AdvTreeNode[], query: string): AdvTreeNode[] => {
     if (!query) return nodes;
     const cleanQuery = query.toLowerCase();
-    
+
     return nodes
-      .map((node) => {
+      .map((node): AdvTreeNode | null => {
         if (node.isDir) {
           const filteredChildren = filterTree(node.children || [], query);
           if (filteredChildren.length > 0 || node.name.toLowerCase().includes(cleanQuery)) {
@@ -153,7 +201,7 @@ export default function AdvancedExplorer({
         }
         return null;
       })
-      .filter(Boolean) as AdvTreeNode[];
+      .filter((node): node is AdvTreeNode => node !== null);
   };
 
   const filteredTree = filterTree(tree, searchQuery);
@@ -168,12 +216,12 @@ export default function AdvancedExplorer({
 
   return (
     <div className="flex flex-col h-full bg-panel overflow-hidden select-none relative">
-      
+
       {/* File Search Bar */}
       <div className="p-3 border-b border-border bg-panel-alt-2/40 flex flex-col gap-2 shrink-0">
         <div className="flex items-center justify-between">
           <span className="text-[10px] uppercase font-bold tracking-widest text-muted font-mono">File Explorer</span>
-          
+
           {/* Toolbar */}
           <div className="flex gap-1">
             <button
@@ -242,8 +290,12 @@ export default function AdvancedExplorer({
                       const matched = flatFiles.find((f) => f.path === fileInfo.path);
                       setHoveredFile({
                         ...fileInfo,
-                        lines: matched?.lines ?? "LOC: N/A",
-                        size: matched?.size ? `${(matched.size / 1024).toFixed(1)} KB` : "N/A",
+                        // RepositoryFileNode doesn't carry lines/size — use
+                        // runtime-optional access with fallback for future enrichment.
+                        lines: (matched as any)?.lines ?? "LOC: N/A",
+                        size: (matched as any)?.size
+                          ? `${((matched as any).size / 1024).toFixed(1)} KB`
+                          : "N/A",
                       });
                       if (rect) {
                         setHoverPosition({ x: rect.right + 10, y: rect.top });
@@ -280,7 +332,7 @@ export default function AdvancedExplorer({
             <AlertCircle className="w-3.5 h-3.5 text-danger" />
             <span>Review Code</span>
           </button>
-          
+
           <button
             onClick={() => handleContextAction("rename", contextMenu.path)}
             className="w-full text-left px-2.5 py-1.5 rounded hover:bg-panel-alt text-text cursor-pointer transition-colors"
@@ -336,10 +388,10 @@ interface AdvFileTreeNodeProps {
   node: AdvTreeNode;
   selectedPath: string;
   onOpenFile: (path: string) => void;
-  gitStatus: any;
+  gitStatus?: GitStatus | null;
   globalExpanded: boolean | null;
   onContextMenu: (e: React.MouseEvent, path: string, isDir: boolean) => void;
-  onHoverFile: (fileInfo: any, rect: DOMRect | null) => void;
+  onHoverFile: (fileInfo: HoverTriggerInfo | null, rect: DOMRect | null) => void;
 }
 
 function AdvFileTreeNode({
@@ -389,12 +441,12 @@ function AdvFileTreeNode({
   };
 
   // Determine Git Decorations state
-  const getGitDecoration = () => {
+  const getGitDecoration = (): GitDecoration | null => {
     if (node.isDir || !gitStatus) return null;
     const relPath = node.path.replace(/\\/g, "/");
-    
+
     // Check modified
-    const isModified = (gitStatus.unstaged || []).some((f: string) => {
+    const isModified = (gitStatus.unstaged || []).some((f) => {
       const gitRel = f.replace(/\\/g, "/");
       return relPath.endsWith(gitRel);
     });
@@ -465,7 +517,7 @@ function AdvFileTreeNode({
 
       {node.isDir && isOpen && node.children && (
         <div className="mt-0.5 border-l border-border ml-3.5 pl-2 space-y-0.5">
-          {node.children.map((child: any, index: number) => (
+          {node.children.map((child, index) => (
             <AdvFileTreeNode
               key={index}
               node={child}

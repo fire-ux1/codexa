@@ -1,26 +1,61 @@
 ﻿// @ts-nocheck
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import {
   ReactFlow,
   MiniMap,
   Controls,
   Background,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
+// Stable shared references so omitted props don't create a new
+// Set/array identity on every render (which would defeat useMemo below).
+const EMPTY_ARRAY = [];
+const EMPTY_SET = new Set();
+
 export default function KnowledgeGraph({
-  nodes = [],
-  edges = [],
+  nodes = EMPTY_ARRAY,
+  edges = EMPTY_ARRAY,
   onNodeClick,
-  highlightedNodeIds = new Set(),
-  highlightedEdgeIds = new Set(),
+  highlightedNodeIds = EMPTY_SET,
+  highlightedEdgeIds = EMPTY_SET,
 }) {
   const [nodeSearch, setNodeSearch] = useState("");
 
+  // Local, draggable copy of nodes/edges. React Flow expects the owner of
+  // controlled nodes/edges to apply changes (drag, selection, etc.) back
+  // via onNodesChange/onEdgesChange, or position updates get discarded on
+  // the next re-render.
+  const [rawNodes, setRawNodes] = useState(nodes);
+  const [rawEdges, setRawEdges] = useState(edges);
+
+  // Keep local state in sync if the parent passes a genuinely new
+  // nodes/edges array (e.g. loading a different graph).
+  useEffect(() => {
+    setRawNodes(nodes);
+  }, [nodes]);
+
+  useEffect(() => {
+    setRawEdges(edges);
+  }, [edges]);
+
+  const handleNodesChange = useCallback(
+    (changes) => setRawNodes((nds) => applyNodeChanges(changes, nds)),
+    []
+  );
+
+  const handleEdgesChange = useCallback(
+    (changes) => setRawEdges((eds) => applyEdgeChanges(changes, eds)),
+    []
+  );
+
   // Map nodes to React Flow format, applying highlighting styles
   const formattedNodes = useMemo(() => {
-    return nodes.map((n) => {
-      const isSearched = nodeSearch && n.data.name.toLowerCase().includes(nodeSearch.toLowerCase());
+    return rawNodes.map((n) => {
+      const name = n.data?.name ?? "";
+      const isSearched = nodeSearch && name.toLowerCase().includes(nodeSearch.toLowerCase());
       const isHighlighted = highlightedNodeIds.size > 0 && highlightedNodeIds.has(n.id);
       const isDimmed = highlightedNodeIds.size > 0 && !isHighlighted;
 
@@ -48,11 +83,11 @@ export default function KnowledgeGraph({
         className: `${opacity} ${border} ${scale} cursor-pointer hover:shadow-lg transition-all`,
       };
     });
-  }, [nodes, nodeSearch, highlightedNodeIds]);
+  }, [rawNodes, nodeSearch, highlightedNodeIds]);
 
   // Format edges applying dimming / highlighting colors
   const formattedEdges = useMemo(() => {
-    return edges.map((e) => {
+    return rawEdges.map((e) => {
       const isHighlighted = highlightedEdgeIds.size > 0 && highlightedEdgeIds.has(e.id);
       const isDimmed = highlightedEdgeIds.size > 0 && !isHighlighted;
 
@@ -67,7 +102,7 @@ export default function KnowledgeGraph({
         },
       };
     });
-  }, [edges, highlightedEdgeIds]);
+  }, [rawEdges, highlightedEdgeIds]);
 
   return (
     <div className="w-full h-full relative flex flex-col min-h-0 bg-[#06080d]">
@@ -96,6 +131,8 @@ export default function KnowledgeGraph({
         <ReactFlow
           nodes={formattedNodes}
           edges={formattedEdges}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={handleEdgesChange}
           onNodeClick={(_, node) => onNodeClick && onNodeClick(node)}
           fitView
           colorMode="dark"
@@ -113,4 +150,3 @@ export default function KnowledgeGraph({
     </div>
   );
 }
-

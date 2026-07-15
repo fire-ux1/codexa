@@ -46,6 +46,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self.local_history = defaultdict(list)
 
     async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return await call_next(request)
         path = request.url.path
         if path in {"/health", "/health/live", "/health/ready", "/", "/auth/refresh"}:
             return await call_next(request)
@@ -121,6 +123,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return await call_next(request)
         response = await call_next(request)
         response.headers["Content-Security-Policy"] = (
             "default-src 'self' 'unsafe-inline' 'unsafe-eval' https:; "

@@ -58,7 +58,7 @@ export default function WorkspaceMemory({
       <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-panel-alt-2/40 shrink-0 select-none">
         <div className="flex items-center gap-2">
           <Brain className="w-4 h-4 text-accent animate-pulse" />
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-text-strong">AI Workspace Memory</span>
+          <span className="text-[12px] font-semibold text-text-strong">Workspace Memory</span>
         </div>
         {onClose && (
           <button
@@ -71,19 +71,19 @@ export default function WorkspaceMemory({
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-border bg-panel shrink-0 select-none">
+      <div className="flex border-b border-border bg-panel shrink-0 select-none overflow-x-auto scrollbar-none">
         {tabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveSubTab(tab.id)}
-            className={`flex-1 py-2.5 px-1 text-[9px] font-mono font-bold uppercase tracking-wider flex flex-col items-center gap-1.5 border-b-2 transition-all cursor-pointer ${
+            className={`flex-1 py-2.5 px-0.5 text-[11px] font-sans font-medium flex flex-col items-center gap-1 border-b-2 transition-all cursor-pointer min-w-[50px] ${
               activeSubTab === tab.id
                 ? "border-accent text-accent bg-accent-dim/10"
                 : "border-transparent text-muted hover:text-text hover:bg-panel-alt"
             }`}
           >
             {tab.icon}
-            <span>{tab.label}</span>
+            <span className="whitespace-nowrap truncate w-full text-center px-0.5">{tab.label}</span>
           </button>
         ))}
       </div>

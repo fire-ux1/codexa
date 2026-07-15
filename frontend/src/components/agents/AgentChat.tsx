@@ -1,4 +1,4 @@
-﻿// @ts-nocheck
+// @ts-nocheck
 import { useState, useRef, useCallback } from "react";
 import AgentSelector from "./AgentSelector";
 import AgentResponse from "./AgentResponse";
@@ -159,11 +159,11 @@ export default function AgentChat({
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center gap-4 px-6 select-none">
             <div className="w-10 h-10 rounded-xl bg-violet-600/10 border border-violet-500/20 flex items-center justify-center">
-              <span className="text-violet-400 text-lg">ðŸ¤–</span>
+              <span className="text-violet-400 text-lg">🤖</span>
             </div>
             <div>
               <p className="text-white font-semibold text-xs mb-1">AI Agents Coordinator</p>
-              <p className="text-gray-500 text-[10px] leading-relaxed">
+              <p className="text-muted text-[10px] leading-relaxed">
                 Select a specialized auditor or coordinate them sequentially. Ask questions targeting your active file context.
               </p>
             </div>

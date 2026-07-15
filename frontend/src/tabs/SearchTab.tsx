@@ -83,15 +83,23 @@ export default function SearchTab({
       const referencesList: SearchResultItem[] = [];
       const docsList: SearchResultItem[] = [];
 
-      (searchRes as SearchResultItem[]).forEach((item) => {
+      (searchRes as any[]).forEach((item) => {
         const ext = item.file.split(".").pop()?.toLowerCase() || "";
+        const resultItem: SearchResultItem = {
+          file: item.file,
+          path: item.path || item.file,
+          symbol: item.symbol,
+          snippet: item.snippet,
+          score: item.score,
+          line: item.line,
+        };
         
         if (["md", "txt", "rst", "pdf"].includes(ext)) {
-          docsList.push(item);
+          docsList.push(resultItem);
         } else if (item.symbol) {
-          symbolsList.push(item);
+          symbolsList.push(resultItem);
         } else {
-          referencesList.push(item);
+          referencesList.push(resultItem);
         }
       });
 

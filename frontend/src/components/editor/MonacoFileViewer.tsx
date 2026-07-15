@@ -2,6 +2,7 @@ import React, { useRef } from "react";
 import Editor from "@monaco-editor/react";
 import { getEditorLanguage } from "../../utils/editorLanguage";
 import { runAIActionStream } from "../../services/api";
+import { createInlinePatchWidget } from "./InlinePatchWidget";
 
 interface MonacoFileViewerProps {
   filePath: string;
@@ -14,7 +15,21 @@ interface MonacoFileViewerProps {
   onRunSelectionAction?: (actionId: string, label: string, data: any) => void;
   onSelectionChange?: (editor: any) => void;
   onChange?: (value: string) => void;
-  repoPath: string;
+  repoPath?: string | null;
+  onQuickAction?: (actionId: string) => void;
+  /** When non-null, renders an inline diff widget anchored to the editor */
+  inlinePatch?: {
+    status: string;
+    instruction: string | null;
+    summary: string | null;
+    originalContent: string | null;
+    modifiedContent: string | null;
+    file: string | null;
+    diff: string;
+  } | null;
+  onPatchAccepted?: () => void;
+  onPatchRejected?: () => void;
+  onReload?: () => void;
 }
 
 
@@ -30,6 +45,12 @@ export default function MonacoFileViewer({
   onSelectionChange,
   onChange,
   repoPath,
+  onReload,
+  // New props from AIWorkspace — accepted so TS doesn't error;
+  // full inline-diff widget implementation is Phase 2 of the plan.
+  inlinePatch: _inlinePatch,
+  onPatchAccepted: _onPatchAccepted,
+  onPatchRejected: _onPatchRejected,
 }: MonacoFileViewerProps) {
   const language = getEditorLanguage(filePath);
 
@@ -43,7 +64,15 @@ export default function MonacoFileViewer({
     const editor = editorRef?.current;
     if (editor) {
       if (widgetRef.current) {
-        editor.removeContentWidget(widgetRef.current);
+        if (typeof widgetRef.current.destroy === "function") {
+          widgetRef.current.destroy();
+        } else {
+          try {
+            editor.removeContentWidget(widgetRef.current);
+          } catch {
+            // ignore
+          }
+        }
         widgetRef.current = null;
       }
       if (decorationsRef.current) {
@@ -59,6 +88,71 @@ export default function MonacoFileViewer({
       cleanupWidgetAndDecorations();
     };
   }, [filePath]);
+
+  // Render/update global inline diff preview widget
+  React.useEffect(() => {
+    const editor = editorRef?.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+
+    if (!_inlinePatch || _inlinePatch.file !== filePath) {
+      cleanupWidgetAndDecorations();
+      return;
+    }
+
+    cleanupWidgetAndDecorations();
+
+    const position = editor.getPosition() || { lineNumber: 1, column: 1 };
+    const targetLineNumber = position.lineNumber;
+
+    let header = "✨ AI Patch Suggestion";
+    if (_inlinePatch.status === "generating") {
+      header = "✨ AI is Generating Patch...";
+    } else if (_inlinePatch.status === "ready") {
+      header = "✨ AI Patch Ready";
+    }
+
+    const patchDecorations = [
+      {
+        range: new monaco.Range(targetLineNumber, 1, targetLineNumber, 1),
+        options: {
+          isWholeLine: true,
+          className: _inlinePatch.status === "generating" ? "ai-processing-line" : "diff-del-line",
+          linesDecorationsClassName: _inlinePatch.status === "generating" ? "ai-processing-gutter" : "diff-del-gutter",
+        },
+      },
+    ];
+    decorationsRef.current = editor.createDecorationsCollection(patchDecorations);
+
+    const instance = createInlinePatchWidget(editor, monaco, {
+      id: "global-inline-patch-widget",
+      lineNumber: targetLineNumber + 1,
+      headerText: header,
+      bodyText: _inlinePatch.summary || _inlinePatch.instruction || "Applying modifications...",
+      showActions: _inlinePatch.status === "ready",
+      onAccept: () => {
+        instance.destroy();
+        cleanupWidgetAndDecorations();
+        if (_onPatchAccepted) _onPatchAccepted();
+      },
+      onReject: () => {
+        instance.destroy();
+        cleanupWidgetAndDecorations();
+        if (_onPatchRejected) _onPatchRejected();
+      },
+    });
+
+    widgetRef.current = {
+      destroy: instance.destroy,
+      getId: () => "global-inline-patch-widget",
+      getDomNode: () => instance.domNode,
+      getPosition: () => instance.widget.getPosition(),
+    };
+
+    return () => {
+      instance.destroy();
+    };
+  }, [_inlinePatch, filePath]);
 
   const runInlineAction = async (ed: any, actionId: string, label: string) => {
     const model = ed.getModel();
@@ -372,6 +466,36 @@ export default function MonacoFileViewer({
     return (
       <div className="flex items-center justify-center h-full min-h-[380px]">
         <span className="w-8 h-8 border-2 border-accent/20 border-t-accent rounded-full animate-spin"></span>
+      </div>
+    );
+  }
+
+  const isError = content.startsWith("// Error loading file:");
+  const errorMessage = isError ? content.replace("// Error loading file:", "").trim() : "";
+
+  if (isError) {
+    return (
+      <div className="w-full h-full min-h-[380px] rounded-2xl overflow-hidden border border-border bg-bg flex flex-col items-center justify-center p-8 text-center font-sans space-y-4 select-none">
+        <div className="w-12 h-12 rounded-full bg-danger-bg/25 flex items-center justify-center text-danger">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div className="space-y-2 max-w-md">
+          <h3 className="text-sm font-semibold text-text-strong">Failed to load file</h3>
+          <p className="text-xs text-muted truncate">{filePath.split(/[/\\]/).pop()}</p>
+          <div className="text-[11px] text-danger-text bg-danger-bg/10 border border-danger/10 px-3 py-2.5 rounded-lg text-left font-mono break-all max-h-[100px] overflow-y-auto scrollbar-thin">
+            {errorMessage || "Unknown file read error."}
+          </div>
+        </div>
+        {onReload && (
+          <button
+            onClick={onReload}
+            className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl cursor-pointer transition-all shadow-lg shadow-indigo-600/10"
+          >
+            Reload File
+          </button>
+        )}
       </div>
     );
   }

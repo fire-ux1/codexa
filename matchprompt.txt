@@ -1,0 +1,135 @@
+Use the attached design as the visual reference. Recreate only the decorative background illustrations, not the text or login form.
+
+Top Left Illustration
+
+Create a premium AI/code intelligence illustration positioned behind the hero content.
+
+Requirements:
+
+Floating code editor window with rounded corners (VS Code inspired)
+Multiple glowing code lines using violet, indigo and cyan
+Small syntax highlighting
+Connected graph/network made from rounded square nodes
+Nodes connected with thin glowing curved lines
+One cyan node as the accent
+Subtle animated particles floating around
+Very soft glow around nodes
+Background should remain mostly empty with plenty of negative space
+
+Animations:
+
+Nodes slowly float up and down (4–6 seconds)
+Connection lines softly pulse
+Code window slightly drifts horizontally
+Small particles fade in/out
+Cyan node emits a soft breathing glow
+
+Animation style:
+Very slow.
+Very smooth.
+No bouncing.
+No large movements.
+
+Top Middle Background
+
+Behind the heading create an abstract intelligence grid.
+
+Requirements:
+
+Very faint dotted matrix
+Tiny glowing dots
+Thin grid lines with 5% opacity
+Gradient fade toward edges
+Almost invisible unless looked at carefully
+
+Animation:
+
+Random dots softly pulse
+Tiny shimmer travelling across the grid
+Opacity slowly changes
+
+The animation should feel alive without attracting attention.
+
+Bottom Left Illustration
+
+Create an abstract AI landscape inspired by neural networks.
+
+Requirements:
+
+Multiple flowing wave meshes
+Purple wireframe terrain
+Layered sine waves
+Very thin glowing lines
+Semi-transparent gradients
+Depth using multiple layers
+
+Place above the waves:
+
+Floating code editor window
+Neural graph
+Connected nodes
+Small glowing squares
+
+Animation:
+
+Wave mesh:
+
+Continuous horizontal movement
+Gentle vertical oscillation
+Infinite loop
+Very slow
+
+Graph:
+
+Nodes float independently
+Links pulse occasionally
+Cyan node glows every few seconds
+
+Code editor:
+
+Slowly drift 4–8 pixels
+Soft shadow
+Slight glow
+
+Particles:
+
+Random tiny particles
+Opacity fade
+Slow upward movement
+Visual Style
+
+Do NOT use Lottie.
+
+Use:
+
+CSS animations
+SVG
+Framer Motion
+
+Performance first.
+
+Everything must remain below 60fps GPU-friendly animations.
+
+
+Design References
+
+The visual quality should be comparable to:
+
+Linear
+Vercel
+Stripe Dashboard
+Raycast
+Warp Terminal
+Clerk Authentication
+Supabase
+OpenAI
+
+Avoid:
+
+Cartoon illustrations
+Generic stock vectors
+Bright neon cyberpunk
+Busy backgrounds
+Large distracting animations
+
+The decorations should enhance the page while keeping the login form as the primary

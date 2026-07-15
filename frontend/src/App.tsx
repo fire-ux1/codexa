@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   fetchUser,
   fetchRepositories,
@@ -24,38 +24,108 @@ import useExecutionFlow from "./hooks/useExecutionFlow";
 import { statusTones } from "./utils/constants";
 import { getFileColor } from "./utils/colors";
 
-const getInitialToken = (): string => {
-  const params = new URLSearchParams(window.location.search);
-  const urlToken = params.get("token");
-  const urlRefreshToken = params.get("refresh_token");
-  if (urlToken) {
-    localStorage.setItem("codepilot_token", urlToken);
-    if (urlRefreshToken) {
-      localStorage.setItem("codepilot_refresh_token", urlRefreshToken);
-    }
-    // Clean the URL so the token doesn't persist in history/bookmarks
-    window.history.replaceState({}, document.title, window.location.pathname);
-    return urlToken;
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  mfa_enabled?: boolean;
+}
+
+interface RepoHistoryEntry {
+  id: string | number;
+  repository_path: string;
+  repository_name?: string;
+  status: "completed" | "cloning" | "indexing" | "error" | string;
+  [key: string]: unknown;
+}
+
+const TOKEN_KEY = "codepilot_token";
+const REFRESH_TOKEN_KEY = "codepilot_refresh_token";
+
+function persistTokens(token: string, refreshToken?: string) {
+  localStorage.setItem(TOKEN_KEY, token);
+  if (refreshToken) {
+    localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
   }
-  return localStorage.getItem("codepilot_token") || "";
+}
+
+function clearPersistedTokens() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
+}
+
+/** Generates a unique-per-tab sandbox identity so concurrent sandbox users
+ *  don't collide on the same name/email at the backend. */
+function generateSandboxIdentity() {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10);
+  return {
+    name: `Sandbox Developer ${id}`,
+    email: `sandbox+${id}@codepilot.ai`,
+  };
+}
+
+// Reads and strips ALL recognized auth-related query params in one place,
+// so we never risk one code path stripping a param another path still needs.
+function consumeAuthParamsFromUrl(): {
+  token: string | null;
+  refreshToken: string | null;
+  mfaRequired: boolean;
+  mfaTempToken: string | null;
+} {
+  const params = new URLSearchParams(window.location.search);
+  const result = {
+    token: params.get("token"),
+    refreshToken: params.get("refresh_token"),
+    mfaRequired: params.get("mfa_required") === "true",
+    mfaTempToken: params.get("mfa_temp_token"),
+  };
+
+  if (result.token || result.mfaTempToken) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+  return result;
+}
+
+const getInitialToken = (): string => {
+  const { token, refreshToken } = consumeAuthParamsFromUrl();
+  if (token) {
+    persistTokens(token, refreshToken ?? undefined);
+    return token;
+  }
+  return localStorage.getItem(TOKEN_KEY) || "";
 };
 
 export default function App() {
   // Authentication & History States
   const [token, setToken] = useState<string>(getInitialToken);
-  const [user, setUser] = useState<any>(null);
-  const [history, setHistory] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [history, setHistory] = useState<RepoHistoryEntry[]>([]);
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [showSandboxForm, setShowSandboxForm] = useState<boolean>(false);
-  const [sandboxName, setSandboxName] = useState<string>("Sandbox Developer");
-  const [sandboxEmail, setSandboxEmail] = useState<string>("sandbox@codepilot.ai");
+  const [sandboxIdentity] = useState(generateSandboxIdentity);
+  const [sandboxName, setSandboxName] = useState<string>(sandboxIdentity.name);
+  const [sandboxEmail, setSandboxEmail] = useState<string>(sandboxIdentity.email);
   const [mfaTempToken, setMfaTempToken] = useState<string>("");
   const [showMfaModal, setShowMfaModal] = useState<boolean>(false);
-  
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmittingLogin, setIsSubmittingLogin] = useState<boolean>(false);
+
   // Hooks Integration
   const { toasts, showToast } = useToast() as any;
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   // Online / Offline Detection
   useEffect(() => {
@@ -89,7 +159,7 @@ export default function App() {
     selectRepositoryFromHistory,
     handleDeleteRepository,
     handleIndexRepository,
-  } = useRepository(token, showToast, history, setHistory) as any;
+  } = useRepository(token, showToast, history as any, setHistory as any) as any;
 
   const {
     architecture,
@@ -117,14 +187,11 @@ export default function App() {
     error: callGraphError,
   } = useCallGraph(repoPath, setStatus) as any;
 
-  const {
-    setFlowData,
-  } = useExecutionFlow(repoPath, setStatus) as any;
+  const { setFlowData } = useExecutionFlow(repoPath, setStatus) as any;
 
   // Sign out helper
   const handleSignOut = useCallback(() => {
-    localStorage.removeItem("codepilot_token");
-    localStorage.removeItem("codepilot_refresh_token");
+    clearPersistedTokens();
     setToken("");
     setUser(null);
     setHistory([]);
@@ -134,6 +201,7 @@ export default function App() {
     setFlowData(null);
     setSelectedFunc(null);
     setSelectedNode(null);
+    showToast("Signed out.", "info");
   }, [
     clearWorkspace,
     showToast,
@@ -157,27 +225,14 @@ export default function App() {
 
     window.addEventListener("codepilot_unauthorized", handleUnauthorized);
 
-    // Handle OAuth redirect: token may land on /auth-callback path
-    const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get("token");
-    const urlRefreshToken = params.get("refresh_token");
-    const mfaRequired = params.get("mfa_required") === "true";
-    const mfaTemp = params.get("mfa_temp_token");
-
-    // Pick up tokens that were NOT caught by getInitialToken
-    // (e.g. if the app was already mounted and OAuth redirect happened)
-    if (urlToken && !localStorage.getItem("codepilot_token")) {
-      localStorage.setItem("codepilot_token", urlToken);
-      if (urlRefreshToken) {
-        localStorage.setItem("codepilot_refresh_token", urlRefreshToken);
-      }
-      setToken(urlToken);
-      window.history.replaceState({}, document.title, window.location.pathname);
-      showToast("Authentication successful!", "success");
-    }
+    // Note: token/refresh_token params (if present) were already consumed and
+    // stripped by getInitialToken()'s lazy initializer, which runs before this
+    // effect on first render. Only mfa_* params can still be present here,
+    // since a token response and an mfa_required response are mutually
+    // exclusive from the backend.
+    const { mfaRequired, mfaTempToken: mfaTemp } = consumeAuthParamsFromUrl();
 
     if (mfaRequired && mfaTemp) {
-      window.history.replaceState({}, document.title, window.location.pathname);
       setMfaTempToken(mfaTemp);
       setShowMfaModal(true);
       setIsAuthLoading(false);
@@ -187,29 +242,33 @@ export default function App() {
     }
 
     const loadUserAndHistory = async () => {
-      const activeToken = localStorage.getItem("codepilot_token");
+      const activeToken = localStorage.getItem(TOKEN_KEY);
       if (activeToken) {
         try {
           const profile = await fetchUser();
+          if (!mountedRef.current) return;
           setUser(profile);
-          const historyList = await fetchRepositories();
+
+          const historyList = (await fetchRepositories()) as unknown as RepoHistoryEntry[];
+          if (!mountedRef.current) return;
           setHistory(historyList);
 
           // If there's a recent completed repository, auto-select it
           if (historyList.length > 0) {
-            const latest = historyList.find((r: any) => r.status === "completed") || historyList[0];
+            const latest =
+              historyList.find((r) => r.status === "completed") || historyList[0];
             if (latest.status === "completed") {
               selectRepositoryFromHistory(latest);
             }
           }
         } catch (error: any) {
           console.error("Auth Load Error:", error);
+          if (!mountedRef.current) return;
           // Only clear session on explicit 401 — not on network errors,
           // to avoid a loop where a transient error wipes valid credentials.
-          const status = error?.response?.status;
-          if (status === 401 || status === 403) {
-            localStorage.removeItem("codepilot_token");
-            localStorage.removeItem("codepilot_refresh_token");
+          const statusCode = error?.response?.status;
+          if (statusCode === 401 || statusCode === 403) {
+            clearPersistedTokens();
             setToken("");
             setUser(null);
           }
@@ -217,44 +276,56 @@ export default function App() {
           // screen briefly; the retry interceptor will handle retries.
         }
       }
-      setIsAuthLoading(false);
+      if (mountedRef.current) setIsAuthLoading(false);
     };
 
     loadUserAndHistory();
     return () => {
       window.removeEventListener("codepilot_unauthorized", handleUnauthorized);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Run only once on mount
 
-  const activeRepo = history.find((r: any) => r.repository_path === repoPath);
+  const activeRepo = history.find((r) => r.repository_path === repoPath);
   const activeRepoId = activeRepo ? activeRepo.id : null;
   const repositoryReady = Boolean(repoPath);
 
   // Sandbox login helper
   const handleSandboxLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoginError(null);
+    setIsSubmittingLogin(true);
     try {
       setIsAuthLoading(true);
       const res = await loginDeveloper(sandboxName, sandboxEmail);
       if (res.mfa_required) {
-        setMfaTempToken(res.mfa_temp_token);
+        setMfaTempToken(res.temp_token ?? "");
         setShowMfaModal(true);
+        setIsAuthLoading(false); // reset before early return
         return;
       }
+      // Persist immediately — without this, the session is lost on refresh
+      // even though React state looks logged in.
+      persistTokens(res.token, res.refresh_token);
       setToken(res.token);
-      setUser(res.user);
+      setUser(res.user ?? null);
       setShowSandboxForm(false);
-      showToast(`Logged in as Sandbox Session: ${res.user.name}`, "success");
-    } catch {
+      showToast(`Logged in as Sandbox Session: ${res.user?.name ?? ""}`, "success");
+    } catch (err: any) {
+      const msg =
+        err?.response?.data?.detail ||
+        err?.message ||
+        "Developer login failed. Please try again.";
+      setLoginError(msg);
       showToast("Developer login failed.", "error");
     } finally {
+      setIsSubmittingLogin(false);
       setIsAuthLoading(false);
     }
   };
 
   // Handle repository selection override
-  const handleSelectRepository = (repo: any) => {
+  const handleSelectRepository = (repo: RepoHistoryEntry) => {
     selectRepositoryFromHistory(repo);
     setArchitecture("");
     setCallGraph(null);
@@ -263,8 +334,7 @@ export default function App() {
     setSelectedNode(null);
   };
 
-  // Ask AI about the selected file (used by architecture tab onExplainFile)
-  const handleExplainFile = () => {};
+
 
   const filteredFunctions = useMemo(() => {
     if (!callGraph) return [];
@@ -290,7 +360,7 @@ export default function App() {
       <div className="min-h-screen bg-[#030712] flex items-center justify-center">
         <div className="text-center space-y-4">
           <span className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin inline-block"></span>
-          <p className="text-gray-400 font-medium text-sm">Authenticating CodePilot Session...</p>
+          <p className="text-gray-400 font-medium text-sm">Authenticating ChunkWiser Session...</p>
         </div>
       </div>
     );
@@ -307,6 +377,8 @@ export default function App() {
         onSandboxEmailChange={setSandboxEmail}
         onToggleSandboxForm={setShowSandboxForm}
         onSandboxLogin={handleSandboxLogin}
+        isSubmitting={isSubmittingLogin}
+        errorMessage={loginError}
       />
     );
   }
@@ -329,7 +401,13 @@ export default function App() {
           <div className="flex flex-col md:flex-row flex-1 min-h-screen">
             <Sidebar
               user={user}
-              history={history}
+              history={history.map((r) => ({
+              ...r,
+              id: r.id ?? "",
+              repository_path: r.repository_path ?? "",
+              repository_name: (r.repository_name as string) ?? r.repository_path?.split(/[/\\]/).pop() ?? "Unknown",
+              status: (r.status as "completed" | "indexing" | "failed") || "completed",
+            }))}
               repoPath={repoPath}
               onSignOut={handleSignOut}
               onClearWorkspace={clearWorkspace}
@@ -338,11 +416,35 @@ export default function App() {
             />
             <div className="flex-grow p-4 md:p-6 lg:p-8">
               {/* Status Bar */}
-              <div className={`mb-6 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border ${(statusTones as Record<string, string>)[status.tone]} transition-all duration-300 glass overflow-hidden`}>
+              <div
+                className={`mb-6 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl border ${
+                  (statusTones as Record<string, string>)[status.tone]
+                } transition-all duration-300 glass overflow-hidden`}
+              >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <span className="flex h-2.5 w-2.5 relative shrink-0">
-                    <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${status.tone === 'loading' ? 'bg-indigo-400' : status.tone === 'success' ? 'bg-emerald-400' : status.tone === 'error' ? 'bg-rose-400' : 'bg-gray-400'}`}></span>
-                    <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${status.tone === 'loading' ? 'bg-indigo-500' : status.tone === 'success' ? 'bg-emerald-500' : status.tone === 'error' ? 'bg-rose-500' : 'bg-gray-500'}`}></span>
+                    <span
+                      className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                        status.tone === "loading"
+                          ? "bg-indigo-400"
+                          : status.tone === "success"
+                          ? "bg-emerald-400"
+                          : status.tone === "error"
+                          ? "bg-rose-400"
+                          : "bg-gray-400"
+                      }`}
+                    ></span>
+                    <span
+                      className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                        status.tone === "loading"
+                          ? "bg-indigo-500"
+                          : status.tone === "success"
+                          ? "bg-emerald-500"
+                          : status.tone === "error"
+                          ? "bg-rose-500"
+                          : "bg-gray-500"
+                      }`}
+                    ></span>
                   </span>
                   <span className="text-sm font-medium text-white">{status.message}</span>
                 </div>
@@ -360,40 +462,39 @@ export default function App() {
           </div>
         ) : (
           /* FULL IDE WORKSPACE */
-          React.createElement(AIWorkspace as any, {
-            repoPath,
-            repoId: activeRepoId,
-            architecture,
-            graphNodes,
-            graphEdges,
-            selectedNode,
-            isArchitectureLoading,
-            isGraphLoadingReactFlow,
-            onNodeClick: handleNodeClick,
-            onExplainFile: handleExplainFile,
-            onGetArchitecture: handleGetArchitecture,
-            getFileColor,
-            callGraph,
-            graphSearch,
-            setGraphSearch,
-            selectedFunc,
-            setSelectedFunc,
-            filteredFunctions,
-            functionCallers,
-            isGraphLoading,
-            onGetCallGraph: handleGetCallGraph,
-            architectureError,
-            callGraphError,
-          })
+          <AIWorkspace
+            repoPath={repoPath}
+            repoId={activeRepoId}
+            architecture={architecture}
+            graphNodes={graphNodes}
+            graphEdges={graphEdges}
+            selectedNode={selectedNode}
+            isArchitectureLoading={isArchitectureLoading}
+            isGraphLoadingReactFlow={isGraphLoadingReactFlow}
+            onNodeClick={handleNodeClick}
+            onGetArchitecture={handleGetArchitecture}
+            getFileColor={getFileColor}
+            callGraph={callGraph}
+            graphSearch={graphSearch}
+            setGraphSearch={setGraphSearch}
+            selectedFunc={selectedFunc}
+            setSelectedFunc={setSelectedFunc}
+            filteredFunctions={filteredFunctions}
+            functionCallers={functionCallers}
+            isGraphLoading={isGraphLoading}
+            onGetCallGraph={handleGetCallGraph}
+            architectureError={architectureError}
+            callGraphError={callGraphError}
+            indexingProgress={indexingProgress}
+          />
         )}
       </ErrorBoundary>
 
       {showMfaModal && mfaTempToken && (
         <MfaVerificationModal
           tempToken={mfaTempToken}
-          onSuccess={(verifiedToken, verifiedRefreshToken, verifiedUser) => {
-            localStorage.setItem("codepilot_token", verifiedToken);
-            localStorage.setItem("codepilot_refresh_token", verifiedRefreshToken);
+          onSuccess={(verifiedToken: string, verifiedRefreshToken: string, verifiedUser: User) => {
+            persistTokens(verifiedToken, verifiedRefreshToken);
             setToken(verifiedToken);
             setUser(verifiedUser);
             setShowMfaModal(false);
