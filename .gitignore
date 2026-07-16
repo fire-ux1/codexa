@@ -39,3 +39,7 @@ docs/DOCKER_SETUP.txt
 *.db
 backend/*.db
 Authen.md
+secDetails.md
+IMPROVEMENTS_F1.md
+FEATURES.md
+
