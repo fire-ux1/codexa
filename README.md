@@ -1,4 +1,4 @@
-# 🏢 Codexa (CodePilot AI)
+# 🏢 ChunkWiser
 
 ## Enterprise Code Intelligence Platform for Teams
 
@@ -44,7 +44,7 @@ You don't need another GitHub Copilot clone.
 - 💼 **CTOs/VPs** who need architecture visibility
 - 🚀 **DevOps teams** understanding infrastructure-as-code
 
-**CodePilot AI solves this:**
+**ChunkWiser solves this:**
 - ✅ **Self-hosted on your infrastructure** — Code never leaves your network
 - ✅ **Team collaboration** — Real-time synchronized workspaces
 - ✅ **Enterprise-grade security** — RBAC, SSO/SAML, audit logs
@@ -54,9 +54,9 @@ You don't need another GitHub Copilot clone.
 
 ---
 
-## 📊 Why Choose CodePilot AI Over Alternatives?
+## 📊 Why Choose ChunkWiser Over Alternatives?
 
-| Feature | CodePilot AI | GitHub Copilot | Cursor | Codeium | TabNine |
+| Feature | ChunkWiser | GitHub Copilot | Cursor | Codeium | TabNine |
 |---------|---|---|---|---|---|
 | **Self-Hosted** | ✅ Fully | ❌ SaaS only | ❌ SaaS only | ❌ SaaS only | Limited |
 | **Team Collaboration** | ✅ WebSocket-based | ❌ Individual | ❌ Individual | ❌ Individual | ❌ No |
@@ -77,7 +77,7 @@ You don't need another GitHub Copilot clone.
 
 **Solution:**
 ```
-Deploy CodePilot on private VPC
+Deploy ChunkWiser on private VPC
 → Team analyzes code locally
 → No data leaves HIPAA boundary
 → Audit trail for compliance
@@ -110,7 +110,7 @@ Import 10 microservices
 
 **Solution:**
 ```
-1. Admin deploys CodePilot to company Kubernetes
+1. Admin deploys ChunkWiser to company Kubernetes
 2. Indexes all 15 microservices
 3. Invites team to workspace
 4. Team asks: "How does payment flow work?"
@@ -145,10 +145,10 @@ Result: Onboarding time: 1 week → 2 days
 ```bash
 # Clone & deploy with Helm
 git clone https://github.com/abhishek-s12/codepilot-ai.git
-helm install codepilot ./helm -f values-production.yaml
+helm install chunkwiser ./helm -f values-production.yaml
 
 # Access via VPC-internal load balancer
-kubectl port-forward svc/codepilot-frontend 8080:80
+kubectl port-forward svc/chunkwiser-frontend 8080:80
 ```
 
 ### Option 2: Docker Compose (Development)
@@ -438,7 +438,7 @@ MIT License — See [LICENSE](LICENSE) for details
 
 ## 🌟 Show Your Support
 
-If CodePilot AI helps your team:
+If ChunkWiser helps your team:
 - ⭐ **Star this repo** (helps with visibility)
 - 🍴 **Fork and contribute**
 - 📢 **Share with your network**
